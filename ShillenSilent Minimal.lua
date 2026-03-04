@@ -165,7 +165,8 @@ local function init_config()
             slider_thumb_base = tw(4),  -- 16px
             slider_thumb_grow = tw(2),  -- 8px
             scrollbar_min_thumb = tw(8),
-            scrollbar_grab_pad = tw(1)
+            scrollbar_grab_pad = tw(1),
+            toggle_border_thickness = s(2)
         },
 
         motion = {
@@ -620,7 +621,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
     local trackB = math.floor(inactiveCol.b + (activeCol.b - inactiveCol.b) * item.anim)
     
     render_rect(switchX, switchY, switchW, switchH, {r=trackR, g=trackG, b=trackB, a=255}, config.radius.full)
-    render_outline(switchX, switchY, switchW, switchH, config.colors.border, 1, config.radius.full)
+    render_outline(switchX, switchY, switchW, switchH, config.colors.border_strong, config.control.toggle_border_thickness, config.radius.full)
     
     local thumbSize = config.space.x5
     local thumbPadding = config.space.x1
@@ -630,7 +631,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
     local thumbY = switchY + (switchH - thumbSize)/2
     
     render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.text_on_accent, config.radius.full)
-    render_outline(thumbX, thumbY, thumbSize, thumbSize, config.colors.border_strong, 1, config.radius.full)
+    render_outline(thumbX, thumbY, thumbSize, thumbSize, config.colors.border_strong, config.control.toggle_border_thickness, config.radius.full)
 
     -- Center text vertically with switch
     local textY = switchY + (switchH - config.font_scale_body)/2
@@ -796,15 +797,18 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 
     render_text(item.label, x + pad_x, y + config.space.x2, config.font_scale_body, config.colors.text_main)
     
-    local boxBg = hovered and config.colors.bg_control_hover or config.colors.bg_control
-    local boxBorder = hovered and config.colors.accent or config.colors.border
+    local box_active = hovered or item.isOpen
+    local boxBg = box_active and config.colors.accent or config.colors.bg_control
+    local boxBorder = box_active and config.colors.accent_hover or config.colors.border
+    local boxText = box_active and config.colors.text_on_accent or config.colors.text_sec
+    local boxArrow = box_active and config.colors.text_on_accent or config.colors.text_dim
     render_rect(boxX, boxY, boxW, boxH, boxBg, config.radius.md)
     render_outline(boxX, boxY, boxW, boxH, boxBorder, 1, config.radius.md)
     -- Center the selected option text in the dropdown box
-    render_text(item.options[item.value] or "", boxX + boxW / 2, boxY + config.space.x1_5, config.font_scale_body, config.colors.text_sec, "center")
+    render_text(item.options[item.value] or "", boxX + boxW / 2, boxY + config.space.x1_5, config.font_scale_body, boxText, "center")
     
     -- Dropdown Arrow
-    render_text("v", boxX + boxW - config.space.x4, boxY + config.space.x1_5, config.font_scale_small, config.colors.text_dim)
+    render_text("v", boxX + boxW - config.space.x4, boxY + config.space.x1_5, config.font_scale_small, boxArrow)
 
     if item.isOpen then
         return { item = item, x = boxX, y = boxY + boxH + config.space.x1, w = boxW }

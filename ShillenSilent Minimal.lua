@@ -197,7 +197,7 @@ local function init_config()
             border = { r = 226, g = 232, b = 240, a = 255 },        -- slate-200
             border_strong = { r = 203, g = 213, b = 225, a = 255 }, -- slate-300
             scroll_track = { r = 226, g = 232, b = 240, a = 220 },  -- slate-200
-            card_shadow = { r = 2, g = 6, b = 23, a = 24 },         -- slate-950/soft
+            card_shadow = { r = 2, g = 6, b = 23, a = 0 },          -- disabled to keep cards pure white
             transparent = { r = 255, g = 255, b = 255, a = 0 },
 
             danger = { r = 220, g = 38, b = 38, a = 255 },          -- red-600
@@ -500,14 +500,20 @@ local function button_variant_for(btn)
         or id:find("preset_refresh", 1, true)
         or id:find("preset_set_name", 1, true)
         or id:find("preset_name_clip", 1, true)
-        or id:find("_tp_", 1, true)
-        or id:find("teleport", 1, true)
     then
         return "ghost"
     end
 
     if id:find("preset_remove", 1, true) then
         return "ghost_danger"
+    end
+
+    if id:find("_tp_", 1, true) or id:find("teleport", 1, true) then
+        return "outline"
+    end
+
+    if id == "doomsday_preset_apply" then
+        return "outline"
     end
 
     if id:find("cuts_apply", 1, true)

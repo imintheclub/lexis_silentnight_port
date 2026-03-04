@@ -501,7 +501,7 @@ local function button_variant_for(btn)
         or id:find("preset_set_name", 1, true)
         or id:find("preset_name_clip", 1, true)
     then
-        return "ghost"
+        return "outline"
     end
 
     if id:find("preset_remove", 1, true) then
@@ -526,6 +526,19 @@ local function button_variant_for(btn)
     end
 
     return "outline"
+end
+
+local function is_preset_file_dropdown(item)
+    if type(item) ~= "table" then return false end
+    if type(item.id) ~= "string" then return false end
+    return item.id:find("_preset_file", 1, true) ~= nil
+end
+
+local function get_dropdown_item_height(item)
+    if is_preset_file_dropdown(item) then
+        return config.item_height.dropdown + config.space.x4
+    end
+    return config.item_height.dropdown
 end
 
 local function button_colors_for(btn, hovered)
@@ -589,7 +602,7 @@ local function get_group_actual_height(group)
         elseif item.type == "button" then h = h + config.item_height.button
         elseif item.type == "button_pair" then h = h + config.item_height.button
         elseif item.type == "slider" then h = h + config.item_height.slider
-        elseif item.type == "dropdown" then h = h + config.item_height.dropdown
+        elseif item.type == "dropdown" then h = h + get_dropdown_item_height(item)
         elseif item.type == "label" then h = h + config.space.x6 end
     end
     return math.max(group.rect.h, h)
@@ -779,10 +792,11 @@ end
 
 local function draw_dropdown_item(item, x, y, w, original_y)
     local pad_x = config.space.x5
-    local boxW = config.control.dropdown_w
+    local is_preset_file = is_preset_file_dropdown(item)
+    local boxW = is_preset_file and (w - (pad_x * 2)) or config.control.dropdown_w
     local boxH = config.space.x9
-    local boxX = x + w - boxW - pad_x
-    local boxY = y + config.space.x1_5
+    local boxX = is_preset_file and (x + pad_x) or (x + w - boxW - pad_x)
+    local boxY = is_preset_file and (y + config.space.x5) or (y + config.space.x1_5)
     
     local hovered = is_hovered_content(boxX, original_y + config.space.x1, boxW, boxH)
 
@@ -798,7 +812,7 @@ local function draw_dropdown_item(item, x, y, w, original_y)
         end
     end
 
-    render_text(item.label, x + pad_x, y + config.space.x2, config.font_scale_body, config.colors.text_main)
+    render_text(item.label, x + pad_x, y + config.space.x1, config.font_scale_body, config.colors.text_main)
     
     local box_active = hovered or item.isOpen
     local boxBg = box_active and config.colors.accent or config.colors.bg_control
@@ -807,14 +821,25 @@ local function draw_dropdown_item(item, x, y, w, original_y)
     local boxArrow = box_active and config.colors.text_on_accent or config.colors.text_dim
     render_rect(boxX, boxY, boxW, boxH, boxBg, config.radius.md)
     render_outline(boxX, boxY, boxW, boxH, boxBorder, 1, config.radius.md)
-    -- Center the selected option text in the dropdown box
-    render_text(item.options[item.value] or "", boxX + boxW / 2, boxY + config.space.x1_5, config.font_scale_body, boxText, "center")
+    local selected = item.options[item.value] or ""
+    if is_preset_file then
+        render_text(selected, boxX + config.space.x3, boxY + config.space.x1_5, config.font_scale_body, boxText)
+    else
+        -- Center the selected option text in normal dropdown boxes
+        render_text(selected, boxX + boxW / 2, boxY + config.space.x1_5, config.font_scale_body, boxText, "center")
+    end
     
     -- Dropdown Arrow
     render_text("v", boxX + boxW - config.space.x4, boxY + config.space.x1_5, config.font_scale_small, boxArrow)
 
     if item.isOpen then
-        return { item = item, x = boxX, y = boxY + boxH + config.space.x1, w = boxW }
+        return {
+            item = item,
+            x = boxX,
+            y = boxY + boxH + config.space.x1,
+            w = boxW,
+            align = is_preset_file and "left" or "center"
+        }
     end
 end
 
@@ -1061,7 +1086,7 @@ ui.render = function()
                         elseif item.type == "dropdown" then
                             local dd = draw_dropdown_item(item, gX, itemY, col_w, itemY)
                             if dd then pendingDropdown = dd end
-                            itemY = itemY + config.item_height.dropdown
+                            itemY = itemY + get_dropdown_item_height(item)
                         elseif item.type == "label" then
                             local labelCol = item.color or config.colors.text_sec
                             render_text(item.text, gX + pad_x, itemY + config.space.x3, config.font_scale_small, labelCol)
@@ -1127,8 +1152,11 @@ ui.render = function()
                 end
                 optTextCol = config.colors.text_on_accent
             end
-            -- Center the option text in the dropdown menu
-            render_text(opt, dd.x + dd.w / 2, optY + config.space.x1, config.font_scale_body, optTextCol, "center")
+            if dd.align == "left" then
+                render_text(opt, dd.x + config.space.x3, optY + config.space.x1, config.font_scale_body, optTextCol)
+            else
+                render_text(opt, dd.x + dd.w / 2, optY + config.space.x1, config.font_scale_body, optTextCol, "center")
+            end
         end
         
         if state.mouse.clicked and not state.dropdown_just_opened and not is_hovered(dd.x, dd.y, dd.w, optsH) then
@@ -3838,16 +3866,6 @@ ui.label(gCasinoInfo, "Heist cooldown: ~45 min (skip)", config.colors.text_sec)
 
 casinoPresetsGroup = ui.group(heistTab, "Presets (JSON)", nil, nil, nil, nil, "casino")
 hp_heist_presets.casino.name_label = ui.label(casinoPresetsGroup, "Name: QuickPreset", config.colors.text_sec)
-hp_heist_presets.casino.dropdown = ui.dropdown(
-    casinoPresetsGroup,
-    "casino_preset_file",
-    "File",
-    hp_heist_presets.casino.options,
-    hp_heist_presets.casino.selected,
-    function(opt)
-        hp_heist_presets.casino.selected = hp_find_option_index(hp_heist_presets.casino.options, opt, 1)
-    end
-)
 ui.button(casinoPresetsGroup, "casino_preset_set_name", "Set Name From Keyboard", function()
     hp_open_heist_preset_name_keyboard("casino")
 end)
@@ -3862,6 +3880,16 @@ ui.button(casinoPresetsGroup, "casino_preset_name_clip", "Set Name From Clipboar
     hp_update_preset_name_label("casino")
     if notify then notify.push("Heist Presets", "Name set: " .. clean, 2000) end
 end)
+hp_heist_presets.casino.dropdown = ui.dropdown(
+    casinoPresetsGroup,
+    "casino_preset_file",
+    "Preset File",
+    hp_heist_presets.casino.options,
+    hp_heist_presets.casino.selected,
+    function(opt)
+        hp_heist_presets.casino.selected = hp_find_option_index(hp_heist_presets.casino.options, opt, 1)
+    end
+)
 ui.button_pair(
     casinoPresetsGroup,
     "casino_preset_save", "Save", function() hp_save_heist_preset("casino") end,
@@ -4338,16 +4366,6 @@ ui.button_pair(
 
 cayoPresetsGroup = ui.group(heistTab, "Presets (JSON)", nil, nil, nil, nil, "cayo")
 hp_heist_presets.cayo.name_label = ui.label(cayoPresetsGroup, "Name: QuickPreset", config.colors.text_sec)
-hp_heist_presets.cayo.dropdown = ui.dropdown(
-    cayoPresetsGroup,
-    "cayo_preset_file",
-    "File",
-    hp_heist_presets.cayo.options,
-    hp_heist_presets.cayo.selected,
-    function(opt)
-        hp_heist_presets.cayo.selected = hp_find_option_index(hp_heist_presets.cayo.options, opt, 1)
-    end
-)
 ui.button(cayoPresetsGroup, "cayo_preset_set_name", "Set Name From Keyboard", function()
     hp_open_heist_preset_name_keyboard("cayo")
 end)
@@ -4362,6 +4380,16 @@ ui.button(cayoPresetsGroup, "cayo_preset_name_clip", "Set Name From Clipboard", 
     hp_update_preset_name_label("cayo")
     if notify then notify.push("Heist Presets", "Name set: " .. clean, 2000) end
 end)
+hp_heist_presets.cayo.dropdown = ui.dropdown(
+    cayoPresetsGroup,
+    "cayo_preset_file",
+    "Preset File",
+    hp_heist_presets.cayo.options,
+    hp_heist_presets.cayo.selected,
+    function(opt)
+        hp_heist_presets.cayo.selected = hp_find_option_index(hp_heist_presets.cayo.options, opt, 1)
+    end
+)
 ui.button_pair(
     cayoPresetsGroup,
     "cayo_preset_save", "Save", function() hp_save_heist_preset("cayo") end,
@@ -4543,16 +4571,6 @@ ui.button(gApartmentPreps, "apartment_change_session", "Change Session", functio
 
 local apartmentPresetsGroup = ui.group(heistTab, "Presets (JSON)", nil, nil, nil, nil, "apartment")
 hp_heist_presets.apartment.name_label = ui.label(apartmentPresetsGroup, "Name: QuickPreset", config.colors.text_sec)
-hp_heist_presets.apartment.dropdown = ui.dropdown(
-    apartmentPresetsGroup,
-    "apartment_preset_file",
-    "File",
-    hp_heist_presets.apartment.options,
-    hp_heist_presets.apartment.selected,
-    function(opt)
-        hp_heist_presets.apartment.selected = hp_find_option_index(hp_heist_presets.apartment.options, opt, 1)
-    end
-)
 ui.button(apartmentPresetsGroup, "apartment_preset_set_name", "Set Name From Keyboard", function()
     hp_open_heist_preset_name_keyboard("apartment")
 end)
@@ -4567,6 +4585,16 @@ ui.button(apartmentPresetsGroup, "apartment_preset_name_clip", "Set Name From Cl
     hp_update_preset_name_label("apartment")
     if notify then notify.push("Heist Presets", "Name set: " .. clean, 2000) end
 end)
+hp_heist_presets.apartment.dropdown = ui.dropdown(
+    apartmentPresetsGroup,
+    "apartment_preset_file",
+    "Preset File",
+    hp_heist_presets.apartment.options,
+    hp_heist_presets.apartment.selected,
+    function(opt)
+        hp_heist_presets.apartment.selected = hp_find_option_index(hp_heist_presets.apartment.options, opt, 1)
+    end
+)
 ui.button_pair(
     apartmentPresetsGroup,
     "apartment_preset_save", "Save", function() hp_save_heist_preset("apartment") end,

@@ -4351,9 +4351,19 @@ end
 local function hp_get_doomsday_max_payout_cut()
     local p = GetMP()
     local heist = account.stats(p .. "GANGOPS_FLOW_MISSION_PROG").int32 or 503
-    local difficulty = script.globals(4718592 + 3538).int32 or 1 -- Heist.Generic.Difficulty
+    local difficulty_raw = script.globals(4718592 + 3538).int32 -- Heist.Generic.Difficulty
+    local difficulty = 1
 
-    if difficulty == 0 then difficulty = 1 end
+    -- Support both observed encodings:
+    -- 0/1 = Normal/Hard and 1/2 = Normal/Hard
+    if difficulty_raw ~= nil then
+        if difficulty_raw <= 1 then
+            difficulty = difficulty_raw + 1
+        else
+            difficulty = difficulty_raw
+        end
+    end
+
     if difficulty < 1 then difficulty = 1 end
     if difficulty > 2 then difficulty = 2 end
 

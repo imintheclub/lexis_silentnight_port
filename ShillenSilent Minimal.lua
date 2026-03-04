@@ -153,10 +153,10 @@ local function init_config()
 
         radius = {
             none = 0,
-            sm = s(4),
-            md = s(6),
-            lg = s(8),
-            xl = s(12),
+            sm = s(2),
+            md = s(4),
+            lg = s(6),
+            xl = s(8),
             full = s(999)
         },
 
@@ -175,33 +175,38 @@ local function init_config()
         scale = scale,
         enable_particles = false,
 
-        -- Tailwind v4 inspired: dark slate + sky accent.
+        -- Tailwind v4-inspired startup light theme: white cards + black primary actions.
         colors = {
-            bg_main = { r = 2, g = 6, b = 23, a = 248 },         -- slate-950
-            bg_sidebar = { r = 15, g = 23, b = 42, a = 255 },    -- slate-900
-            bg_panel = { r = 15, g = 23, b = 42, a = 245 },      -- slate-900
-            bg_control = { r = 30, g = 41, b = 59, a = 255 },    -- slate-800
-            bg_control_hover = { r = 51, g = 65, b = 85, a = 255 }, -- slate-700
+            bg_main = { r = 241, g = 245, b = 249, a = 255 },       -- slate-100
+            bg_sidebar = { r = 241, g = 245, b = 249, a = 255 },    -- slate-100
+            bg_panel = { r = 255, g = 255, b = 255, a = 255 },      -- white
+            bg_control = { r = 255, g = 255, b = 255, a = 255 },    -- white
+            bg_control_hover = { r = 248, g = 250, b = 252, a = 255 }, -- slate-50
+            bg_ghost_hover = { r = 241, g = 245, b = 249, a = 255 }, -- slate-100
 
-            accent = { r = 14, g = 165, b = 233, a = 255 },      -- sky-500
-            accent_hover = { r = 56, g = 189, b = 248, a = 255 }, -- sky-400
-            accent_dim = { r = 14, g = 165, b = 233, a = 112 },  -- sky-500 / alpha
+            accent = { r = 15, g = 23, b = 42, a = 255 },           -- slate-900
+            accent_hover = { r = 2, g = 6, b = 23, a = 255 },       -- slate-950
+            accent_dim = { r = 241, g = 245, b = 249, a = 255 },    -- slate-100
 
-            text_main = { r = 241, g = 245, b = 249, a = 255 },  -- slate-100
-            text_sec = { r = 203, g = 213, b = 225, a = 255 },   -- slate-300
-            text_dim = { r = 148, g = 163, b = 184, a = 230 },   -- slate-400
+            text_main = { r = 15, g = 23, b = 42, a = 255 },        -- slate-900
+            text_sec = { r = 51, g = 65, b = 85, a = 255 },         -- slate-700
+            text_dim = { r = 100, g = 116, b = 139, a = 240 },      -- slate-500
             text_on_accent = { r = 248, g = 250, b = 252, a = 255 }, -- slate-50
 
-            white = { r = 248, g = 250, b = 252, a = 255 },      -- slate-50
-            btn_hover = { r = 56, g = 189, b = 248, a = 90 },    -- sky-400 / strong hover
-            border = { r = 51, g = 65, b = 85, a = 255 },        -- slate-700
-            scroll_track = { r = 30, g = 41, b = 59, a = 170 },  -- slate-800
+            white = { r = 255, g = 255, b = 255, a = 255 },         -- white
+            btn_hover = { r = 226, g = 232, b = 240, a = 255 },     -- slate-200
+            border = { r = 226, g = 232, b = 240, a = 255 },        -- slate-200
+            border_strong = { r = 203, g = 213, b = 225, a = 255 }, -- slate-300
+            scroll_track = { r = 226, g = 232, b = 240, a = 220 },  -- slate-200
+            card_shadow = { r = 2, g = 6, b = 23, a = 24 },         -- slate-950/soft
+            transparent = { r = 255, g = 255, b = 255, a = 0 },
 
-            danger = { r = 185, g = 28, b = 28, a = 255 },       -- red-700
-            danger_hover = { r = 220, g = 38, b = 38, a = 255 }, -- red-600
-            danger_text = { r = 254, g = 202, b = 202, a = 255 }, -- red-200
-            success = { r = 4, g = 120, b = 87, a = 255 },       -- emerald-700
-            success_hover = { r = 5, g = 150, b = 105, a = 255 } -- emerald-600
+            danger = { r = 220, g = 38, b = 38, a = 255 },          -- red-600
+            danger_hover = { r = 185, g = 28, b = 28, a = 255 },    -- red-700
+            danger_soft = { r = 254, g = 242, b = 242, a = 255 },   -- red-50
+            danger_text = { r = 153, g = 27, b = 27, a = 255 },     -- red-800
+            success = { r = 5, g = 150, b = 105, a = 255 },         -- emerald-600
+            success_hover = { r = 4, g = 120, b = 87, a = 255 }     -- emerald-700
         }
     }
 end
@@ -474,6 +479,101 @@ ui.label = function(groupRef, text, color)
     return item
 end
 
+local function render_card(x, y, w, h, bg_col, border_col, rounding)
+    local r = rounding or config.radius.md
+    local shadow_y = config.space.x1
+    render_rect(x, y + shadow_y, w, h, config.colors.card_shadow, r)
+    render_rect(x, y, w, h, bg_col or config.colors.bg_panel, r)
+    render_outline(x, y, w, h, border_col or config.colors.border, 1, r)
+end
+
+local function button_variant_for(btn)
+    if btn.color == "green" then return "success" end
+    if btn.color == "danger" then return "danger" end
+    if btn.color == "ghost" then return "ghost" end
+    if btn.color == "primary" then return "primary" end
+
+    local id = string.lower(tostring(btn.id or ""))
+    if id == "" then
+        return "outline"
+    end
+
+    if id:find("preset_copy", 1, true)
+        or id:find("preset_refresh", 1, true)
+        or id:find("preset_set_name", 1, true)
+        or id:find("preset_name_clip", 1, true)
+        or id:find("_tp_", 1, true)
+        or id:find("teleport", 1, true)
+    then
+        return "ghost"
+    end
+
+    if id:find("preset_remove", 1, true) then
+        return "ghost_danger"
+    end
+
+    if id:find("cuts_apply", 1, true)
+        or id:find("_apply", 1, true)
+        or id:find("preset_save", 1, true)
+        or id:find("preset_load", 1, true)
+        or id:find("force_ready", 1, true)
+    then
+        return "primary"
+    end
+
+    return "outline"
+end
+
+local function button_colors_for(btn, hovered)
+    local variant = button_variant_for(btn)
+
+    if btn.disabled then
+        return {
+            bg = hovered and config.colors.danger_hover or config.colors.danger,
+            border = hovered and config.colors.danger_hover or config.colors.danger,
+            text = config.colors.text_on_accent
+        }
+    end
+
+    if variant == "primary" then
+        return {
+            bg = hovered and config.colors.accent_hover or config.colors.accent,
+            border = hovered and config.colors.accent_hover or config.colors.accent,
+            text = config.colors.text_on_accent
+        }
+    elseif variant == "success" then
+        return {
+            bg = hovered and config.colors.success_hover or config.colors.success,
+            border = hovered and config.colors.success_hover or config.colors.success,
+            text = config.colors.text_on_accent
+        }
+    elseif variant == "danger" then
+        return {
+            bg = hovered and config.colors.danger_hover or config.colors.danger,
+            border = hovered and config.colors.danger_hover or config.colors.danger,
+            text = config.colors.text_on_accent
+        }
+    elseif variant == "ghost" then
+        return {
+            bg = hovered and config.colors.bg_ghost_hover or config.colors.transparent,
+            border = config.colors.transparent,
+            text = config.colors.text_main
+        }
+    elseif variant == "ghost_danger" then
+        return {
+            bg = hovered and config.colors.danger_soft or config.colors.transparent,
+            border = config.colors.transparent,
+            text = config.colors.danger_text
+        }
+    else
+        return {
+            bg = hovered and config.colors.bg_control_hover or config.colors.bg_control,
+            border = hovered and config.colors.border_strong or config.colors.border,
+            text = config.colors.text_main
+        }
+    end
+end
+
 -- ---------------------------------------------------------
 -- 4. Rendering Implementations
 -- ---------------------------------------------------------
@@ -511,7 +611,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
     local switchX = x + w - switchW - config.space.x4
     local switchY = y + config.space.x2
 
-    local inactiveCol = config.colors.bg_control
+    local inactiveCol = config.colors.border_strong
     local activeCol = config.colors.accent
     
     local trackR = math.floor(inactiveCol.r + (activeCol.r - inactiveCol.r) * item.anim)
@@ -519,6 +619,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
     local trackB = math.floor(inactiveCol.b + (activeCol.b - inactiveCol.b) * item.anim)
     
     render_rect(switchX, switchY, switchW, switchH, {r=trackR, g=trackG, b=trackB, a=255}, config.radius.full)
+    render_outline(switchX, switchY, switchW, switchH, config.colors.border, 1, config.radius.full)
     
     local thumbSize = config.space.x4
     local thumbPadding = config.space.x1
@@ -528,6 +629,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
     local thumbY = switchY + (switchH - thumbSize)/2
     
     render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.text_on_accent, config.radius.full)
+    render_outline(thumbX, thumbY, thumbSize, thumbSize, config.colors.border, 1, config.radius.full)
 
     -- Center text vertically with switch
     local textY = switchY + (switchH - config.font_scale_body)/2
@@ -552,26 +654,16 @@ local function draw_button_item(item, x, y, w, original_y)
         state.window.is_dragging = false  -- Prevent window dragging
     end
 
-    local bgCol
-    local textCol
-    if item.disabled then
-        bgCol = hovered and config.colors.danger_hover or config.colors.danger
-        textCol = hovered and config.colors.text_on_accent or config.colors.danger_text
-    elseif item.color == "green" then
-        bgCol = hovered and config.colors.success_hover or config.colors.success
-        textCol = config.colors.text_on_accent
-    else
-        bgCol = hovered and config.colors.accent_hover or config.colors.bg_control
-        textCol = hovered and config.colors.text_on_accent or config.colors.text_main
+    local style = button_colors_for(item, hovered)
+    render_rect(btnX, btnY, btnW, btnH, style.bg, config.radius.md)
+    if style.border.a and style.border.a > 0 then
+        render_outline(btnX, btnY, btnW, btnH, style.border, 1, config.radius.md)
     end
-    
-    render_rect(btnX, btnY, btnW, btnH, bgCol, config.radius.md)
-    render_outline(btnX, btnY, btnW, btnH, hovered and config.colors.accent or config.colors.border, 1, config.radius.md)
     -- Center text both horizontally and vertically
     local textSize = config.font_scale_small
     local textHeight = textSize * 0.7
     local textY = btnY + (btnH / 2) - (textHeight / 2)
-    render_text(item.label, btnX + btnW / 2, textY, textSize, textCol, "center")
+    render_text(item.label, btnX + btnW / 2, textY, textSize, style.text, "center")
 end
 
 local function draw_button_pair_item(item, x, y, w, original_y)
@@ -594,28 +686,18 @@ local function draw_button_pair_item(item, x, y, w, original_y)
             state.window.is_dragging = false
         end
 
-        local bgCol
-        local textCol
-        if btn.disabled then
-            bgCol = hovered and config.colors.danger_hover or config.colors.danger
-            textCol = hovered and config.colors.text_on_accent or config.colors.danger_text
-        elseif btn.color == "green" then
-            bgCol = hovered and config.colors.success_hover or config.colors.success
-            textCol = config.colors.text_on_accent
-        else
-            bgCol = hovered and config.colors.accent_hover or config.colors.bg_control
-            textCol = hovered and config.colors.text_on_accent or config.colors.text_main
+        local style = button_colors_for(btn, hovered)
+        render_rect(btnX, btnY, btnW, btnH, style.bg, config.radius.md)
+        if style.border.a and style.border.a > 0 then
+            render_outline(btnX, btnY, btnW, btnH, style.border, 1, config.radius.md)
         end
-
-        render_rect(btnX, btnY, btnW, btnH, bgCol, config.radius.md)
-        render_outline(btnX, btnY, btnW, btnH, hovered and config.colors.accent or config.colors.border, 1, config.radius.md)
 
         -- Stability-first: fixed smaller font for split buttons (no dynamic measurement).
         local drawSize = config.font_scale_small
         local textStr = tostring(btn.label or "")
         local textHeight = drawSize * 0.7
         local textY = btnY + (btnH / 2) - (textHeight / 2)
-        render_text(textStr, btnX + btnW / 2, textY, drawSize, textCol, "center")
+        render_text(textStr, btnX + btnW / 2, textY, drawSize, style.text, "center")
     end
 
     draw_half(item.left, baseX)
@@ -782,8 +864,7 @@ ui.render = function()
         state.window.y = state.mouse.y - state.window.drag_offset.y
     end
 
-    render_rect(config.origin_x, bodyY, config.menu_width, bodyH, config.colors.bg_main, config.radius.xl)
-    render_outline(config.origin_x, bodyY, config.menu_width, bodyH, config.colors.border, 1, config.radius.xl)
+    render_card(config.origin_x, bodyY, config.menu_width, bodyH, config.colors.bg_main, config.colors.border_strong, config.radius.xl)
     if config.enable_particles then
         draw_particles(config.origin_x, bodyY, config.menu_width, bodyH)
     end
@@ -946,12 +1027,13 @@ ui.render = function()
                 local available_height = contentH - subtab_bar_height
                 local clip_start = groups_start_y
                 if (gY + actual_h > clip_start) and (gY < clip_start + available_height) then
-                    render_rect(gX, gY, col_w, actual_h, config.colors.bg_panel, config.radius.lg)
-                    render_outline(gX, gY, col_w, actual_h, config.colors.border, 1, config.radius.lg)
+                    render_card(gX, gY, col_w, actual_h, config.colors.bg_panel, config.colors.border, config.radius.lg)
                     -- Group Header Label
-                    render_text(group.label, gX + config.space.x4, gY + config.space.x3, config.font_scale_header, config.colors.text_sec)
+                    render_text(group.label, gX + config.space.x4, gY + config.space.x3, config.font_scale_header, config.colors.text_main)
+                    local dividerY = gY + config.item_height.header_padding - config.space.x1
+                    render_rect(gX + config.space.x4, dividerY, col_w - config.space.x8, config.space.x1, config.colors.border, config.radius.full)
 
-                    local itemY = gY + config.item_height.header_padding + config.space.x1
+                    local itemY = gY + config.item_height.header_padding + config.space.x2
                     for _, item in ipairs(group.items) do
                         if item.type == "toggle" then
                             draw_toggle_item(item, gX, itemY, col_w, itemY)
@@ -1018,11 +1100,11 @@ ui.render = function()
         local dd = pendingDropdown
         local itemHeight = config.space.x9
         local optsH = #dd.item.options * itemHeight
-        render_rect(dd.x, dd.y, dd.w, optsH, config.colors.bg_panel, config.radius.md)
-        render_outline(dd.x, dd.y, dd.w, optsH, config.colors.border, 1, config.radius.md)
+        render_card(dd.x, dd.y, dd.w, optsH, config.colors.bg_panel, config.colors.border, config.radius.md)
         
         for i, opt in ipairs(dd.item.options) do
             local optY = dd.y + (i-1)*itemHeight
+            local optTextCol = config.colors.text_main
             if is_hovered(dd.x, optY, dd.w, itemHeight) then
                 render_rect(dd.x, optY, dd.w, itemHeight, config.colors.accent_dim, config.radius.none)
                 if state.mouse.clicked and not state.dropdown_just_opened then
@@ -1032,9 +1114,10 @@ ui.render = function()
                     state.window.is_dragging = false
                     if dd.item.onChange then dd.item.onChange(opt) end
                 end
+                optTextCol = config.colors.text_main
             end
             -- Center the option text in the dropdown menu
-            render_text(opt, dd.x + dd.w / 2, optY + config.space.x1, config.font_scale_body, config.colors.text_main, "center")
+            render_text(opt, dd.x + dd.w / 2, optY + config.space.x1, config.font_scale_body, optTextCol, "center")
         end
         
         if state.mouse.clicked and not state.dropdown_just_opened and not is_hovered(dd.x, dd.y, dd.w, optsH) then

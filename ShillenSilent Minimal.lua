@@ -104,7 +104,7 @@ local function init_config()
     return {
         font_path = "/Users/shiv/dev/projects/personal/lexis_silentnight_port/InterVariable.ttf",
 
-        -- Tailwind-like typography scale (Inter).
+        -- Typography scale tuned for Inter.
         font_scale_title = 24.0 * scale,
         font_scale_header = 18.0 * scale,
         font_scale_body = 16.0 * scale,
@@ -177,7 +177,7 @@ local function init_config()
         scale = scale,
         enable_particles = false,
 
-        -- Tailwind v4-inspired startup light theme: white cards + black primary actions.
+        -- Light theme palette: white surfaces with dark primary actions.
         colors = {
             bg_main = { r = 255, g = 255, b = 255, a = 255 },       -- white
             bg_panel = { r = 255, g = 255, b = 255, a = 255 },      -- white

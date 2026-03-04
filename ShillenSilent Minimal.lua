@@ -20,8 +20,8 @@ High-level
     - Various button widths and font sizes and such have been changed.
 - Cayo/Casino prep control depth expanded to level of SilentNight.
 
-Cayo + Casino JSON Preset System
-- Added full JSON preset subsystem for both heists:
+Apartment + Cayo + Casino JSON Preset System
+- Added full JSON preset subsystem for all three heists:
   - Name input from keyboard/clipboard.
   - Save, load, remove, refresh, copy preset folder path.
   - Directory model under script path with heist-specific folders.
@@ -1070,6 +1070,14 @@ hp_keyboard_guard = nil
 
 hp_heist_presets = {
     root = paths.script .. "\\HeistPresets",
+    apartment = {
+        dir = "",
+        name = "QuickPreset",
+        options = { "(empty)" },
+        selected = 1,
+        dropdown = nil,
+        name_label = nil
+    },
     cayo = {
         dir = "",
         name = "QuickPreset",
@@ -1089,6 +1097,7 @@ hp_heist_presets = {
     keyboard = { waiting = false, mode = nil }
 }
 
+hp_heist_presets.apartment.dir = hp_heist_presets.root .. "\\Apartment"
 hp_heist_presets.cayo.dir = hp_heist_presets.root .. "\\CayoPerico"
 hp_heist_presets.casino.dir = hp_heist_presets.root .. "\\DiamondCasino"
 
@@ -1108,6 +1117,9 @@ function hp_sanitize_preset_name(name)
 end
 
 function hp_get_preset_state(mode)
+    if mode == "apartment" then
+        return hp_heist_presets.apartment
+    end
     if mode == "cayo" then
         return hp_heist_presets.cayo
     end
@@ -1186,6 +1198,7 @@ end
 
 local PRESET_SCHEMA_VERSION = 1
 local PRESET_HEIST_MODE_TO_ID = {
+    apartment = "apartment",
     cayo = "cayo_perico",
     casino = "diamond_casino"
 }
@@ -1231,6 +1244,10 @@ local function hp_clamp_cut_percent(value)
     return math.floor(hp_clamp_number(value, 0, 300))
 end
 
+local function hp_clamp_apartment_cut_percent(value)
+    return math.floor(hp_clamp_number(value, 0, 3000))
+end
+
 local function hp_set_uniform_cuts(state_tbl, keys, sliders, cut, apply_fn)
     local value = hp_clamp_cut_percent(cut)
 
@@ -1254,9 +1271,41 @@ local function hp_set_uniform_cuts(state_tbl, keys, sliders, cut, apply_fn)
 end
 
 local SAFE_PAYOUT_TARGETS = {
+    apartment = 3000000,
     cayo = 2500000,
     casino = 3550000,
     doomsday = 2500000
+}
+
+local APARTMENT_HEIST_IDS = {
+    fleeca = "hK5OgJk1BkinXGGXghhTMg",
+    prison_break = "7-w96-PU4kSevhtG5YwUHQ",
+    humane_labs = "BWsCWtmnvEWXBrprK9hDHA",
+    series_a = "20Lu41Px20OJMPdZ6wXG3g",
+    pacific_standard = "zCxFg29teE2ReKGnr0L4Bg"
+}
+
+local APARTMENT_HEIST_IDS_BY_INDEX = {
+    [1] = APARTMENT_HEIST_IDS.fleeca,
+    [2] = APARTMENT_HEIST_IDS.prison_break,
+    [3] = APARTMENT_HEIST_IDS.humane_labs,
+    [4] = APARTMENT_HEIST_IDS.series_a,
+    [5] = APARTMENT_HEIST_IDS.pacific_standard
+}
+
+local APARTMENT_PAYOUTS = {
+    [APARTMENT_HEIST_IDS.fleeca] = { 100625, 201250, 251563 },
+    [APARTMENT_HEIST_IDS.prison_break] = { 350000, 700000, 875000 },
+    [APARTMENT_HEIST_IDS.humane_labs] = { 472500, 945000, 1181250 },
+    [APARTMENT_HEIST_IDS.series_a] = { 353500, 707000, 883750 },
+    [APARTMENT_HEIST_IDS.pacific_standard] = { 750000, 1500000, 1875000 }
+}
+
+local APARTMENT_CUT_PRESET_OPTIONS = {
+    { name = "All - 0%", value = 0 },
+    { name = "All - 25%", value = 25 },
+    { name = "All - 85%", value = 85 },
+    { name = "All - 100%", value = 100 }
 }
 
 function hp_extract_preset_name(file_entry)
@@ -1270,6 +1319,9 @@ end
 function hp_ensure_heist_preset_dirs()
     if not dirs.exists(hp_heist_presets.root) then
         dirs.create(hp_heist_presets.root)
+    end
+    if not dirs.exists(hp_heist_presets.apartment.dir) then
+        dirs.create(hp_heist_presets.apartment.dir)
     end
     if not dirs.exists(hp_heist_presets.cayo.dir) then
         dirs.create(hp_heist_presets.cayo.dir)
@@ -1675,6 +1727,93 @@ function hp_apply_casino_preset_data(preps)
     return true
 end
 
+function hp_collect_apartment_preset_data()
+    local cuts = ApartmentCutsValues or {}
+    local preps = {
+        schema = PRESET_SCHEMA_VERSION,
+        heist = "apartment",
+        solo_launch = state.solo_launch.apartment and true or false,
+        bonus_12mil = apartment_bonus_enabled and true or false,
+        double_rewards_week = apartment_double_rewards_week and true or false,
+        max_payout = apartment_max_payout_enabled and true or false,
+        preset = math.max(0, (apartment_cut_preset_index or 1) - 1),
+        player1 = { enabled = true, cut = cuts.player1 or 0 },
+        player2 = { enabled = ((cuts.player2 or 0) > 0), cut = cuts.player2 or 0 },
+        player3 = { enabled = ((cuts.player3 or 0) > 0), cut = cuts.player3 or 0 },
+        player4 = { enabled = ((cuts.player4 or 0) > 0), cut = cuts.player4 or 0 }
+    }
+    return preps
+end
+
+function hp_apply_apartment_preset_data(preps)
+    if type(preps) ~= "table" then
+        return false
+    end
+
+    if type(preps.solo_launch) == "boolean" then
+        state.solo_launch.apartment = preps.solo_launch
+    end
+
+    local bonus = preps.bonus_12mil
+    if type(bonus) ~= "boolean" and type(preps.bonus) == "boolean" then
+        bonus = preps.bonus
+    end
+    if type(bonus) == "boolean" then
+        if type(apartment_12mil_bonus) == "function" then
+            apartment_12mil_bonus(bonus, true)
+        else
+            apartment_bonus_enabled = bonus
+        end
+    end
+
+    if type(preps.double_rewards_week) == "boolean" then
+        apartment_double_rewards_week = preps.double_rewards_week
+    end
+    if type(preps.max_payout) == "boolean" then
+        apartment_max_payout_enabled = preps.max_payout
+    end
+
+    local preset = tonumber(preps.preset)
+    if not preset then
+        preset = tonumber(preps.presets)
+    end
+    if preset then
+        apartment_cut_preset_index = math.floor(hp_clamp_number(preset + 1, 1, #APARTMENT_CUT_PRESET_OPTIONS))
+    end
+
+    local function read_cut(player_tbl, legacy_key, fallback)
+        local value = fallback
+        if type(player_tbl) == "table" and tonumber(player_tbl.cut) then
+            value = tonumber(player_tbl.cut)
+        elseif tonumber(preps[legacy_key]) then
+            value = tonumber(preps[legacy_key])
+        end
+        return hp_clamp_apartment_cut_percent(value or 0)
+    end
+
+    ApartmentCutsValues.player1 = read_cut(preps.player1, "player1_cut", ApartmentCutsValues.player1)
+    ApartmentCutsValues.player2 = read_cut(preps.player2, "player2_cut", ApartmentCutsValues.player2)
+    ApartmentCutsValues.player3 = read_cut(preps.player3, "player3_cut", ApartmentCutsValues.player3)
+    ApartmentCutsValues.player4 = read_cut(preps.player4, "player4_cut", ApartmentCutsValues.player4)
+
+    if apartmentSoloLaunchToggle then apartmentSoloLaunchToggle.state = state.solo_launch.apartment end
+    if apartmentBonusToggleRef then apartmentBonusToggleRef.state = apartment_bonus_enabled end
+    if apartmentDoubleToggleRef then apartmentDoubleToggleRef.state = apartment_double_rewards_week end
+    if apartmentMaxPayoutToggleRef then apartmentMaxPayoutToggleRef.state = apartment_max_payout_enabled end
+    if apartmentPresetDropdownRef then apartmentPresetDropdownRef.value = apartment_cut_preset_index end
+
+    if apartmentP1SliderRef then apartmentP1SliderRef.value = ApartmentCutsValues.player1 end
+    if apartmentP2SliderRef then apartmentP2SliderRef.value = ApartmentCutsValues.player2 end
+    if apartmentP3SliderRef then apartmentP3SliderRef.value = ApartmentCutsValues.player3 end
+    if apartmentP4SliderRef then apartmentP4SliderRef.value = ApartmentCutsValues.player4 end
+
+    if apartment_max_payout_enabled then
+        hp_refresh_apartment_max_payout(true, false)
+    end
+
+    return true
+end
+
 function hp_save_heist_preset(mode)
     local state_tbl = hp_get_preset_state(mode)
     if not state_tbl then
@@ -1690,10 +1829,15 @@ function hp_save_heist_preset(mode)
     hp_ensure_heist_preset_dirs()
     local path = hp_get_heist_preset_path(mode, clean_name)
     local content
-    if mode == "cayo" then
+    if mode == "apartment" then
+        content = hp_collect_apartment_preset_data()
+    elseif mode == "cayo" then
         content = hp_collect_cayo_preset_data()
-    else
+    elseif mode == "casino" then
         content = hp_collect_casino_preset_data()
+    else
+        if notify then notify.push("Heist Presets", "Unsupported preset mode", 2000) end
+        return
     end
 
     local ok = hp_write_json_file(path, content)
@@ -1730,10 +1874,15 @@ function hp_load_heist_preset(mode)
     end
 
     local applied = false
-    if mode == "cayo" then
+    if mode == "apartment" then
+        applied = hp_apply_apartment_preset_data(preps)
+    elseif mode == "cayo" then
         applied = hp_apply_cayo_preset_data(preps)
-    else
+    elseif mode == "casino" then
         applied = hp_apply_casino_preset_data(preps)
+    else
+        if notify then notify.push("Heist Presets", "Unsupported preset mode", 2000) end
+        return
     end
 
     if applied then
@@ -1774,6 +1923,139 @@ function hp_copy_heist_preset_folder(mode)
     hp_ensure_heist_preset_dirs()
     input.set_clipboard_text(state_tbl.dir)
     if notify then notify.push("Heist Presets", "Folder path copied", 2000) end
+end
+
+apartment_bonus_enabled = false
+apartment_double_rewards_week = false
+apartment_max_payout_enabled = false
+apartment_cut_preset_index = 4
+
+apartmentP1SliderRef = nil
+apartmentP2SliderRef = nil
+apartmentP3SliderRef = nil
+apartmentP4SliderRef = nil
+apartmentBonusToggleRef = nil
+apartmentDoubleToggleRef = nil
+apartmentMaxPayoutToggleRef = nil
+apartmentPresetDropdownRef = nil
+apartmentSoloLaunchToggle = nil
+
+local apartment_max_payout_cache = {
+    heist = nil,
+    difficulty = nil,
+    double = nil,
+    cut = nil
+}
+
+local function hp_get_apartment_heist_id()
+    local stat = account.stats("HEIST_MISSION_RCONT_ID_1")
+    local heist = ""
+
+    if stat and type(stat.str) == "string" then
+        heist = stat.str
+    end
+
+    if heist ~= "" then
+        return heist
+    end
+
+    local legacy_index = (stat and stat.int32) or nil
+    if legacy_index and APARTMENT_HEIST_IDS_BY_INDEX[legacy_index] then
+        return APARTMENT_HEIST_IDS_BY_INDEX[legacy_index]
+    end
+
+    return nil
+end
+
+function hp_is_apartment_fleeca()
+    return hp_get_apartment_heist_id() == APARTMENT_HEIST_IDS.fleeca
+end
+
+local function hp_get_apartment_difficulty_index()
+    local raw = script.globals(4718592 + 3538).int32 or 1
+    local difficulty = math.floor(raw) + 1
+    if difficulty < 1 then difficulty = 1 end
+    if difficulty > 3 then difficulty = 3 end
+    return difficulty
+end
+
+local function hp_get_apartment_max_payout_cut(double_rewards)
+    local heist = hp_get_apartment_heist_id()
+    local payout_by_heist = heist and APARTMENT_PAYOUTS[heist] or nil
+    if not payout_by_heist then
+        return nil, heist, nil
+    end
+
+    local difficulty = hp_get_apartment_difficulty_index()
+    local payout = payout_by_heist[difficulty] or payout_by_heist[#payout_by_heist]
+    if not payout or payout <= 0 then
+        return nil, heist, difficulty
+    end
+
+    local divisor = (double_rewards and true or false) and 2 or 1
+    local cut = math.floor(SAFE_PAYOUT_TARGETS.apartment / (payout / 100) / divisor)
+    return hp_clamp_apartment_cut_percent(cut), heist, difficulty
+end
+
+function hp_set_apartment_uniform_cuts(cut, apply_now)
+    local value = hp_clamp_apartment_cut_percent(cut)
+
+    if type(ApartmentCutsValues) ~= "table" then
+        return value
+    end
+
+    ApartmentCutsValues.player1 = value
+    ApartmentCutsValues.player2 = value
+    ApartmentCutsValues.player3 = value
+    ApartmentCutsValues.player4 = value
+
+    if apartmentP1SliderRef then apartmentP1SliderRef.value = value end
+    if apartmentP2SliderRef then apartmentP2SliderRef.value = value end
+    if apartmentP3SliderRef then apartmentP3SliderRef.value = value end
+    if apartmentP4SliderRef then apartmentP4SliderRef.value = value end
+
+    if apply_now and type(apply_apartment_cuts) == "function" then
+        apply_apartment_cuts()
+    end
+
+    return value
+end
+
+function hp_apply_selected_apartment_cut_preset(apply_now)
+    local selected = APARTMENT_CUT_PRESET_OPTIONS[apartment_cut_preset_index] or APARTMENT_CUT_PRESET_OPTIONS[#APARTMENT_CUT_PRESET_OPTIONS]
+    local value = selected and selected.value or 100
+    return hp_set_apartment_uniform_cuts(value, apply_now)
+end
+
+function hp_refresh_apartment_max_payout(force_update, apply_now)
+    if not apartment_max_payout_enabled then
+        apartment_max_payout_cache.heist = nil
+        apartment_max_payout_cache.difficulty = nil
+        apartment_max_payout_cache.double = nil
+        apartment_max_payout_cache.cut = nil
+        return false
+    end
+
+    local cut, heist, difficulty = hp_get_apartment_max_payout_cut(apartment_double_rewards_week)
+    if not cut then
+        return false
+    end
+
+    local changed = force_update
+        or apartment_max_payout_cache.heist ~= heist
+        or apartment_max_payout_cache.difficulty ~= difficulty
+        or apartment_max_payout_cache.double ~= apartment_double_rewards_week
+        or apartment_max_payout_cache.cut ~= cut
+
+    if changed then
+        hp_set_apartment_uniform_cuts(cut, apply_now)
+        apartment_max_payout_cache.heist = heist
+        apartment_max_payout_cache.difficulty = difficulty
+        apartment_max_payout_cache.double = apartment_double_rewards_week
+        apartment_max_payout_cache.cut = cut
+    end
+
+    return changed
 end
 
 -- Apply cuts for Casino Heist
@@ -2169,9 +2451,8 @@ local function solo_launch_reset_apartment()
     local value = script.locals("fmmc_launcher", 20056 + 34).int32
     if not value or value == 0 then return false end
 
-    -- Apartment: Check if it's Fleeca or others (use player count from data)
-    local stat = account.stats("HEIST_MISSION_RCONT_ID_1").int32
-    local is_fleeca = (stat == 1)
+    -- Apartment: Fleeca requires 2, the rest require 4
+    local is_fleeca = hp_is_apartment_fleeca()
     local required_players = is_fleeca and 2 or 4  -- FLEECA = 2, APARTMENT = 4
 
     local BASE_LOBBY = 794954
@@ -2929,7 +3210,9 @@ local function apartment_complete_preps()
 end
 
 local function apartment_kill_cooldown()
-    script.globals(1877303).int32 = -1
+    local player_id = (players and players.user and players.user()) or 0
+    local cooldown_global = 1877303 + 1 + (player_id * 77) + 76
+    script.globals(cooldown_global).int32 = -1
     if notify then notify.push("Apartment Preps", "Cooldown Reset", 2000) end
 end
 
@@ -3817,7 +4100,7 @@ local DoomsdayCutsValues = {
     player4 = 100,
 }
 
-local ApartmentCutsValues = {
+ApartmentCutsValues = {
     player1 = 100,
     player2 = 0,
     player3 = 0,
@@ -3869,7 +4152,7 @@ ui.label(gApartmentInfo, "15M possible (Criminal Mastermind)", config.colors.tex
 ui.label(gApartmentInfo, "Heist cooldown: unknown", config.colors.text_sec)
 
 local gApartmentLaunch = ui.group(heistTab, "Launch", nil, nil, nil, nil, "apartment")
-ui.toggle(gApartmentLaunch, "apartment_launch_solo", "Solo Launch", state.solo_launch.apartment, function(val)
+apartmentSoloLaunchToggle = ui.toggle(gApartmentLaunch, "apartment_launch_solo", "Solo Launch", state.solo_launch.apartment, function(val)
     state.solo_launch.apartment = val
 end)
 ui.button(gApartmentLaunch, "apartment_force_ready", "Force Ready", function() apartment_force_ready() end)
@@ -3878,6 +4161,47 @@ ui.button(gApartmentLaunch, "apartment_redraw_board", "Redraw Board", function()
 local gApartmentPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "apartment")
 ui.button(gApartmentPreps, "apartment_complete_preps", "Complete Preps", function() apartment_complete_preps() end)
 ui.button(gApartmentPreps, "apartment_kill_cooldown", "Kill Cooldown", function() apartment_kill_cooldown() end)
+ui.button(gApartmentPreps, "apartment_change_session", "Change Session", function() apartment_change_session() end)
+
+local apartmentPresetsGroup = ui.group(heistTab, "Presets (JSON)", nil, nil, nil, nil, "apartment")
+hp_heist_presets.apartment.name_label = ui.label(apartmentPresetsGroup, "Name: QuickPreset", config.colors.text_sec)
+hp_heist_presets.apartment.dropdown = ui.dropdown(
+    apartmentPresetsGroup,
+    "apartment_preset_file",
+    "File",
+    hp_heist_presets.apartment.options,
+    hp_heist_presets.apartment.selected,
+    function(opt)
+        hp_heist_presets.apartment.selected = hp_find_option_index(hp_heist_presets.apartment.options, opt, 1)
+    end
+)
+ui.button(apartmentPresetsGroup, "apartment_preset_set_name", "Set Name From Keyboard", function()
+    hp_open_heist_preset_name_keyboard("apartment")
+end)
+ui.button(apartmentPresetsGroup, "apartment_preset_name_clip", "Set Name From Clipboard", function()
+    local clip = input.get_clipboard_text()
+    local clean = hp_sanitize_preset_name(clip)
+    if clean == "" then
+        if notify then notify.push("Heist Presets", "Clipboard is empty/invalid", 2000) end
+        return
+    end
+    hp_heist_presets.apartment.name = clean
+    hp_update_preset_name_label("apartment")
+    if notify then notify.push("Heist Presets", "Name set: " .. clean, 2000) end
+end)
+ui.button_pair(
+    apartmentPresetsGroup,
+    "apartment_preset_save", "Save", function() hp_save_heist_preset("apartment") end,
+    "apartment_preset_load", "Load", function() hp_load_heist_preset("apartment") end
+)
+ui.button_pair(
+    apartmentPresetsGroup,
+    "apartment_preset_remove", "Remove", function() hp_remove_heist_preset("apartment") end,
+    "apartment_preset_refresh", "Refresh", function() hp_refresh_heist_preset_files("apartment") end
+)
+ui.button(apartmentPresetsGroup, "apartment_preset_copy", "Copy Folder Path", function() hp_copy_heist_preset_folder("apartment") end)
+hp_update_preset_name_label("apartment")
+hp_refresh_heist_preset_files("apartment")
 
 local function apartment_fleeca_hack()
     if script.running("fm_mission_controller") then
@@ -3936,26 +4260,57 @@ local function apartment_instant_finish_other()
 end
 
 local function apartment_play_unavailable()
-    local player_id = 0
+    local player_id = (players and players.user and players.user()) or 0
     local cooldown_global = 1877303 + 1 + (player_id * 77) + 76
     script.globals(cooldown_global).int32 = -1
     if notify then notify.push("Apartment Tools", "Unavailable Jobs Now Playable", 2000) end
 end
 
+function apartment_change_session()
+    local started = false
+
+    local result = invoker.call(0xED34C0C02C098BB7, 0, 32) -- NETWORK_SESSION_HOST_CLOSED
+    if result and result.bool then
+        started = true
+    else
+        local fallback = invoker.call(0x6F3D4ED9BEE4E61D, 0, 32, true) -- NETWORK_SESSION_HOST
+        started = (fallback and fallback.bool) and true or false
+    end
+
+    if started then
+        if notify then notify.push("Apartment Tools", "Started invite-only session", 2000) end
+    else
+        if notify then notify.push("Apartment Tools", "Could not change session. Please change manually.", 2800) end
+    end
+
+    return started
+end
+
 local function apartment_unlock_all_jobs()
     local p = GetMP()
-    local stats = {
-        "HEIST_SAVED_STRAND_0", "HEIST_SAVED_STRAND_0_L",
-        "HEIST_SAVED_STRAND_1", "HEIST_SAVED_STRAND_1_L",
-        "HEIST_SAVED_STRAND_2", "HEIST_SAVED_STRAND_2_L",
-        "HEIST_SAVED_STRAND_3", "HEIST_SAVED_STRAND_3_L",
-        "HEIST_SAVED_STRAND_4", "HEIST_SAVED_STRAND_4_L"
-    }
-    for _, stat in ipairs(stats) do
-        account.stats(p .. stat).int32 = 5  -- STRAND_COMPLETE = 5
+    local function hash_text(text)
+        if type(joaat) == "function" then
+            return joaat(text)
+        end
+        local hashed = invoker.call(0xD24D37CC275948CC, text) -- GET_HASH_KEY
+        return (hashed and hashed.int) or 0
     end
-    script.globals(1936048).int32 = 2  -- Reload board
-    if notify then notify.push("Apartment Tools", "All Jobs Unlocked", 2000) end
+
+    local root_hashes = {
+        hash_text("33TxqLipLUintwlU_YDzMg"),
+        hash_text("A6UBSyF61kiveglc58lm2Q"),
+        hash_text("a_hWnpMUz0-7Yd_Rc5pJ4w"),
+        hash_text("7r5AKL5aB0qe9HiDy3nW8w"),
+        hash_text("hKSf9RCT8UiaZlykyGrMwg")
+    }
+
+    for i = 0, 4 do
+        account.stats(p .. "HEIST_SAVED_STRAND_" .. i).int32 = root_hashes[i + 1]
+        account.stats(p .. "HEIST_SAVED_STRAND_" .. i .. "_L").int32 = 5
+    end
+
+    script.globals(ApartmentGlobals.Board).int32 = 22
+    if notify then notify.push("Apartment Tools", "All Jobs Unlocked. Change session to apply.", 2600) end
 end
 
 local function apartment_teleport_to_entrance()
@@ -4044,7 +4399,7 @@ ui.button(gApartmentTeleport, "apartment_tp_entrance", "Teleport to Entrance", f
 ui.button(gApartmentTeleport, "apartment_tp_heist_board", "Teleport to Heist Board", function() apartment_teleport_to_heist_board() end)
 
 -- Apply Apartment Cuts
-local function apply_apartment_cuts()
+function apply_apartment_cuts()
     local base_global = 1936013
     local base_local = 1937981
     local total_cut = ApartmentCutsValues.player1 + ApartmentCutsValues.player2 + ApartmentCutsValues.player3 + ApartmentCutsValues.player4
@@ -4072,33 +4427,65 @@ local function apply_apartment_cuts()
 end
 
 local gApartmentCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "apartment")
-local apartmentP1Slider = ui.slider(gApartmentCuts, "apartment_cut_p1", "Host Cut %", 0, 1500, 100, function(val)
+apartmentP1SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p1", "Host Cut %", 0, 3000, ApartmentCutsValues.player1, function(val)
     ApartmentCutsValues.player1 = math.floor(val)
 end, nil, 10)
-local apartmentP2Slider = ui.slider(gApartmentCuts, "apartment_cut_p2", "Player 2 Cut %", 0, 1500, 0, function(val)
+apartmentP2SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p2", "Player 2 Cut %", 0, 3000, ApartmentCutsValues.player2, function(val)
     ApartmentCutsValues.player2 = math.floor(val)
 end, nil, 10)
-local apartmentP3Slider = ui.slider(gApartmentCuts, "apartment_cut_p3", "Player 3 Cut %", 0, 1500, 0, function(val)
+apartmentP3SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p3", "Player 3 Cut %", 0, 3000, ApartmentCutsValues.player3, function(val)
     ApartmentCutsValues.player3 = math.floor(val)
 end, nil, 10)
-local apartmentP4Slider = ui.slider(gApartmentCuts, "apartment_cut_p4", "Player 4 Cut %", 0, 1500, 0, function(val)
+apartmentP4SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p4", "Player 4 Cut %", 0, 3000, ApartmentCutsValues.player4, function(val)
     ApartmentCutsValues.player4 = math.floor(val)
 end, nil, 10)
-ui.button(gApartmentCuts, "apartment_apply_preset", "Apply Preset (100%)", function()
-    ApartmentCutsValues.player1 = 100
-    ApartmentCutsValues.player2 = 100
-    ApartmentCutsValues.player3 = 100
-    ApartmentCutsValues.player4 = 100
-    if apartmentP1Slider then apartmentP1Slider.value = 100 end
-    if apartmentP2Slider then apartmentP2Slider.value = 100 end
-    if apartmentP3Slider then apartmentP3Slider.value = 100 end
-    if apartmentP4Slider then apartmentP4Slider.value = 100 end
+
+local apartmentCutPresetNames = hp_options_to_names(APARTMENT_CUT_PRESET_OPTIONS)
+apartmentPresetDropdownRef = ui.dropdown(
+    gApartmentCuts,
+    "apartment_cut_preset",
+    "Preset",
+    apartmentCutPresetNames,
+    apartment_cut_preset_index,
+    function(opt)
+        apartment_cut_preset_index = hp_find_option_index(apartmentCutPresetNames, opt, apartment_cut_preset_index)
+    end
+)
+
+apartmentMaxPayoutToggleRef = ui.toggle(gApartmentCuts, "apartment_max_payout", "3mil Payout", apartment_max_payout_enabled, function(val)
+    apartment_max_payout_enabled = val
+    if val then
+        if not hp_refresh_apartment_max_payout(true, false) then
+            if notify then notify.push("Apartment Cuts", "Unknown heist. Load an Apartment finale first.", 2400) end
+        end
+    end
 end)
+
+apartmentDoubleToggleRef = ui.toggle(gApartmentCuts, "apartment_double_rewards", "Double Rewards Week", apartment_double_rewards_week, function(val)
+    apartment_double_rewards_week = val
+    if apartment_max_payout_enabled then
+        hp_refresh_apartment_max_payout(true, false)
+    end
+end)
+
+ui.button_pair(
+    gApartmentCuts,
+    "apartment_apply_selected_preset", "Apply Selected Preset", function()
+        hp_apply_selected_apartment_cut_preset(true)
+    end,
+    "apartment_cuts_max_instant", "Apply Preset (Max Payout)", function()
+        local cut = hp_get_apartment_max_payout_cut(apartment_double_rewards_week)
+        if not cut then
+            if notify then notify.push("Apartment Cuts", "Unknown heist. Load an Apartment finale first.", 2400) end
+            return
+        end
+        hp_set_apartment_uniform_cuts(cut, true)
+    end
+)
 ui.button(gApartmentCuts, "apartment_cuts_apply", "Apply Cuts", function() apply_apartment_cuts() end)
 
 -- 12M Bonus Function 
-local apartment_bonus_enabled = false
-local function apartment_12mil_bonus(enable)
+function apartment_12mil_bonus(enable, silent)
     if enable then
         account.stats("MPPLY_HEISTFLOWORDERPROGRESS").int32 = 268435455
         account.stats("MPPLY_AWD_HST_ORDER").bool = false
@@ -4108,7 +4495,7 @@ local function apartment_12mil_bonus(enable)
         
         account.stats("MPPLY_HEISTNODEATHPROGREITSET").int32 = 268435455
         account.stats("MPPLY_AWD_HST_ULT_CHAL").bool = false
-        if notify then notify.push("Apartment Bonuses", "12M Bonus Enabled", 2000) end
+        if not silent and notify then notify.push("Apartment Bonuses", "12M Bonus Enabled", 2000) end
     else
         account.stats("MPPLY_HEISTFLOWORDERPROGRESS").int32 = 134217727
         account.stats("MPPLY_AWD_HST_ORDER").bool = true
@@ -4118,7 +4505,7 @@ local function apartment_12mil_bonus(enable)
         
         account.stats("MPPLY_HEISTNODEATHPROGREITSET").int32 = 134217727
         account.stats("MPPLY_AWD_HST_ULT_CHAL").bool = true
-        if notify then notify.push("Apartment Bonuses", "12M Bonus Disabled", 2000) end
+        if not silent and notify then notify.push("Apartment Bonuses", "12M Bonus Disabled", 2000) end
     end
     apartment_bonus_enabled = enable
     return true
@@ -4126,7 +4513,7 @@ end
 
 -- Bonuses Group
 local gApartmentBonuses = ui.group(heistTab, "Bonuses", nil, nil, nil, nil, "apartment")
-ui.toggle(gApartmentBonuses, "apartment_12m_bonus", "Enable 12M Bonus", apartment_bonus_enabled, function(val)
+apartmentBonusToggleRef = ui.toggle(gApartmentBonuses, "apartment_12m_bonus", "Enable 12M Bonus", apartment_bonus_enabled, function(val)
     apartment_12mil_bonus(val)
 end)
 
@@ -4602,6 +4989,8 @@ util.create_thread(function()
             -- Just turned off, reset to normal
             solo_launch_reset_doomsday()
         end
+
+        hp_refresh_apartment_max_payout(false, false)
         
         -- Update previous state
         state.solo_launch_prev.casino = state.solo_launch.casino

@@ -180,15 +180,13 @@ local function init_config()
         -- Tailwind v4-inspired startup light theme: white cards + black primary actions.
         colors = {
             bg_main = { r = 255, g = 255, b = 255, a = 255 },       -- white
-            bg_sidebar = { r = 255, g = 255, b = 255, a = 255 },    -- white
             bg_panel = { r = 255, g = 255, b = 255, a = 255 },      -- white
             bg_control = { r = 255, g = 255, b = 255, a = 255 },    -- white
-            bg_control_hover = { r = 248, g = 250, b = 252, a = 255 }, -- slate-50
-            bg_ghost_hover = { r = 241, g = 245, b = 249, a = 255 }, -- slate-100
+            bg_control_hover = { r = 226, g = 232, b = 240, a = 255 }, -- slate-200
+            bg_ghost_hover = { r = 226, g = 232, b = 240, a = 255 }, -- slate-200
 
             accent = { r = 15, g = 23, b = 42, a = 255 },           -- slate-900
             accent_hover = { r = 2, g = 6, b = 23, a = 255 },       -- slate-950
-            accent_dim = { r = 241, g = 245, b = 249, a = 255 },    -- slate-100
 
             text_main = { r = 15, g = 23, b = 42, a = 255 },        -- slate-900
             text_sec = { r = 51, g = 65, b = 85, a = 255 },         -- slate-700
@@ -196,7 +194,6 @@ local function init_config()
             text_on_accent = { r = 248, g = 250, b = 252, a = 255 }, -- slate-50
 
             white = { r = 255, g = 255, b = 255, a = 255 },         -- white
-            btn_hover = { r = 226, g = 232, b = 240, a = 255 },     -- slate-200
             border = { r = 226, g = 232, b = 240, a = 255 },        -- slate-200
             border_strong = { r = 203, g = 213, b = 225, a = 255 }, -- slate-300
             scroll_track = { r = 226, g = 232, b = 240, a = 220 },  -- slate-200
@@ -240,7 +237,6 @@ local state = {
     dropdown_just_opened = false,
     dragging_slider = nil,
     scroll = { y = 0, max_y = 0, is_dragging = false },
-    sidebar_scroll = { y = 0, max_y = 0 },
     window = { x = config.origin_x, y = config.origin_y, is_dragging = false, drag_offset = { x = 0, y = 0 } },
     animation = { open = false, progress = 0.0, target = 1.0, speed = 0.15 },
     active_tab_y = nil,
@@ -839,8 +835,6 @@ ui.render = function()
     local ox, oy = get_win_offset()
 
     local dynamicBodyH = config.menu_height
-    state.sidebar_scroll.max_y = 0
-    state.sidebar_scroll.y = 0
 
     -- Full-width content panel (no sidebar/tab navigation).
     local bodyY = config.origin_y
@@ -1148,15 +1142,6 @@ local function disable_control_action(...)
     for group = 0, 1 do
         for k, v in pairs(keys) do
             invoker.call(0xFE99B66D079CF6BC, group, v, true)
-        end
-    end
-end
-
-local function enable_control_action(...)
-    local keys = {...}
-    for group = 0, 1 do
-        for k, v in pairs(keys) do
-            invoker.call(0x351220255D64C155, group, v, true)
         end
     end
 end

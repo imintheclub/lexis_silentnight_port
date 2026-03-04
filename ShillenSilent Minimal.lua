@@ -1514,6 +1514,8 @@ function hp_collect_cayo_preset_data()
         coke_value = CayoConfig.val_coke,
         gold_value = CayoConfig.val_gold,
         arts_value = CayoConfig.val_art,
+        womans_bag = cayo_womans_bag_enabled and true or false,
+        remove_crew_cuts = cayo_remove_crew_cuts_enabled and true or false,
         unlock_all_poi = CayoConfig.unlock_all_poi and true or false,
         player1 = { enabled = true, cut = CayoCutsValues.host },
         player2 = { enabled = (CayoCutsValues.player2 > 0), cut = CayoCutsValues.player2 },
@@ -1543,6 +1545,12 @@ function hp_apply_cayo_preset_data(preps)
     end
     if type(preps.unlock_all_poi) == "boolean" then
         CayoConfig.unlock_all_poi = preps.unlock_all_poi
+    end
+    if type(preps.womans_bag) == "boolean" then
+        cayo_set_womans_bag(preps.womans_bag, true)
+    end
+    if type(preps.remove_crew_cuts) == "boolean" then
+        cayo_set_remove_crew_cuts(preps.remove_crew_cuts, true)
     end
 
     if tonumber(preps.cash_value) then CayoConfig.val_cash = math.floor(tonumber(preps.cash_value)) end
@@ -1591,6 +1599,8 @@ function hp_apply_cayo_preset_data(preps)
     if cayoCokeValueSlider then cayoCokeValueSlider.value = CayoConfig.val_coke end
     if cayoGoldValueSlider then cayoGoldValueSlider.value = CayoConfig.val_gold end
     if cayoArtValueSlider then cayoArtValueSlider.value = CayoConfig.val_art end
+    if cayoWomansBagToggle then cayoWomansBagToggle.state = cayo_womans_bag_enabled end
+    if cayoRemoveCrewCutsToggle then cayoRemoveCrewCutsToggle.state = cayo_remove_crew_cuts_enabled end
     if cayoHostSliderRef then cayoHostSliderRef.value = CayoCutsValues.host end
     if cayoP2SliderRef then cayoP2SliderRef.value = CayoCutsValues.player2 end
     if cayoP3SliderRef then cayoP3SliderRef.value = CayoCutsValues.player3 end
@@ -1616,6 +1626,8 @@ function hp_collect_casino_preset_data()
         vehicles = CasinoManualPreps.vehicle_slot - 1,
         unlock_all_poi = CasinoManualPreps.unlock_all_poi and true or false,
         solo_launch = state.solo_launch.casino and true or false,
+        remove_crew_cuts = casino_remove_crew_cuts_enabled and true or false,
+        autograbber = casino_autograbber_enabled and true or false,
         player1 = { enabled = true, cut = CutsValues.host },
         player2 = { enabled = (CutsValues.player2 > 0), cut = CutsValues.player2 },
         player3 = { enabled = (CutsValues.player3 > 0), cut = CutsValues.player3 },
@@ -1653,6 +1665,12 @@ function hp_apply_casino_preset_data(preps)
     end
     if type(preps.solo_launch) == "boolean" then
         state.solo_launch.casino = preps.solo_launch
+    end
+    if type(preps.remove_crew_cuts) == "boolean" then
+        casino_set_remove_crew_cuts(preps.remove_crew_cuts, true)
+    end
+    if type(preps.autograbber) == "boolean" then
+        casino_set_autograbber(preps.autograbber, true)
     end
 
     if type(preps.player1) == "table" and tonumber(preps.player1.cut) then
@@ -1708,6 +1726,12 @@ function hp_apply_casino_preset_data(preps)
     end
     if casinoSoloLaunchToggle then
         casinoSoloLaunchToggle.state = state.solo_launch.casino
+    end
+    if casinoRemoveCrewCutsToggle then
+        casinoRemoveCrewCutsToggle.state = casino_remove_crew_cuts_enabled
+    end
+    if casinoAutograbberToggle then
+        casinoAutograbberToggle.state = casino_autograbber_enabled
     end
 
     if manualLoadoutDropdown and manualVehiclesDropdown then
@@ -2615,6 +2639,193 @@ CayoConfig = {
     advanced = false,
     unlock_all_poi = true
 }
+
+local CAYO_TUNABLE_DEFAULTS = {
+    bag_max_capacity = 1800,
+    pavel_cut = -0.02,
+    fencing_fee = -0.1
+}
+
+local CASINO_CREW_CUT_TUNABLES = {
+    { name = "CH_LESTER_CUT", default = 5 },
+    { name = "HEIST3_PREPBOARD_GUNMEN_KARL_CUT", default = 5 },
+    { name = "HEIST3_PREPBOARD_GUNMEN_GUSTAVO_CUT", default = 9 },
+    { name = "HEIST3_PREPBOARD_GUNMEN_CHARLIE_CUT", default = 7 },
+    { name = "HEIST3_PREPBOARD_GUNMEN_CHESTER_CUT", default = 10 },
+    { name = "HEIST3_PREPBOARD_GUNMEN_PATRICK_CUT", default = 8 },
+    { name = "HEIST3_DRIVERS_KARIM_CUT", default = 5 },
+    { name = "HEIST3_DRIVERS_TALIANA_CUT", default = 7 },
+    { name = "HEIST3_DRIVERS_EDDIE_CUT", default = 9 },
+    { name = "HEIST3_DRIVERS_ZACH_CUT", default = 6 },
+    { name = "HEIST3_DRIVERS_CHESTER_CUT", default = 10 },
+    { name = "HEIST3_HACKERS_RICKIE_CUT", default = 3 },
+    { name = "HEIST3_HACKERS_CHRISTIAN_CUT", default = 7 },
+    { name = "HEIST3_HACKERS_YOHAN_CUT", default = 5 },
+    { name = "HEIST3_HACKERS_AVI_CUT", default = 10 },
+    { name = "HEIST3_HACKERS_PAIGE_CUT", default = 9 }
+}
+
+local cayo_tunable_backup = {
+    bag_max_capacity = nil,
+    pavel_cut = nil,
+    fencing_fee = nil
+}
+
+local casino_crew_cut_backup = {}
+
+cayo_womans_bag_enabled = false
+cayo_remove_crew_cuts_enabled = false
+casino_remove_crew_cuts_enabled = false
+casino_autograbber_enabled = false
+
+cayoWomansBagToggle = nil
+cayoRemoveCrewCutsToggle = nil
+casinoRemoveCrewCutsToggle = nil
+casinoAutograbberToggle = nil
+
+local function hp_tunable_int(name)
+    return script.tunables(name).int32
+end
+
+local function hp_tunable_float(name)
+    return script.tunables(name).float
+end
+
+local function hp_set_tunable_int(name, value)
+    script.tunables(name).int32 = value
+end
+
+local function hp_set_tunable_float(name, value)
+    script.tunables(name).float = value
+end
+
+function cayo_set_womans_bag(enable, silent)
+    local enabled = enable and true or false
+    local changed = (cayo_womans_bag_enabled ~= enabled)
+
+    if enabled and cayo_tunable_backup.bag_max_capacity == nil then
+        cayo_tunable_backup.bag_max_capacity = hp_tunable_int("HEIST_BAG_MAX_CAPACITY")
+    end
+
+    if enabled then
+        hp_set_tunable_int("HEIST_BAG_MAX_CAPACITY", 99999)
+    else
+        local restore = cayo_tunable_backup.bag_max_capacity
+        if restore == nil then
+            restore = CAYO_TUNABLE_DEFAULTS.bag_max_capacity
+        end
+        hp_set_tunable_int("HEIST_BAG_MAX_CAPACITY", restore)
+    end
+
+    cayo_womans_bag_enabled = enabled
+    if cayoWomansBagToggle then cayoWomansBagToggle.state = enabled end
+    if changed and not silent and notify then
+        notify.push("Cayo Perico", enabled and "Woman's Bag Enabled" or "Woman's Bag Disabled", 2000)
+    end
+end
+
+function cayo_set_remove_crew_cuts(enable, silent)
+    local enabled = enable and true or false
+    local changed = (cayo_remove_crew_cuts_enabled ~= enabled)
+
+    if enabled then
+        if cayo_tunable_backup.pavel_cut == nil then
+            cayo_tunable_backup.pavel_cut = hp_tunable_float("IH_DEDUCTION_PAVEL_CUT")
+        end
+        if cayo_tunable_backup.fencing_fee == nil then
+            cayo_tunable_backup.fencing_fee = hp_tunable_float("IH_DEDUCTION_FENCING_FEE")
+        end
+
+        hp_set_tunable_float("IH_DEDUCTION_PAVEL_CUT", 0.0)
+        hp_set_tunable_float("IH_DEDUCTION_FENCING_FEE", 0.0)
+    else
+        local restore_pavel = cayo_tunable_backup.pavel_cut
+        local restore_fee = cayo_tunable_backup.fencing_fee
+        if restore_pavel == nil then restore_pavel = CAYO_TUNABLE_DEFAULTS.pavel_cut end
+        if restore_fee == nil then restore_fee = CAYO_TUNABLE_DEFAULTS.fencing_fee end
+
+        hp_set_tunable_float("IH_DEDUCTION_PAVEL_CUT", restore_pavel)
+        hp_set_tunable_float("IH_DEDUCTION_FENCING_FEE", restore_fee)
+    end
+
+    cayo_remove_crew_cuts_enabled = enabled
+    if cayoRemoveCrewCutsToggle then cayoRemoveCrewCutsToggle.state = enabled end
+    if changed and not silent and notify then
+        notify.push("Cayo Perico", enabled and "Crew Cuts Removed" or "Crew Cuts Restored", 2000)
+    end
+end
+
+function casino_set_remove_crew_cuts(enable, silent)
+    local enabled = enable and true or false
+    local changed = (casino_remove_crew_cuts_enabled ~= enabled)
+
+    local i
+    for i = 1, #CASINO_CREW_CUT_TUNABLES do
+        local item = CASINO_CREW_CUT_TUNABLES[i]
+        if enabled then
+            if casino_crew_cut_backup[item.name] == nil then
+                casino_crew_cut_backup[item.name] = hp_tunable_int(item.name)
+            end
+            hp_set_tunable_int(item.name, 0)
+        else
+            local restore = casino_crew_cut_backup[item.name]
+            if restore == nil then restore = item.default end
+            hp_set_tunable_int(item.name, restore)
+        end
+    end
+
+    casino_remove_crew_cuts_enabled = enabled
+    if casinoRemoveCrewCutsToggle then casinoRemoveCrewCutsToggle.state = enabled end
+    if changed and not silent and notify then
+        notify.push("Casino", enabled and "Crew Cuts Removed" or "Crew Cuts Restored", 2000)
+    end
+end
+
+function casino_set_autograbber(enable, silent)
+    local enabled = enable and true or false
+    local changed = (casino_autograbber_enabled ~= enabled)
+    casino_autograbber_enabled = enabled
+    if casinoAutograbberToggle then casinoAutograbberToggle.state = enabled end
+
+    if changed and not silent and notify then
+        notify.push("Casino", enabled and "Autograbber Enabled" or "Autograbber Disabled", 2000)
+    end
+end
+
+local function casino_autograbber_tick()
+    if not casino_autograbber_enabled then
+        return
+    end
+    if not script.running("fm_mission_controller") then
+        return
+    end
+
+    local grab_local = script.locals("fm_mission_controller", 10295)
+    local grab = grab_local.int32
+    if grab == 3 then
+        grab_local.int32 = 4
+    elseif grab == 4 then
+        script.locals("fm_mission_controller", 10295 + 14).float = 2.0
+    end
+end
+
+local function hp_enforce_heist_toggles()
+    if cayo_womans_bag_enabled then
+        hp_set_tunable_int("HEIST_BAG_MAX_CAPACITY", 99999)
+    end
+    if cayo_remove_crew_cuts_enabled then
+        hp_set_tunable_float("IH_DEDUCTION_PAVEL_CUT", 0.0)
+        hp_set_tunable_float("IH_DEDUCTION_FENCING_FEE", 0.0)
+    end
+    if casino_remove_crew_cuts_enabled then
+        local i
+        for i = 1, #CASINO_CREW_CUT_TUNABLES do
+            hp_set_tunable_int(CASINO_CREW_CUT_TUNABLES[i].name, 0)
+        end
+    end
+
+    casino_autograbber_tick()
+end
 
 -- Apply Cayo Preps
 local function cayo_apply_preps()
@@ -3532,6 +3743,9 @@ ui.button_pair(
     "tool_cooldown", "Remove Cooldown", function() casino_remove_cooldown() end
 )
 ui.button(gTools, "tool_lives", "Set Team Lives", function() casino_set_team_lives() end)
+casinoAutograbberToggle = ui.toggle(gTools, "casino_autograbber", "Autograbber", casino_autograbber_enabled, function(val)
+    casino_set_autograbber(val)
+end)
 
 -- Launch group
 local gLaunch = ui.group(heistTab, "Launch", nil, nil, nil, nil, "casino")
@@ -3685,6 +3899,9 @@ hp_update_casino_loadout_dropdown(true)
 hp_update_casino_vehicle_dropdown(true)
 
 local gCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "casino")
+casinoRemoveCrewCutsToggle = ui.toggle(gCuts, "casino_remove_crew_cuts", "Remove Crew Cuts", casino_remove_crew_cuts_enabled, function(val)
+    casino_set_remove_crew_cuts(val)
+end)
 casinoHostSliderRef = ui.slider(gCuts, "cut_host", "Host Cut %", 0, 300, 100, function(val)
     CutsValues.host = math.floor(val)
 end, nil, 5)
@@ -3832,6 +4049,9 @@ ui.label(gCayoInfo, "Heist cooldown: 45 min (skip)", config.colors.text_sec)
 
 local gCayoPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "cayo")
 ui.button(gCayoPreps, "cayo_unlock_poi", "Unlock All POI", function() cayo_unlock_all_poi() end)
+cayoWomansBagToggle = ui.toggle(gCayoPreps, "cayo_womans_bag", "Woman's Bag", cayo_womans_bag_enabled, function(val)
+    cayo_set_womans_bag(val)
+end)
 cayoUnlockOnApplyToggle = ui.toggle(gCayoPreps, "cayo_unlock_on_apply", "Unlock All POI on Apply", CayoConfig.unlock_all_poi, function(val)
     CayoConfig.unlock_all_poi = val
 end)
@@ -4057,6 +4277,9 @@ ui.button_pair(
 ui.button(gCayoTeleportOutside, "cayo_tp_escape", "Escape", function() cayo_teleport_escape() end, nil, false, "green")
 
 local gCayoCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "cayo")
+cayoRemoveCrewCutsToggle = ui.toggle(gCayoCuts, "cayo_remove_crew_cuts", "Remove Crew Cuts", cayo_remove_crew_cuts_enabled, function(val)
+    cayo_set_remove_crew_cuts(val)
+end)
 cayoHostSliderRef = ui.slider(gCayoCuts, "cayo_cut_host", "Host Cut %", 0, 300, 100, function(val)
     CayoCutsValues.host = math.floor(val)
 end, nil, 5)
@@ -4991,6 +5214,7 @@ util.create_thread(function()
         end
 
         hp_refresh_apartment_max_payout(false, false)
+        hp_enforce_heist_toggles()
         
         -- Update previous state
         state.solo_launch_prev.casino = state.solo_launch.casino

@@ -166,7 +166,8 @@ local function init_config()
             slider_thumb_grow = tw(2),  -- 8px
             scrollbar_min_thumb = tw(8),
             scrollbar_grab_pad = tw(1),
-            toggle_border_thickness = s(2)
+            toggle_track_border_thickness = s(2),
+            toggle_thumb_border_thickness = s(1.25)
         },
 
         motion = {
@@ -178,8 +179,8 @@ local function init_config()
 
         -- Tailwind v4-inspired startup light theme: white cards + black primary actions.
         colors = {
-            bg_main = { r = 241, g = 245, b = 249, a = 255 },       -- slate-100
-            bg_sidebar = { r = 241, g = 245, b = 249, a = 255 },    -- slate-100
+            bg_main = { r = 255, g = 255, b = 255, a = 255 },       -- white
+            bg_sidebar = { r = 255, g = 255, b = 255, a = 255 },    -- white
             bg_panel = { r = 255, g = 255, b = 255, a = 255 },      -- white
             bg_control = { r = 255, g = 255, b = 255, a = 255 },    -- white
             bg_control_hover = { r = 248, g = 250, b = 252, a = 255 }, -- slate-50
@@ -621,17 +622,17 @@ local function draw_toggle_item(item, x, y, w, original_y)
     local trackB = math.floor(inactiveCol.b + (activeCol.b - inactiveCol.b) * item.anim)
     
     render_rect(switchX, switchY, switchW, switchH, {r=trackR, g=trackG, b=trackB, a=255}, config.radius.full)
-    render_outline(switchX, switchY, switchW, switchH, config.colors.border_strong, config.control.toggle_border_thickness, config.radius.full)
+    render_outline(switchX, switchY, switchW, switchH, config.colors.border_strong, config.control.toggle_track_border_thickness, config.radius.full)
     
-    local thumbSize = config.space.x5
-    local thumbPadding = config.space.x1
+    local thumbPadding = math.max(1, math.floor(config.space.x1 / 2))
+    local thumbSize = math.max(2, switchH - (thumbPadding * 2))
     local minX = switchX + thumbPadding
     local maxX = switchX + switchW - thumbSize - thumbPadding
     local thumbX = lerp(minX, maxX, item.anim)
     local thumbY = switchY + (switchH - thumbSize)/2
     
-    render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.text_on_accent, config.radius.full)
-    render_outline(thumbX, thumbY, thumbSize, thumbSize, config.colors.border_strong, config.control.toggle_border_thickness, config.radius.full)
+    render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.white, config.radius.full)
+    render_outline(thumbX, thumbY, thumbSize, thumbSize, config.colors.accent_hover, config.control.toggle_thumb_border_thickness, config.radius.full)
 
     -- Center text vertically with switch
     local textY = switchY + (switchH - config.font_scale_body)/2

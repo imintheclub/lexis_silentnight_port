@@ -91,13 +91,21 @@ end
 
 local function init_config()
     local scale = get_screen_scale()
-    local menu_width = math.floor(950 * 1.5 * scale)
-    local menu_height = math.floor(600 * scale)
+    local function s(px)
+        return math.max(1, math.floor(px * scale))
+    end
+    local function tw(units)
+        return s(units * 4)
+    end
+
+    local menu_width = tw(356)
+    local menu_height = tw(150)
 
     return {
-        font_path = nil,
+        font_path = "/Users/shiv/dev/projects/personal/lexis_silentnight_port/InterVariable.ttf",
 
-        font_scale_title = 26.0 * scale,
+        -- Tailwind-like typography scale (Inter).
+        font_scale_title = 24.0 * scale,
         font_scale_header = 18.0 * scale,
         font_scale_body = 16.0 * scale,
         font_scale_small = 14.0 * scale,
@@ -107,42 +115,93 @@ local function init_config()
         menu_width = menu_width,
         menu_height = menu_height,
 
-        sidebar_width = math.floor(100 * scale),
-        sidebar_gap = math.floor(18 * scale),
+        sidebar_width = tw(25),
+        sidebar_gap = tw(4),
         
-        content_margin = math.floor(30 * scale),
+        content_margin = tw(6),
         
         content_area = {
             x = 0, y = 0, w = 0, h = 0
         },
 
         item_height = {
-            toggle = math.floor(42 * scale),
-            button = math.floor(45 * scale),
-            slider = math.floor(58 * scale),
-            dropdown = math.floor(45 * scale),
-            header_padding = math.floor(36 * scale)
+            toggle = tw(12),
+            button = tw(12),
+            slider = tw(15),
+            dropdown = tw(12),
+            header_padding = tw(10)
+        },
+
+        space = {
+            x1 = tw(1),      -- 4px
+            x1_5 = tw(1.5),  -- 6px
+            x2 = tw(2),      -- 8px
+            x2_5 = tw(2.5),  -- 10px
+            x3 = tw(3),      -- 12px
+            x3_5 = tw(3.5),  -- 14px
+            x4 = tw(4),      -- 16px
+            x5 = tw(5),      -- 20px
+            x6 = tw(6),      -- 24px
+            x7 = tw(7),      -- 28px
+            x8 = tw(8),      -- 32px
+            x9 = tw(9),      -- 36px
+            x10 = tw(10),    -- 40px
+            x11 = tw(11),    -- 44px
+            x12 = tw(12),    -- 48px
+            x15 = tw(15)     -- 60px
+        },
+
+        radius = {
+            none = 0,
+            sm = s(4),
+            md = s(6),
+            lg = s(8),
+            xl = s(12),
+            full = s(999)
+        },
+
+        control = {
+            dropdown_w = tw(45),        -- 180px
+            slider_thumb_base = tw(4),  -- 16px
+            slider_thumb_grow = tw(2),  -- 8px
+            scrollbar_min_thumb = tw(8),
+            scrollbar_grab_pad = tw(1)
+        },
+
+        motion = {
+            open_y_offset = tw(7.5) -- 30px
         },
 
         scale = scale,
+        enable_particles = false,
 
-        -- Theme: Midnight Blue
+        -- Tailwind v4 inspired: dark slate + sky accent.
         colors = {
-            bg_main = { r = 12, g = 15, b = 25, a = 250 },      -- Deep midnight blue background
-            bg_sidebar = { r = 15, g = 20, b = 35, a = 255 },   -- Sidebar background
-            bg_panel = { r = 18, g = 25, b = 40, a = 255 },     -- Group Panel background
-            
-            accent = { r = 52, g = 152, b = 219, a = 255 },     -- Bright blue accent
-            accent_dim = { r = 52, g = 152, b = 219, a = 80 },  -- Dim blue accent
-            
-            text_main = { r = 250, g = 250, b = 255, a = 255 },
-            text_sec = { r = 180, g = 190, b = 210, a = 255 },
-            text_dim = { r = 120, g = 130, b = 150, a = 220 },
-            
-            white = { r = 255, g = 255, b = 255, a = 255 },
-            btn_hover = { r = 255, g = 255, b = 255, a = 15 },
-            border = { r = 30, g = 45, b = 65, a = 255 },
-            scroll_track = { r = 0, g = 0, b = 0, a = 0 } -- Invisible track
+            bg_main = { r = 2, g = 6, b = 23, a = 248 },         -- slate-950
+            bg_sidebar = { r = 15, g = 23, b = 42, a = 255 },    -- slate-900
+            bg_panel = { r = 15, g = 23, b = 42, a = 245 },      -- slate-900
+            bg_control = { r = 30, g = 41, b = 59, a = 255 },    -- slate-800
+            bg_control_hover = { r = 51, g = 65, b = 85, a = 255 }, -- slate-700
+
+            accent = { r = 14, g = 165, b = 233, a = 255 },      -- sky-500
+            accent_hover = { r = 56, g = 189, b = 248, a = 255 }, -- sky-400
+            accent_dim = { r = 14, g = 165, b = 233, a = 112 },  -- sky-500 / alpha
+
+            text_main = { r = 241, g = 245, b = 249, a = 255 },  -- slate-100
+            text_sec = { r = 203, g = 213, b = 225, a = 255 },   -- slate-300
+            text_dim = { r = 148, g = 163, b = 184, a = 230 },   -- slate-400
+            text_on_accent = { r = 248, g = 250, b = 252, a = 255 }, -- slate-50
+
+            white = { r = 248, g = 250, b = 252, a = 255 },      -- slate-50
+            btn_hover = { r = 56, g = 189, b = 248, a = 90 },    -- sky-400 / strong hover
+            border = { r = 51, g = 65, b = 85, a = 255 },        -- slate-700
+            scroll_track = { r = 30, g = 41, b = 59, a = 170 },  -- slate-800
+
+            danger = { r = 185, g = 28, b = 28, a = 255 },       -- red-700
+            danger_hover = { r = 220, g = 38, b = 38, a = 255 }, -- red-600
+            danger_text = { r = 254, g = 202, b = 202, a = 255 }, -- red-200
+            success = { r = 4, g = 120, b = 87, a = 255 },       -- emerald-700
+            success_hover = { r = 5, g = 150, b = 105, a = 255 } -- emerald-600
         }
     }
 end
@@ -159,9 +218,9 @@ config.content_area.y = config.origin_y + body_offset
 config.content_area.w = config.menu_width - config.sidebar_width - config.sidebar_gap
 config.content_area.h = config.menu_height - body_offset
 config.scrollbar = {
-    x = config.origin_x + config.menu_width - math.floor(8 * config.scale),
+    x = config.origin_x + config.menu_width - config.space.x2,
     y = config.content_area.y + config.content_margin,
-    w = math.floor(4 * config.scale),
+    w = config.space.x1,
     h = config.content_area.h - (config.content_margin * 2)
 }
 
@@ -212,7 +271,7 @@ end
 local function vec(x, y) return vec2(x, y) end
 
 local function get_win_offset()
-    local anim_y_offset = (1.0 - state.animation.progress) * (30 * config.scale)
+    local anim_y_offset = (1.0 - state.animation.progress) * config.motion.open_y_offset
     return state.window.x - config.origin_x, (state.window.y - config.origin_y) + anim_y_offset
 end
 
@@ -332,7 +391,7 @@ local function draw_particles(x, y, w, h)
         local py = config.origin_y + p.y
         
         -- Helper render_rect handles win_offset
-        render_rect(px, py, p.size, p.size, {r=255, g=255, b=255, a=p.alpha}, 1)
+        render_rect(px, py, p.size, p.size, {r=config.colors.text_on_accent.r, g=config.colors.text_on_accent.g, b=config.colors.text_on_accent.b, a=p.alpha}, config.radius.sm)
     end
     gui.pop_clip()
 end
@@ -420,20 +479,20 @@ end
 -- ---------------------------------------------------------
 
 local function get_group_actual_height(group)
-    local h = config.item_height.header_padding + math.floor(10 * config.scale)
+    local h = config.item_height.header_padding + config.space.x2
     for _, item in ipairs(group.items) do
         if item.type == "toggle" then h = h + config.item_height.toggle
         elseif item.type == "button" then h = h + config.item_height.button
         elseif item.type == "button_pair" then h = h + config.item_height.button
         elseif item.type == "slider" then h = h + config.item_height.slider
         elseif item.type == "dropdown" then h = h + config.item_height.dropdown
-        elseif item.type == "label" then h = h + math.floor(25 * config.scale) end
+        elseif item.type == "label" then h = h + config.space.x6 end
     end
     return math.max(group.rect.h, h)
 end
 
 local function draw_toggle_item(item, x, y, w, original_y)
-    local hitbox_h = config.item_height.toggle - 2
+    local hitbox_h = config.item_height.toggle - config.space.x1
     local hovered = is_hovered_content(x, original_y, w, hitbox_h)
 
     if hovered and state.mouse.clicked and not state.active_dropdown then
@@ -447,41 +506,41 @@ local function draw_toggle_item(item, x, y, w, original_y)
     if not item.anim then item.anim = target end
     item.anim = lerp(item.anim, target, 0.15)
 
-    local switchW = math.floor(42 * config.scale)
-    local switchH = math.floor(22 * config.scale)
-    local switchX = x + w - switchW - math.floor(18 * config.scale)
-    local switchY = y + math.floor(8 * config.scale)
+    local switchW = config.space.x11
+    local switchH = config.space.x6
+    local switchX = x + w - switchW - config.space.x4
+    local switchY = y + config.space.x2
 
-    local inactiveCol = {r=40, g=40, b=50, a=255}
+    local inactiveCol = config.colors.bg_control
     local activeCol = config.colors.accent
     
     local trackR = math.floor(inactiveCol.r + (activeCol.r - inactiveCol.r) * item.anim)
     local trackG = math.floor(inactiveCol.g + (activeCol.g - inactiveCol.g) * item.anim)
     local trackB = math.floor(inactiveCol.b + (activeCol.b - inactiveCol.b) * item.anim)
     
-    render_rect(switchX, switchY, switchW, switchH, {r=trackR, g=trackG, b=trackB, a=255}, switchH/2)
+    render_rect(switchX, switchY, switchW, switchH, {r=trackR, g=trackG, b=trackB, a=255}, config.radius.full)
     
-    local thumbSize = math.floor(16 * config.scale)
-    local thumbPadding = math.floor(3 * config.scale)
+    local thumbSize = config.space.x4
+    local thumbPadding = config.space.x1
     local minX = switchX + thumbPadding
     local maxX = switchX + switchW - thumbSize - thumbPadding
     local thumbX = lerp(minX, maxX, item.anim)
     local thumbY = switchY + (switchH - thumbSize)/2
     
-    render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.white, thumbSize/2)
+    render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.text_on_accent, config.radius.full)
 
     -- Center text vertically with switch
     local textY = switchY + (switchH - config.font_scale_body)/2
-    render_text(item.label, x + math.floor(15 * config.scale), textY, config.font_scale_body, config.colors.text_main)
+    render_text(item.label, x + config.space.x4, textY, config.font_scale_body, config.colors.text_main)
 end
 
 local function draw_button_item(item, x, y, w, original_y)
-    local btnH = config.item_height.button - math.floor(6 * config.scale)
-    local btnW = w - math.floor(30 * config.scale)
-    local btnX = x + math.floor(15 * config.scale)
-    local btnY = y + math.floor(3 * config.scale)
+    local btnH = config.item_height.button - config.space.x1
+    local btnW = w - config.space.x8
+    local btnX = x + config.space.x4
+    local btnY = y + config.space.x1
 
-    local hovered = is_hovered_content(btnX, original_y + 3, btnW, btnH)
+    local hovered = is_hovered_content(btnX, original_y + config.space.x1, btnW, btnH)
     
     if hovered and state.mouse.clicked and not state.active_dropdown then
         if item.disabled then
@@ -493,22 +552,21 @@ local function draw_button_item(item, x, y, w, original_y)
         state.window.is_dragging = false  -- Prevent window dragging
     end
 
-    -- Red color for disabled buttons, custom color for special buttons, normal colors for enabled
     local bgCol
     local textCol
     if item.disabled then
-        bgCol = hovered and {r = 200, g = 50, b = 50, a = 255} or {r = 150, g = 30, b = 30, a = 255}
-        textCol = hovered and config.colors.white or {r = 255, g = 200, b = 200, a = 255}
+        bgCol = hovered and config.colors.danger_hover or config.colors.danger
+        textCol = hovered and config.colors.text_on_accent or config.colors.danger_text
     elseif item.color == "green" then
-        -- Green color for escape button
-        bgCol = hovered and {r = 50, g = 200, b = 50, a = 255} or {r = 30, g = 150, b = 30, a = 255}
-        textCol = config.colors.white
+        bgCol = hovered and config.colors.success_hover or config.colors.success
+        textCol = config.colors.text_on_accent
     else
-        bgCol = hovered and config.colors.accent or config.colors.bg_sidebar
-        textCol = hovered and config.colors.white or config.colors.text_main
+        bgCol = hovered and config.colors.accent_hover or config.colors.bg_control
+        textCol = hovered and config.colors.text_on_accent or config.colors.text_main
     end
     
-    render_rect(btnX, btnY, btnW, btnH, bgCol, 6)
+    render_rect(btnX, btnY, btnW, btnH, bgCol, config.radius.md)
+    render_outline(btnX, btnY, btnW, btnH, hovered and config.colors.accent or config.colors.border, 1, config.radius.md)
     -- Center text both horizontally and vertically
     local textSize = config.font_scale_small
     local textHeight = textSize * 0.7
@@ -517,15 +575,15 @@ local function draw_button_item(item, x, y, w, original_y)
 end
 
 local function draw_button_pair_item(item, x, y, w, original_y)
-    local btnH = config.item_height.button - math.floor(6 * config.scale)
-    local totalW = w - math.floor(30 * config.scale)
-    local baseX = x + math.floor(15 * config.scale)
-    local btnY = y + math.floor(3 * config.scale)
-    local gap = math.floor(10 * config.scale)
+    local btnH = config.item_height.button - config.space.x1
+    local totalW = w - config.space.x8
+    local baseX = x + config.space.x4
+    local btnY = y + config.space.x1
+    local gap = config.space.x2_5
     local btnW = (totalW - gap) / 2
 
     local function draw_half(btn, btnX)
-        local hovered = is_hovered_content(btnX, original_y + 3, btnW, btnH)
+        local hovered = is_hovered_content(btnX, original_y + config.space.x1, btnW, btnH)
 
         if hovered and state.mouse.clicked and not state.active_dropdown then
             if btn.disabled then
@@ -539,17 +597,18 @@ local function draw_button_pair_item(item, x, y, w, original_y)
         local bgCol
         local textCol
         if btn.disabled then
-            bgCol = hovered and {r = 200, g = 50, b = 50, a = 255} or {r = 150, g = 30, b = 30, a = 255}
-            textCol = hovered and config.colors.white or {r = 255, g = 200, b = 200, a = 255}
+            bgCol = hovered and config.colors.danger_hover or config.colors.danger
+            textCol = hovered and config.colors.text_on_accent or config.colors.danger_text
         elseif btn.color == "green" then
-            bgCol = hovered and {r = 50, g = 200, b = 50, a = 255} or {r = 30, g = 150, b = 30, a = 255}
-            textCol = config.colors.white
+            bgCol = hovered and config.colors.success_hover or config.colors.success
+            textCol = config.colors.text_on_accent
         else
-            bgCol = hovered and config.colors.accent or config.colors.bg_sidebar
-            textCol = hovered and config.colors.white or config.colors.text_main
+            bgCol = hovered and config.colors.accent_hover or config.colors.bg_control
+            textCol = hovered and config.colors.text_on_accent or config.colors.text_main
         end
 
-        render_rect(btnX, btnY, btnW, btnH, bgCol, 6)
+        render_rect(btnX, btnY, btnW, btnH, bgCol, config.radius.md)
+        render_outline(btnX, btnY, btnW, btnH, hovered and config.colors.accent or config.colors.border, 1, config.radius.md)
 
         -- Stability-first: fixed smaller font for split buttons (no dynamic measurement).
         local drawSize = config.font_scale_small
@@ -564,10 +623,10 @@ local function draw_button_pair_item(item, x, y, w, original_y)
 end
 
 local function draw_slider_item(item, x, y, w, original_y)
-    local barW = w - math.floor(36 * config.scale)
-    local barH = math.floor(4 * config.scale)
-    local barX = x + math.floor(18 * config.scale)
-    local barY = y + math.floor(32 * config.scale)
+    local barW = w - config.space.x9
+    local barH = config.space.x1
+    local barX = x + config.space.x4
+    local barY = y + config.space.x8
 
     local hovered = is_hovered_content(x, original_y, w, config.item_height.slider)
     
@@ -598,43 +657,43 @@ local function draw_slider_item(item, x, y, w, original_y)
     if not item.anim then item.anim = 0.0 end
     item.anim = lerp(item.anim, target, 0.2)
 
-    render_text(item.label, x + math.floor(15 * config.scale), y + math.floor(5 * config.scale), config.font_scale_body, config.colors.text_main)
+    render_text(item.label, x + config.space.x4, y + config.space.x1, config.font_scale_body, config.colors.text_main)
     -- Display integer value (no decimals)
     local displayValue = math.floor(item.value)
-    render_text(tostring(displayValue), x + w - math.floor(15 * config.scale), y + math.floor(5 * config.scale), config.font_scale_body, config.colors.accent, "right")
+    render_text(tostring(displayValue), x + w - config.space.x4, y + config.space.x1, config.font_scale_body, config.colors.accent, "right")
 
-    render_rect(barX, barY, barW, barH, config.colors.bg_sidebar, barH/2)
+    render_rect(barX, barY, barW, barH, config.colors.bg_control, config.radius.full)
     
     local fillRatio = (item.value - item.min) / (item.max - item.min)
     if fillRatio > 0 then
-        render_rect(barX, barY, barW * fillRatio, barH, config.colors.accent, barH/2)
+        render_rect(barX, barY, barW * fillRatio, barH, config.colors.accent, config.radius.full)
     end
     
-    local baseSize = 16
-    local growSize = 6
-    local thumbSize = math.floor((baseSize + growSize * item.anim) * config.scale)
+    local baseSize = config.control.slider_thumb_base
+    local growSize = config.control.slider_thumb_grow
+    local thumbSize = math.floor(baseSize + (growSize * item.anim))
     local thumbX = barX + (barW * fillRatio) - thumbSize/2
     local thumbY = barY - thumbSize/2 + barH/2
     
     if item.anim > 0.01 then
-        local glowSize = thumbSize + math.floor(6 * config.scale * item.anim)
+        local glowSize = thumbSize + math.floor(config.space.x2 * item.anim)
         local glowX = thumbX - (glowSize - thumbSize)/2
         local glowY = thumbY - (glowSize - thumbSize)/2
-        local glowAlpha = math.floor(60 * item.anim)
+        local glowAlpha = math.floor(90 * item.anim)
         render_rect(glowX, glowY, glowSize, glowSize, {r=config.colors.accent.r, g=config.colors.accent.g, b=config.colors.accent.b, a=glowAlpha}, glowSize/2)
     end
     
     -- Main circle
-    render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.white, thumbSize/2)
+    render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.text_on_accent, config.radius.full)
 end
 
 local function draw_dropdown_item(item, x, y, w, original_y)
-    local boxW = math.floor(180 * config.scale)
-    local boxH = math.floor(36 * config.scale)
-    local boxX = x + w - boxW - math.floor(18 * config.scale)
-    local boxY = y + math.floor(6 * config.scale)
+    local boxW = config.control.dropdown_w
+    local boxH = config.space.x9
+    local boxX = x + w - boxW - config.space.x4
+    local boxY = y + config.space.x1_5
     
-    local hovered = is_hovered_content(boxX, original_y + 5, boxW, boxH)
+    local hovered = is_hovered_content(boxX, original_y + config.space.x1, boxW, boxH)
 
     if hovered and state.mouse.clicked then
         state.window.is_dragging = false  -- Prevent window dragging
@@ -648,17 +707,20 @@ local function draw_dropdown_item(item, x, y, w, original_y)
         end
     end
 
-    render_text(item.label, x + math.floor(15 * config.scale), y + math.floor(8 * config.scale), config.font_scale_body, config.colors.text_main)
+    render_text(item.label, x + config.space.x4, y + config.space.x2, config.font_scale_body, config.colors.text_main)
     
-    render_rect(boxX, boxY, boxW, boxH, config.colors.bg_sidebar, 4)
+    local boxBg = hovered and config.colors.bg_control_hover or config.colors.bg_control
+    local boxBorder = hovered and config.colors.accent or config.colors.border
+    render_rect(boxX, boxY, boxW, boxH, boxBg, config.radius.md)
+    render_outline(boxX, boxY, boxW, boxH, boxBorder, 1, config.radius.md)
     -- Center the selected option text in the dropdown box
-    render_text(item.options[item.value] or "", boxX + boxW / 2, boxY + math.floor(6 * config.scale), config.font_scale_body, config.colors.text_sec, "center")
+    render_text(item.options[item.value] or "", boxX + boxW / 2, boxY + config.space.x1_5, config.font_scale_body, config.colors.text_sec, "center")
     
     -- Dropdown Arrow
-    render_text("v", boxX + boxW - math.floor(15 * config.scale), boxY + math.floor(6 * config.scale), config.font_scale_small, config.colors.text_dim)
+    render_text("v", boxX + boxW - config.space.x4, boxY + config.space.x1_5, config.font_scale_small, config.colors.text_dim)
 
     if item.isOpen then
-        return { item = item, x = boxX, y = boxY + boxH + 2, w = boxW }
+        return { item = item, x = boxX, y = boxY + boxH + config.space.x1, w = boxW }
     end
 end
 
@@ -696,7 +758,9 @@ ui.render = function()
     config.content_area.w = config.menu_width
     config.content_area.h = bodyH
 
-    manage_particles(config.menu_width, dynamicBodyH)
+    if config.enable_particles then
+        manage_particles(config.menu_width, dynamicBodyH)
+    end
 
     -- Window Dragging
     if state.mouse.clicked and not state.active_dropdown and not state.dragging_slider then
@@ -718,8 +782,11 @@ ui.render = function()
         state.window.y = state.mouse.y - state.window.drag_offset.y
     end
 
-    render_rect(config.origin_x, bodyY, config.menu_width, bodyH, config.colors.bg_main, 15)
-    draw_particles(config.origin_x, bodyY, config.menu_width, bodyH)
+    render_rect(config.origin_x, bodyY, config.menu_width, bodyH, config.colors.bg_main, config.radius.xl)
+    render_outline(config.origin_x, bodyY, config.menu_width, bodyH, config.colors.border, 1, config.radius.xl)
+    if config.enable_particles then
+        draw_particles(config.origin_x, bodyY, config.menu_width, bodyH)
+    end
 
 
     local contentX = config.content_area.x + config.content_margin
@@ -733,8 +800,8 @@ ui.render = function()
     if ui.currentTab and ui.currentTab.id == "heist" then
         local subtab_names = {"Cayo", "Casino", "Doomsday", "Apartment", "Cluckin"}
         local subtab_count = #subtab_names
-        local subtab_h = math.floor(35 * config.scale)
-        local subtab_gap = math.floor(6 * config.scale)
+        local subtab_h = config.space.x9
+        local subtab_gap = config.space.x2
         local subtab_w = (contentW - (subtab_count - 1) * subtab_gap) / subtab_count
         local subtab_y = contentY
         
@@ -749,16 +816,17 @@ ui.render = function()
                 state.window.is_dragging = false
             end
             
-            local bg_col = is_active and config.colors.accent or config.colors.bg_sidebar
+            local bg_col = is_active and config.colors.accent or config.colors.bg_control
             if hovered and not is_active then
-                bg_col = config.colors.btn_hover
+                bg_col = config.colors.bg_control_hover
             end
-            render_rect(subtab_x, subtab_y, subtab_w, subtab_h, bg_col, 6)
-            local text_col = is_active and config.colors.white or config.colors.text_main
-            render_text(name, subtab_x + subtab_w / 2, subtab_y + subtab_h / 2 - math.floor(8 * config.scale), config.font_scale_body, text_col, "center")
+            render_rect(subtab_x, subtab_y, subtab_w, subtab_h, bg_col, config.radius.md)
+            render_outline(subtab_x, subtab_y, subtab_w, subtab_h, is_active and config.colors.accent_hover or config.colors.border, 1, config.radius.md)
+            local text_col = is_active and config.colors.text_on_accent or config.colors.text_main
+            render_text(name, subtab_x + subtab_w / 2, subtab_y + subtab_h / 2 - config.space.x2, config.font_scale_body, text_col, "center")
         end
         
-        subtab_bar_height = subtab_h + math.floor(10 * config.scale)
+        subtab_bar_height = subtab_h + config.space.x2
         groups_start_y = contentY + subtab_bar_height
     end
     
@@ -791,7 +859,7 @@ ui.render = function()
     
     if #activeGroups > 0 then
         local column_count = 3
-        local column_gap = 15
+        local column_gap = config.space.x4
         local col_w = (contentW - ((column_count - 1) * column_gap)) / column_count
         local col_x = {}
         local base_y = groups_start_y - state.scroll.y
@@ -878,11 +946,12 @@ ui.render = function()
                 local available_height = contentH - subtab_bar_height
                 local clip_start = groups_start_y
                 if (gY + actual_h > clip_start) and (gY < clip_start + available_height) then
-                    render_rect(gX, gY, col_w, actual_h, config.colors.bg_panel, 8)
+                    render_rect(gX, gY, col_w, actual_h, config.colors.bg_panel, config.radius.lg)
+                    render_outline(gX, gY, col_w, actual_h, config.colors.border, 1, config.radius.lg)
                     -- Group Header Label
-                    render_text(group.label, gX + 15, gY + 12, config.font_scale_header, config.colors.accent)
+                    render_text(group.label, gX + config.space.x4, gY + config.space.x3, config.font_scale_header, config.colors.text_sec)
 
-                    local itemY = gY + config.item_height.header_padding + 5
+                    local itemY = gY + config.item_height.header_padding + config.space.x1
                     for _, item in ipairs(group.items) do
                         if item.type == "toggle" then
                             draw_toggle_item(item, gX, itemY, col_w, itemY)
@@ -902,13 +971,13 @@ ui.render = function()
                             itemY = itemY + config.item_height.dropdown
                         elseif item.type == "label" then
                             local labelCol = item.color or config.colors.text_sec
-                            render_text(item.text, gX + math.floor(15 * config.scale), itemY + math.floor(12 * config.scale), config.font_scale_small, labelCol)
-                            itemY = itemY + math.floor(25 * config.scale)
+                            render_text(item.text, gX + config.space.x4, itemY + config.space.x3, config.font_scale_small, labelCol)
+                            itemY = itemY + config.space.x6
                         end
                     end
                 end
 
-                col_y = col_y + actual_h + 15
+                col_y = col_y + actual_h + config.space.x4
             end
 
             if col_y > max_col_y then
@@ -929,12 +998,13 @@ ui.render = function()
         local sbH = contentH - subtab_bar_height
         local sbY = groups_start_y
         
-        local thumbH = math.max(30, (sbH / (sbH + state.scroll.max_y)) * sbH)
+        local thumbH = math.max(config.control.scrollbar_min_thumb, (sbH / (sbH + state.scroll.max_y)) * sbH)
         local thumbY = sbY + (state.scroll.y / state.scroll.max_y) * (sbH - thumbH)
         
-        render_rect(sb.x, thumbY, sb.w, thumbH, config.colors.accent, 2)
+        render_rect(sb.x, sbY, sb.w, sbH, config.colors.scroll_track, config.radius.full)
+        render_rect(sb.x, thumbY, sb.w, thumbH, config.colors.accent, config.radius.full)
         
-        if is_hovered(sb.x - 5, sbY, sb.w + 10, sbH) and state.mouse.clicked then
+        if is_hovered(sb.x - config.control.scrollbar_grab_pad, sbY, sb.w + (config.control.scrollbar_grab_pad * 2), sbH) and state.mouse.clicked then
             state.scroll.is_dragging = true
         end
         if state.scroll.is_dragging and state.mouse.down then
@@ -946,15 +1016,15 @@ ui.render = function()
 
     if pendingDropdown then
         local dd = pendingDropdown
-        local itemHeight = math.floor(36 * config.scale)
+        local itemHeight = config.space.x9
         local optsH = #dd.item.options * itemHeight
-        render_rect(dd.x, dd.y, dd.w, optsH, config.colors.bg_panel, 4)
-        render_outline(dd.x, dd.y, dd.w, optsH, config.colors.border, 1, 4)
+        render_rect(dd.x, dd.y, dd.w, optsH, config.colors.bg_panel, config.radius.md)
+        render_outline(dd.x, dd.y, dd.w, optsH, config.colors.border, 1, config.radius.md)
         
         for i, opt in ipairs(dd.item.options) do
             local optY = dd.y + (i-1)*itemHeight
             if is_hovered(dd.x, optY, dd.w, itemHeight) then
-                render_rect(dd.x, optY, dd.w, itemHeight, config.colors.accent_dim, 0)
+                render_rect(dd.x, optY, dd.w, itemHeight, config.colors.accent_dim, config.radius.none)
                 if state.mouse.clicked and not state.dropdown_just_opened then
                     dd.item.value = i
                     dd.item.isOpen = false
@@ -964,7 +1034,7 @@ ui.render = function()
                 end
             end
             -- Center the option text in the dropdown menu
-            render_text(opt, dd.x + dd.w / 2, optY + 5, config.font_scale_body, config.colors.text_main, "center")
+            render_text(opt, dd.x + dd.w / 2, optY + config.space.x1, config.font_scale_body, config.colors.text_main, "center")
         end
         
         if state.mouse.clicked and not state.dropdown_just_opened and not is_hovered(dd.x, dd.y, dd.w, optsH) then

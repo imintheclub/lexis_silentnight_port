@@ -1,0 +1,75 @@
+-- ============================================================
+-- # Request
+-- ============================================================
+--
+-- > **Warning:** These options are blocking, it's recommended to call
+-- > inside of a thread or job.
+--
+-- ## control
+-- Requests control of an entity.
+-- ---@param entity integer
+-- ---@param force_ownership? bool
+-- function request.control(entity, force_ownership?): bool
+--
+-- ## model
+-- Requests a model to be loaded.
+-- ---@param model string|integer
+-- function request.model(model): bool
+--
+-- ## weapon
+-- Requests a weapon to be loaded.
+-- ---@param model string|integer
+-- function request.weapon(model): bool
+--
+-- ## dict
+-- Requests a dictionary to be loaded.
+-- ---@param dictionary string
+-- function request.dict(dictionary): bool
+--
+-- ## anim
+-- Requests an animation to be loaded.
+-- ---@param animation string
+-- function request.anim(animation): bool
+--
+-- ## particle
+-- Requests a particle to be loaded.
+-- ---@param particle string
+-- function request.particle(particle): bool
+--
+-- ### Example
+-- ```lua
+-- local natives = require('natives')
+-- util.create_job(function()
+--     local hash = joaat('player_two')
+--     if request.model(hash) then
+--         natives.set_player_model(players.me().id, hash)
+--     end
+-- end)
+-- ```
+---@class request
+request = {}
+--- Requests control of an entity.
+---@param entity integer
+---@param force_ownership? boolean
+---@return boolean
+function request.control(entity, force_ownership) end
+--- Requests a model to be loaded.
+---@param model string|integer
+---@return boolean
+function request.model(model) end
+--- Requests a weapon to be loaded.
+---@param model string|integer
+---@return boolean
+function request.weapon(model) end
+--- Requests a dictionary to be loaded.
+---@param dictionary string
+---@return boolean
+function request.dict(dictionary) end
+--- Requests an animation to be loaded.
+---@param animation string
+---@return boolean
+function request.anim(animation) end
+--- Requests a particle to be loaded.
+---@param particle string
+---@return boolean
+function request.particle(particle) end

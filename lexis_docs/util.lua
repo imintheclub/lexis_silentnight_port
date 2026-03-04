@@ -1,0 +1,140 @@
+-- ============================================================
+-- # Util
+-- ============================================================
+--
+-- > **Tip:** Yielding at the end of a thread or job is not necessary.
+--
+-- ## create_thread
+-- Create a thread that'll be called each frame, returning a thread id.
+-- ---@param callback function()
+-- function util.create_thread(callback): integer
+--
+-- ## remove_thread
+-- Delete a thread using the id returned from create_thread.
+-- ---@param id integer
+-- function util.remove_thread(id): nil
+--
+-- ## create_job
+-- Create a job that'll be called once.
+-- ---@param callback function()
+-- function util.create_job(callback): nil
+--
+-- ## yield
+-- Yield the current callback.
+-- ---@param time_ms? integer
+-- function util.yield(time_ms?): nil
+--
+-- ## get_tick_count
+-- Tick count returned from GetTickCount().
+-- function util.get_tick_count(): integer
+--
+-- ## str_split
+-- Tokenize a string and returns the tokens.
+-- ---@param str string
+-- ---@param delimiter string
+-- function util.str_split(str, delimiter): string[]
+--
+-- ## str_random
+-- Returns a random string of length.
+-- ---@param length integer
+-- function util.str_random(length): string
+--
+-- ## str_bytes
+-- Returns a hex string as a list of bytes (FFFF to { 255, 255 })
+-- ---@param str string
+-- function util.str_bytes(str): integer[]
+--
+-- ## number_bytes
+-- Returns a 4 byte integer as bytes (little endian).
+-- ---@param num integer
+-- function util.number_bytes(num): integer[]
+--
+-- ## random_int
+-- Returns a random integer between min and max.
+-- ---@param min integer
+-- ---@param max integer
+-- function util.random_int(min, max): integer
+--
+-- ## random_float
+-- Returns a random float (number) between min and max.
+-- ---@param min number
+-- ---@param max number
+-- function util.random_float(min, max): number
+--
+-- ### Example
+-- ```lua
+-- local natives = require('natives')
+--
+-- -- called once
+-- util.create_job(function()
+--     local hash = joaat('player_two')
+--     if request.model(hash) then
+--         natives.set_player_model(players.me().id, hash)
+--     end
+-- end)
+--
+-- -- called per frame
+-- local id = util.create_thread(function()
+--     gui.rect(vec2(100.0, 100.0), vec2(100.0, 100.0))
+--         :filled()
+--         :color(color(255, 255, 255, 100))
+--         :draw()
+-- end)
+--
+-- -- deletes the thread after 5s
+-- util.create_job(function()
+--     util.yield(5000)
+--     util.remove_thread(id)
+-- end)
+--
+-- local tokens = util.str_split('this is a nice string', ' ')
+-- print(tokens[1]) -- 'this'
+-- ```
+---@class util
+util = {}
+--- Create a thread that'll be called each frame, returning a thread id.
+---@param callback fun()
+---@return integer
+function util.create_thread(callback) end
+--- Delete a thread using the id returned from create_thread.
+---@param id integer
+---@return nil
+function util.remove_thread(id) end
+--- Create a job that'll be called once.
+---@param callback fun()
+---@return nil
+function util.create_job(callback) end
+--- Yield the current callback.
+---@param time_ms? integer
+---@return nil
+function util.yield(time_ms) end
+--- Tick count returned from GetTickCount().
+---@return integer
+function util.get_tick_count() end
+--- Tokenize a string and returns the tokens.
+---@param str string
+---@param delimiter string
+---@return string[]
+function util.str_split(str, delimiter) end
+--- Returns a random string of length.
+---@param length integer
+---@return string
+function util.str_random(length) end
+--- Returns a hex string as a list of bytes (FFFF to { 255, 255 }).
+---@param str string
+---@return integer[]
+function util.str_bytes(str) end
+--- Returns a 4 byte integer as bytes (little endian).
+---@param num integer
+---@return integer[]
+function util.number_bytes(num) end
+--- Returns a random integer between min and max.
+---@param min integer
+---@param max integer
+---@return integer
+function util.random_int(min, max) end
+--- Returns a random float (number) between min and max.
+---@param min number
+---@param max number
+---@return number
+function util.random_float(min, max) end

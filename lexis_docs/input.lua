@@ -1,0 +1,138 @@
+-- ============================================================
+-- # Input
+-- ============================================================
+--
+-- ## Functions
+--
+-- ### show_cursor
+-- Show the mouse cursor.
+-- ---@param show bool
+-- function input.show_cursor(show): nil
+--
+-- ### disable_input
+-- Disable input to Lexis.
+-- ---@param disable bool
+-- function input.disable_input(disable): nil
+--
+-- ### key
+-- Get a key state.
+-- ---@param vk integer
+-- function input.key(vk): input_keyboard_state
+--
+-- ### mouse
+-- Get a mouse key state.
+-- ---@param vk integer
+-- function input.mouse(vk): input_mouse_state
+--
+-- ### pad
+-- Get a controller key state.
+-- ---@param key integer
+-- function input.pad(key): input_pad_state
+--
+-- ### mouse_position
+-- Get the position of the mouse cursor.
+-- function input.mouse_position(): vec2
+--
+-- ### is_mouse_within
+-- If the mouse cursor is within a given bounds.
+-- ---@param position vec2
+-- ---@param scale vec2
+-- function input.is_mouse_within(position, scale): bool
+--
+-- ### get_clipboard_text
+-- Get the text in your clipboard.
+-- function input.get_clipboard_text(): string
+--
+-- ### set_clipboard_text
+-- Set your clipboard text.
+-- ---@param str string
+-- function input.set_clipboard_text(str): nil
+--
+-- ## Types
+--
+-- ### input_keyboard_state
+-- | Type    | Name          |
+-- |---------|---------------|
+-- | bool    | pressed       |
+-- | bool    | just_pressed  |
+-- | bool    | just_released |
+-- | string  | name          |
+--
+-- ### input_mouse_state
+-- | Type    | Name          |
+-- |---------|---------------|
+-- | bool    | double_clicked|
+-- | bool    | pressed       |
+-- | bool    | just_pressed  |
+-- | bool    | just_released |
+-- | string  | name          |
+--
+-- ### input_pad_state
+-- | Type    | Name          |
+-- |---------|---------------|
+-- | bool    | pressed       |
+-- | bool    | just_pressed  |
+-- | bool    | just_released |
+--
+-- ### Example
+-- ```lua
+-- INPUT_ATTACK  = 0x18
+-- VK_W          = 0x57
+-- VK_LEFT_MOUSE = 0x01
+-- print('w just pressed: ', input.key(VK_W).just_pressed)
+-- print('left mouse being held: ', input.mouse(VK_LEFT_MOUSE).pressed)
+-- print('mouse position: ', input.mouse_position())
+-- print('attacking: ', input.pad(INPUT_ATTACK).pressed)
+-- ```
+---@class input_keyboard_state
+---@field pressed       boolean
+---@field just_pressed  boolean
+---@field just_released boolean
+---@field name          string
+---@class input_mouse_state
+---@field double_clicked boolean
+---@field pressed        boolean
+---@field just_pressed   boolean
+---@field just_released  boolean
+---@field name           string
+---@class input_pad_state
+---@field pressed       boolean
+---@field just_pressed  boolean
+---@field just_released boolean
+---@class input
+input = {}
+--- Show the mouse cursor.
+---@param show boolean
+---@return nil
+function input.show_cursor(show) end
+--- Disable input to Lexis.
+---@param disable boolean
+---@return nil
+function input.disable_input(disable) end
+--- Get a key state.
+---@param vk integer
+---@return input_keyboard_state
+function input.key(vk) end
+--- Get a mouse key state.
+---@param vk integer
+---@return input_mouse_state
+function input.mouse(vk) end
+--- Get a controller key state.
+---@param key integer
+---@return input_pad_state
+function input.pad(key) end
+--- Get the position of the mouse cursor.
+---@return vec2
+function input.mouse_position() end
+--- If the mouse cursor is within a given bounds.
+---@param position vec2
+---@param scale vec2
+---@return boolean
+function input.is_mouse_within(position, scale) end
+--- Get the text in your clipboard.
+---@return string
+function input.get_clipboard_text() end
+--- Set your clipboard text.
+---@param str string
+---@return nil
+function input.set_clipboard_text(str) end

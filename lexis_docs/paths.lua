@@ -1,0 +1,22 @@
+-- ============================================================
+-- # Paths
+-- ============================================================
+--
+-- ## Constants
+--
+-- paths.cheat
+-- paths.game
+-- paths.script
+--
+-- ## Example
+-- ```lua
+-- print(paths.cheat)  -- 'C:\Users\<username>\Lexis'
+-- print(paths.game)   -- 'C:\Users\<username>\Lexis\Grand Theft Auto V'
+-- print(paths.script) -- 'C:\Users\<username>\Lexis\scripts\my_script'
+-- ```
+
+---@class paths
+---@field cheat  string
+---@field game   string
+---@field script string
+paths = {}

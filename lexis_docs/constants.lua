@@ -1,0 +1,238 @@
+-- ============================================================
+-- # Constants
+-- ============================================================
+--
+-- ## node_data_type
+--
+-- node_data_type.int8
+-- node_data_type.int16
+-- node_data_type.int32
+-- node_data_type.int64
+-- node_data_type.uint8
+-- node_data_type.uint16
+-- node_data_type.uint32
+-- node_data_type.uint64
+-- node_data_type.float
+-- node_data_type.double
+-- node_data_type.bool
+-- node_data_type.vec2
+-- node_data_type.vec3
+-- node_data_type.bytes
+--
+-- ## net_object
+--
+-- net_object.automobile
+-- net_object.bike
+-- net_object.boat
+-- net_object.door
+-- net_object.heli
+-- net_object.object
+-- net_object.ped
+-- net_object.pickup
+-- net_object.pickup_placement
+-- net_object.plane
+-- net_object.submarine
+-- net_object.player
+-- net_object.trailer
+-- net_object.train
+--
+-- ## data_node
+--
+-- data_node.automobile_creation
+-- data_node.bike_game_state
+-- data_node.boat_game_state
+-- data_node.door_creation
+-- data_node.door_movement
+-- data_node.door_script_game_state
+-- data_node.door_script_info
+-- data_node.dynamic_entity_game_state
+-- data_node.entity_orientation
+-- data_node.entity_script_game_state
+-- data_node.entity_script_info
+-- data_node.global_flags
+-- data_node.heli_control
+-- data_node.heli_health
+-- data_node.migration
+-- data_node.object_creation
+-- data_node.object_game_state
+-- data_node.object_orientation
+-- data_node.object_script_game_state
+-- data_node.object_sector_pos
+-- data_node.patrol
+-- data_node.ped_ai_data
+-- data_node.ped_appearance
+-- data_node.ped_attach
+-- data_node.ped_component_reservation
+-- data_node.ped_creation
+-- data_node.ped_game_state
+-- data_node.ped_health
+-- data_node.ped_inventory
+-- data_node.ped_movement
+-- data_node.ped_movement_group
+-- data_node.ped_orientation
+-- data_node.ped_script_creation
+-- data_node.ped_script_game_state
+-- data_node.ped_sector_pos_map
+-- data_node.ped_sector_pos_nav_mesh
+-- data_node.ped_task_sequence
+-- data_node.ped_task_specific
+-- data_node.ped_task_tree
+-- data_node.physical_ang_velocity
+-- data_node.physical_attach
+-- data_node.physical_game_state
+-- data_node.physical_health
+-- data_node.physical_migration
+-- data_node.physical_script_game_state
+-- data_node.physical_script_migration
+-- data_node.physical_velocity
+-- data_node.pickup_creation
+-- data_node.pickup_placement_creation
+-- data_node.pickup_placement_state
+-- data_node.pickup_script_game_state
+-- data_node.pickup_sector_pos
+-- data_node.plane_control
+-- data_node.plane_game_state
+-- data_node.player_ambient_model_streaming
+-- data_node.player_appearance
+-- data_node.player_camera
+-- data_node.player_creation
+-- data_node.player_extended_game_state
+-- data_node.player_game_state
+-- data_node.player_gamer
+-- data_node.player_ped_group
+-- data_node.player_sector_pos
+-- data_node.player_wanted_and_los
+-- data_node.sector
+-- data_node.sector_position
+-- data_node.submarine_control
+-- data_node.submarine_game_state
+-- data_node.train_game_state
+-- data_node.vehicle_ang_velocity
+-- data_node.vehicle_appearance
+-- data_node.vehicle_component_reservation
+-- data_node.vehicle_control
+-- data_node.vehicle_creation
+-- data_node.vehicle_damage_status
+-- data_node.vehicle_gadget
+-- data_node.vehicle_game_state
+-- data_node.vehicle_health
+-- data_node.vehicle_proximity_migration
+-- data_node.vehicle_script_game_state
+-- data_node.vehicle_steering
+-- data_node.vehicle_task
+---@class node_data_type
+---@field int8   integer
+---@field int16  integer
+---@field int32  integer
+---@field int64  integer
+---@field uint8  integer
+---@field uint16 integer
+---@field uint32 integer
+---@field uint64 integer
+---@field float  integer
+---@field double integer
+---@field bool   integer
+---@field vec2   integer
+---@field vec3   integer
+---@field bytes  integer
+node_data_type = {}
+---@class net_object
+---@field automobile       integer
+---@field bike             integer
+---@field boat             integer
+---@field door             integer
+---@field heli             integer
+---@field object           integer
+---@field ped              integer
+---@field pickup           integer
+---@field pickup_placement integer
+---@field plane            integer
+---@field submarine        integer
+---@field player           integer
+---@field trailer          integer
+---@field train            integer
+net_object = {}
+---@class data_node
+---@field automobile_creation            integer
+---@field bike_game_state                integer
+---@field boat_game_state                integer
+---@field door_creation                  integer
+---@field door_movement                  integer
+---@field door_script_game_state         integer
+---@field door_script_info               integer
+---@field dynamic_entity_game_state      integer
+---@field entity_orientation             integer
+---@field entity_script_game_state       integer
+---@field entity_script_info             integer
+---@field global_flags                   integer
+---@field heli_control                   integer
+---@field heli_health                    integer
+---@field migration                      integer
+---@field object_creation                integer
+---@field object_game_state              integer
+---@field object_orientation             integer
+---@field object_script_game_state       integer
+---@field object_sector_pos              integer
+---@field patrol                         integer
+---@field ped_ai_data                    integer
+---@field ped_appearance                 integer
+---@field ped_attach                     integer
+---@field ped_component_reservation      integer
+---@field ped_creation                   integer
+---@field ped_game_state                 integer
+---@field ped_health                     integer
+---@field ped_inventory                  integer
+---@field ped_movement                   integer
+---@field ped_movement_group             integer
+---@field ped_orientation                integer
+---@field ped_script_creation            integer
+---@field ped_script_game_state          integer
+---@field ped_sector_pos_map             integer
+---@field ped_sector_pos_nav_mesh        integer
+---@field ped_task_sequence              integer
+---@field ped_task_specific              integer
+---@field ped_task_tree                  integer
+---@field physical_ang_velocity          integer
+---@field physical_attach                integer
+---@field physical_game_state            integer
+---@field physical_health                integer
+---@field physical_migration             integer
+---@field physical_script_game_state     integer
+---@field physical_script_migration      integer
+---@field physical_velocity              integer
+---@field pickup_creation                integer
+---@field pickup_placement_creation      integer
+---@field pickup_placement_state         integer
+---@field pickup_script_game_state       integer
+---@field pickup_sector_pos              integer
+---@field plane_control                  integer
+---@field plane_game_state               integer
+---@field player_ambient_model_streaming integer
+---@field player_appearance              integer
+---@field player_camera                  integer
+---@field player_creation                integer
+---@field player_extended_game_state     integer
+---@field player_game_state              integer
+---@field player_gamer                   integer
+---@field player_ped_group               integer
+---@field player_sector_pos              integer
+---@field player_wanted_and_los          integer
+---@field sector                         integer
+---@field sector_position                integer
+---@field submarine_control              integer
+---@field submarine_game_state           integer
+---@field train_game_state               integer
+---@field vehicle_ang_velocity           integer
+---@field vehicle_appearance             integer
+---@field vehicle_component_reservation  integer
+---@field vehicle_control                integer
+---@field vehicle_creation               integer
+---@field vehicle_damage_status          integer
+---@field vehicle_gadget                 integer
+---@field vehicle_game_state             integer
+---@field vehicle_health                 integer
+---@field vehicle_proximity_migration    integer
+---@field vehicle_script_game_state      integer
+---@field vehicle_steering               integer
+---@field vehicle_task                   integer
+data_node = {}

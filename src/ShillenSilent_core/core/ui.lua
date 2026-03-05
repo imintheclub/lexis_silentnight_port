@@ -64,6 +64,7 @@ local function update_input()
     if not state.mouse.down then
         state.dragging_slider = nil
         state.window.is_dragging = false
+        state.window.is_resizing = false
         state.scroll.is_dragging = false
     end
 end
@@ -331,6 +332,7 @@ local BUTTON_COLOR_STYLES = {
 
 local HEIST_SUBTAB_NAMES = { "Cayo", "Casino", "Doomsday", "Apartment", "Cluckin" }
 
+-- Legacy visual order hints. Used only to flatten groups into a stable sequence.
 local HEIST_GROUP_LAYOUTS = {
     [1] = { -- Cayo
         ["Info"] = { col = 1, order = 1 },
@@ -384,8 +386,56 @@ end
 local render_cache = {
     active_groups = {},
     col_x = {},
-    groups_by_column = { {}, {}, {} }
+    groups_by_column = { {}, {}, {} },
+    ordered_groups = {}
 }
+
+local function flatten_groups_by_order(activeGroups, heist_subtab)
+    local ordered = render_cache.ordered_groups
+    clear_array(ordered)
+
+    local layout = HEIST_GROUP_LAYOUTS[heist_subtab]
+    for i, group in ipairs(activeGroups) do
+        local rank = 1000000 + i
+        if layout then
+            local spec = layout[group.label]
+            if spec then
+                rank = ((spec.col - 1) * 1000) + spec.order
+            end
+        end
+        ordered[#ordered + 1] = { group = group, rank = rank, idx = i }
+    end
+
+    table.sort(ordered, function(a, b)
+        if a.rank == b.rank then
+            return a.idx < b.idx
+        end
+        return a.rank < b.rank
+    end)
+
+    return ordered
+end
+
+local function distribute_groups_by_column(flattened, groups_by_column, column_count)
+    for col = 1, column_count do
+        clear_array(groups_by_column[col])
+    end
+
+    local total = #flattened
+    local base_size = math.floor(total / column_count)
+    local remainder = total % column_count
+    local idx = 1
+
+    for col = 1, column_count do
+        local target_size = base_size + ((col <= remainder) and 1 or 0)
+        for _ = 1, target_size do
+            local entry = flattened[idx]
+            if not entry then break end
+            groups_by_column[col][#groups_by_column[col] + 1] = { group = entry.group, order = idx }
+            idx = idx + 1
+        end
+    end
+end
 
 local TOGGLE_INACTIVE_COLOR = { r = 148, g = 163, b = 184, a = 255 }
 local toggle_track_color = { r = 148, g = 163, b = 184, a = 255 }
@@ -718,23 +768,28 @@ ui.render = function()
 
     local dynamicBodyH = config.menu_height
 
-    -- Full-width content panel (no sidebar/tab navigation).
     local bodyY = config.origin_y
     local bodyH = dynamicBodyH
-    config.content_area.x = config.origin_x
-    config.content_area.y = bodyY
-    config.content_area.w = config.menu_width
-    config.content_area.h = bodyH
+    local resize_hit_w = config.resize.edge_hit_w
+    local resize_hit_h = config.resize.edge_hit_h or config.space.x6
+    local resize_hit_x = config.origin_x + config.menu_width - resize_hit_w
+    local resize_hit_y = bodyY + bodyH - resize_hit_h
+    local resize_hovered = (not state.active_dropdown)
+        and is_hovered(
+            resize_hit_x - config.space.x1,
+            resize_hit_y - config.space.x1,
+            resize_hit_w + config.space.x2,
+            resize_hit_h + config.space.x2
+        )
 
-    if config.enable_particles then
-        manage_particles(config.menu_width, dynamicBodyH)
-    end
-
-    -- Window Dragging
     if state.mouse.clicked and not state.active_dropdown and not state.dragging_slider then
         local menuStartY = config.origin_y
-        -- Check if hovering entire menu area
-        if is_hovered(config.origin_x, menuStartY, config.menu_width, dynamicBodyH) then
+        if resize_hovered then
+            state.window.is_resizing = true
+            state.window.is_dragging = false
+            state.window.resize_start.x = state.mouse.x
+            state.window.resize_start.width = config.menu_width
+        elseif is_hovered(config.origin_x, menuStartY, config.menu_width, dynamicBodyH) then
             state.window.is_dragging = true
             state.window.drag_offset.x = state.mouse.x - state.window.x
             state.window.drag_offset.y = state.mouse.y - state.window.y
@@ -743,17 +798,49 @@ ui.render = function()
     
     if state.dragging_slider then
         state.window.is_dragging = false
+        state.window.is_resizing = false
     end
-    
-    if state.window.is_dragging and state.mouse.down and not state.dragging_slider then
+
+    if state.window.is_resizing and state.mouse.down and not state.dragging_slider then
+        local delta_x = state.mouse.x - state.window.resize_start.x
+        local next_w = state.window.resize_start.width + delta_x
+        local max_w_screen = math.floor(game.resolution().x - config.resize.max_screen_margin)
+        local max_w_cfg = config.resize.max_menu_width or max_w_screen
+        local max_w = math.min(max_w_cfg, max_w_screen)
+        if max_w < config.resize.min_menu_width then
+            max_w = config.resize.min_menu_width
+        end
+        config.menu_width = math.max(config.resize.min_menu_width, math.min(max_w, next_w))
+    elseif state.window.is_dragging and state.mouse.down and not state.dragging_slider then
         state.window.x = state.mouse.x - state.window.drag_offset.x
         state.window.y = state.mouse.y - state.window.drag_offset.y
+    end
+
+    -- Full-width content panel (no sidebar/tab navigation).
+    config.content_area.x = config.origin_x
+    config.content_area.y = bodyY
+    config.content_area.w = config.menu_width
+    config.content_area.h = bodyH
+    config.scrollbar.x = config.origin_x + config.menu_width - config.space.x2
+    config.scrollbar.y = config.content_area.y + config.content_margin
+    config.scrollbar.h = config.content_area.h - (config.content_margin * 2)
+
+    if config.enable_particles then
+        manage_particles(config.menu_width, dynamicBodyH)
     end
 
     render_card(config.origin_x, bodyY, config.menu_width, bodyH, config.colors.bg_main, config.colors.border_strong, config.radius.xl)
     if config.enable_particles then
         draw_particles(config.origin_x, bodyY, config.menu_width, bodyH)
     end
+
+    -- Bottom-right corner grip to indicate draggable resize area.
+    local grip_color = (state.window.is_resizing or resize_hovered) and config.colors.accent or config.colors.border_strong
+    local grip_right = config.origin_x + config.menu_width - config.space.x1
+    local grip_bottom = bodyY + bodyH - config.space.x1
+    render_rect(grip_right - config.space.x7, grip_bottom - config.space.x1, config.space.x5, config.space.x1, grip_color, config.radius.full)
+    render_rect(grip_right - config.space.x5, grip_bottom - config.space.x3, config.space.x4, config.space.x1, grip_color, config.radius.full)
+    render_rect(grip_right - config.space.x3, grip_bottom - config.space.x5, config.space.x3, config.space.x1, grip_color, config.radius.full)
 
 
     local contentX = config.content_area.x + config.content_margin
@@ -828,53 +915,28 @@ ui.render = function()
     end
     
     if #activeGroups > 0 then
-        local column_count = 3
-        local column_gap = config.space.x4
-        local col_w = (contentW - ((column_count - 1) * column_gap)) / column_count
+        local layout_cfg = config.layout or {}
+        local column_gap = layout_cfg.column_gap or config.space.x4
+        local fixed_col_w = layout_cfg.fixed_column_w or math.max(1, math.floor((contentW - (2 * column_gap)) / 3))
+        local max_columns = layout_cfg.max_columns or 3
+        local column_count = math.floor((contentW + column_gap) / (fixed_col_w + column_gap))
+        if column_count < 1 then column_count = 1 end
+        if column_count > max_columns then column_count = max_columns end
+
+        local col_w = fixed_col_w
+        local used_w = (column_count * col_w) + ((column_count - 1) * column_gap)
+        local start_x = contentX + math.max(0, math.floor((contentW - used_w) / 2))
         local col_x = render_cache.col_x
         clear_array(col_x)
         local base_y = groups_start_y - state.scroll.y
 
         for col = 1, column_count do
-            col_x[col] = contentX + ((col - 1) * (col_w + column_gap))
+            col_x[col] = start_x + ((col - 1) * (col_w + column_gap))
         end
 
         local groups_by_column = render_cache.groups_by_column
-        for col = 1, column_count do
-            clear_array(groups_by_column[col])
-        end
-        local custom_layout_used = false
-
-        if ui.currentTab and ui.currentTab.id == "heist" then
-            local layout = HEIST_GROUP_LAYOUTS[state.heist_subtab]
-
-            if layout then
-                custom_layout_used = true
-                local fallback_col = 1
-                for _, group in ipairs(activeGroups) do
-                    local spec = layout[group.label]
-                    if spec then
-                        table.insert(groups_by_column[spec.col], { group = group, order = spec.order })
-                    else
-                        table.insert(groups_by_column[fallback_col], { group = group, order = 1000 + #groups_by_column[fallback_col] })
-                        fallback_col = (fallback_col % column_count) + 1
-                    end
-                end
-
-                for col = 1, column_count do
-                    table.sort(groups_by_column[col], function(a, b)
-                        return a.order < b.order
-                    end)
-                end
-            end
-        end
-
-        if not custom_layout_used then
-            for i, group in ipairs(activeGroups) do
-                local col = ((i - 1) % column_count) + 1
-                table.insert(groups_by_column[col], { group = group, order = i })
-            end
-        end
+        local ordered = flatten_groups_by_order(activeGroups, state.heist_subtab)
+        distribute_groups_by_column(ordered, groups_by_column, column_count)
 
         local max_col_y = base_y
         for col = 1, column_count do
@@ -996,4 +1058,3 @@ ui.render = function()
         state.dropdown_just_opened = false
     end
 end
-

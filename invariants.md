@@ -49,4 +49,5 @@ Baseline invariants (generic):
 - Keep runtime safety guards (clamping/validation) for user-entered or loaded values.
 - Do not change core offsets/stat write pathways without explicit approval.
 - Keep comments functional/explanatory only; avoid branding/narrative comments.
+- Do not manually edit `release-v*` files/directories; make code changes only in root `src/` and generate releases from that source.
 - After edits, always run a syntax check and report result.

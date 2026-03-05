@@ -113,6 +113,16 @@ local function init_config()
 
     local menu_width = tw(356)
     local menu_height = tw(150)
+    local content_margin = tw(6)
+    local column_gap = tw(4)
+    local default_content_w = menu_width - (content_margin * 2)
+    local fixed_column_w = math.floor((default_content_w - (2 * column_gap)) / 3)
+    local min_column_left_pad = tw(3)
+    local subtab_count = 5
+    local min_subtab_w = tw(18)
+    local subtab_gap = tw(2)
+    local min_w_from_subtabs = (content_margin * 2) + (subtab_count * min_subtab_w) + ((subtab_count - 1) * subtab_gap)
+    local min_w_from_columns = (content_margin * 2) + fixed_column_w + min_column_left_pad
 
         return {
             font_path = SHILLENSILENT_CORE_FONTS_DIR .. "\\InterVariable.ttf",
@@ -131,7 +141,21 @@ local function init_config()
         sidebar_width = tw(25),
         sidebar_gap = tw(4),
         
-        content_margin = tw(6),
+        content_margin = content_margin,
+        
+        layout = {
+            fixed_column_w = fixed_column_w,
+            column_gap = column_gap,
+            max_columns = 3
+        },
+
+        resize = {
+            edge_hit_w = tw(3),
+            edge_hit_h = tw(6),
+            min_menu_width = math.max(min_w_from_subtabs, min_w_from_columns),
+            max_menu_width = menu_width,
+            max_screen_margin = tw(10)
+        },
         
         content_area = {
             x = 0, y = 0, w = 0, h = 0
@@ -250,7 +274,14 @@ local state = {
     dropdown_just_opened = false,
     dragging_slider = nil,
     scroll = { y = 0, max_y = 0, is_dragging = false },
-    window = { x = config.origin_x, y = config.origin_y, is_dragging = false, drag_offset = { x = 0, y = 0 } },
+    window = {
+        x = config.origin_x,
+        y = config.origin_y,
+        is_dragging = false,
+        is_resizing = false,
+        drag_offset = { x = 0, y = 0 },
+        resize_start = { x = 0, width = config.menu_width }
+    },
     animation = { open = false, progress = 0.0, target = 1.0, speed = 0.15 },
     active_tab_y = nil,
     particles = {},
@@ -267,4 +298,3 @@ local state = {
         doomsday = false
     }
 }
-

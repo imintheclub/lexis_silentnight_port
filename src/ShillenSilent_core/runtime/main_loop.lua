@@ -30,42 +30,37 @@ if events.event.scroll then
     end)
 end
 
+local SOLO_LAUNCH_HANDLERS = {
+    { key = "casino", setup = solo_launch_casino_setup, reset = solo_launch_reset_casino },
+    { key = "apartment", setup = nil, reset = solo_launch_reset_apartment },
+    { key = "doomsday", setup = nil, reset = solo_launch_reset_doomsday }
+}
+
 util.create_thread(function()
     while true do
-        -- Solo Launch: Diamond Casino
-        if state.solo_launch.casino then
-            solo_launch_generic()
-            solo_launch_casino_setup()
-        elseif state.solo_launch_prev.casino then
-            -- Just turned off, reset to normal
-            solo_launch_reset_casino()
-        end
+        for i = 1, #SOLO_LAUNCH_HANDLERS do
+            local handler = SOLO_LAUNCH_HANDLERS[i]
+            local key = handler.key
+            local enabled = state.solo_launch[key]
+            local was_enabled = state.solo_launch_prev[key]
 
-        -- Solo Launch: Apartment Heist
-        if state.solo_launch.apartment then
-            solo_launch_generic()
-        elseif state.solo_launch_prev.apartment then
-            -- Just turned off, reset to normal
-            solo_launch_reset_apartment()
-        end
+            if enabled then
+                solo_launch_generic()
+                if handler.setup then
+                    handler.setup()
+                end
+            elseif was_enabled and handler.reset then
+                -- Just turned off, reset to normal.
+                handler.reset()
+            end
 
-        -- Solo Launch: Doomsday
-        if state.solo_launch.doomsday then
-            solo_launch_generic()
-        elseif state.solo_launch_prev.doomsday then
-            -- Just turned off, reset to normal
-            solo_launch_reset_doomsday()
+            state.solo_launch_prev[key] = enabled
         end
 
         hp_refresh_apartment_max_payout(false, false)
         cayo_enforce_heist_toggles()
         casino_enforce_heist_toggles()
-        
-        -- Update previous state
-        state.solo_launch_prev.casino = state.solo_launch.casino
-        state.solo_launch_prev.apartment = state.solo_launch.apartment
-        state.solo_launch_prev.doomsday = state.solo_launch.doomsday
-        
+
         if input.key(84).just_pressed then -- T
             state.animation.open = not state.animation.open
             state.animation.target = state.animation.open and 1.0 or 0.0
@@ -77,12 +72,13 @@ util.create_thread(function()
                 end
             end
         end
-        
-        if state.animation.open or state.animation.progress > 0.01 then
+
+        local custom_visible = state.animation.open or state.animation.progress > 0.01
+        if custom_visible then
             ui.render()
         end
 
-        if state.animation.open or state.animation.progress > 0.01 then
+        if custom_visible then
             -- Disable mouse controls (group 2)
             invoker.call(0x5F4B6931816E599B, 2)
             

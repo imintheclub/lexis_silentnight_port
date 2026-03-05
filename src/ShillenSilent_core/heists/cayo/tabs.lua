@@ -139,45 +139,7 @@ ui.button_pair(
     "cayo_apply_preps", "Apply Preps", function() cayo_apply_preps() end
 )
 
-cayoPresetsGroup = ui.group(heistTab, "Presets (JSON)", nil, nil, nil, nil, "cayo")
-hp_heist_presets.cayo.name_label = ui.label(cayoPresetsGroup, "Name: QuickPreset", config.colors.text_sec)
-ui.button(cayoPresetsGroup, "cayo_preset_set_name", "Set Name From Keyboard", function()
-    hp_open_heist_preset_name_keyboard("cayo")
-end)
-ui.button(cayoPresetsGroup, "cayo_preset_name_clip", "Set Name From Clipboard", function()
-    local clip = input.get_clipboard_text()
-    local clean = hp_sanitize_preset_name(clip)
-    if clean == "" then
-        if notify then notify.push("Heist Presets", "Clipboard is empty/invalid", 2000) end
-        return
-    end
-    hp_heist_presets.cayo.name = clean
-    hp_update_preset_name_label("cayo")
-    if notify then notify.push("Heist Presets", "Name set: " .. clean, 2000) end
-end)
-hp_heist_presets.cayo.dropdown = ui.dropdown(
-    cayoPresetsGroup,
-    "cayo_preset_file",
-    "Preset File",
-    hp_heist_presets.cayo.options,
-    hp_heist_presets.cayo.selected,
-    function(opt)
-        hp_heist_presets.cayo.selected = hp_find_option_index(hp_heist_presets.cayo.options, opt, 1)
-    end
-)
-ui.button_pair(
-    cayoPresetsGroup,
-    "cayo_preset_save", "Save", function() hp_save_heist_preset("cayo") end,
-    "cayo_preset_load", "Load", function() hp_load_heist_preset("cayo") end
-)
-ui.button_pair(
-    cayoPresetsGroup,
-    "cayo_preset_remove", "Remove", function() hp_remove_heist_preset("cayo") end,
-    "cayo_preset_refresh", "Refresh", function() hp_refresh_heist_preset_files("cayo") end
-)
-ui.button(cayoPresetsGroup, "cayo_preset_copy", "Copy Folder Path", function() hp_copy_heist_preset_folder("cayo") end)
-hp_update_preset_name_label("cayo")
-hp_refresh_heist_preset_files("cayo")
+cayoPresetsGroup = hp_build_heist_preset_group(heistTab, "cayo", "cayo", "cayo")
 
 local gCayoTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "cayo")
 ui.button_pair(
@@ -285,4 +247,3 @@ ui.button_pair(
     end
 )
 ui.button(gCayoCuts, "cayo_cuts_apply", "Apply Cuts", function() cayo_apply_cuts() end)
-

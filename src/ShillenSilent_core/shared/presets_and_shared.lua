@@ -147,6 +147,12 @@ function hp_get_invoker_string(result)
     return ""
 end
 
+local function hp_notify_presets(message, duration)
+    if notify then
+        notify.push("Heist Presets", message, duration or 2000)
+    end
+end
+
 function hp_update_preset_name_label(mode)
     local state_tbl = hp_get_preset_state(mode)
     if not state_tbl or not state_tbl.name_label then
@@ -157,6 +163,25 @@ function hp_update_preset_name_label(mode)
         shown_name = "(not set)"
     end
     state_tbl.name_label.text = "Name: " .. shown_name
+end
+
+function hp_set_heist_preset_name_from_clipboard(mode)
+    local state_tbl = hp_get_preset_state(mode)
+    if not state_tbl then
+        return false
+    end
+
+    local clip = input.get_clipboard_text()
+    local clean = hp_sanitize_preset_name(clip)
+    if clean == "" then
+        hp_notify_presets("Clipboard is empty/invalid", 2000)
+        return false
+    end
+
+    state_tbl.name = clean
+    hp_update_preset_name_label(mode)
+    hp_notify_presets("Name set: " .. clean, 2000)
+    return true
 end
 
 function hp_find_option_index(option_names, selected_name, fallback)
@@ -410,7 +435,7 @@ function hp_open_heist_preset_name_keyboard(mode)
     end
 
     if hp_keyboard_guard then
-        if notify then notify.push("Heist Presets", "Keyboard already in use", 2000) end
+        hp_notify_presets("Keyboard already in use", 2000)
         return
     end
 
@@ -424,7 +449,7 @@ function hp_open_heist_preset_name_keyboard(mode)
     end
 
     native.display_onscreen_keyboard(6, "FMMC_KEY_TIP8", "", default_name, "", "", "", 64)
-    if notify then notify.push("Heist Presets", "Enter preset name...", 2200) end
+    hp_notify_presets("Enter preset name...", 2200)
 end
 
 util.create_thread(function()
@@ -444,9 +469,9 @@ util.create_thread(function()
                     if clean_name ~= "" then
                         state_tbl.name = clean_name
                         hp_update_preset_name_label(mode)
-                        if notify then notify.push("Heist Presets", "Name set: " .. clean_name, 2000) end
+                        hp_notify_presets("Name set: " .. clean_name, 2000)
                     else
-                        if notify then notify.push("Heist Presets", "Preset name cannot be empty", 2000) end
+                        hp_notify_presets("Preset name cannot be empty", 2000)
                     end
                 end
 
@@ -457,11 +482,56 @@ util.create_thread(function()
                 hp_heist_presets.keyboard.waiting = false
                 hp_heist_presets.keyboard.mode = nil
                 hp_keyboard_guard = nil
-                if notify then notify.push("Heist Presets", "Name entry canceled", 1500) end
+                hp_notify_presets("Name entry canceled", 1500)
             end
         end
     end
 end)
+
+function hp_build_heist_preset_group(tab_ref, mode, heist_subtab, id_prefix)
+    local state_tbl = hp_get_preset_state(mode)
+    if not tab_ref or not state_tbl then
+        return nil
+    end
+
+    local prefix = id_prefix or mode
+    local group = ui.group(tab_ref, "Presets (JSON)", nil, nil, nil, nil, heist_subtab)
+    state_tbl.name_label = ui.label(group, "Name: QuickPreset", config.colors.text_sec)
+
+    ui.button(group, prefix .. "_preset_set_name", "Set Name From Keyboard", function()
+        hp_open_heist_preset_name_keyboard(mode)
+    end)
+    ui.button(group, prefix .. "_preset_name_clip", "Set Name From Clipboard", function()
+        hp_set_heist_preset_name_from_clipboard(mode)
+    end)
+
+    state_tbl.dropdown = ui.dropdown(
+        group,
+        prefix .. "_preset_file",
+        "Preset File",
+        state_tbl.options,
+        state_tbl.selected,
+        function(opt)
+            state_tbl.selected = hp_find_option_index(state_tbl.options, opt, 1)
+        end
+    )
+
+    ui.button_pair(
+        group,
+        prefix .. "_preset_save", "Save", function() hp_save_heist_preset(mode) end,
+        prefix .. "_preset_load", "Load", function() hp_load_heist_preset(mode) end
+    )
+    ui.button_pair(
+        group,
+        prefix .. "_preset_remove", "Remove", function() hp_remove_heist_preset(mode) end,
+        prefix .. "_preset_refresh", "Refresh", function() hp_refresh_heist_preset_files(mode) end
+    )
+    ui.button(group, prefix .. "_preset_copy", "Copy Folder Path", function() hp_copy_heist_preset_folder(mode) end)
+
+    hp_update_preset_name_label(mode)
+    hp_refresh_heist_preset_files(mode)
+    return group
+end
 
 function hp_read_json_file(path)
     local ok, result = pcall(function()
@@ -828,7 +898,7 @@ function hp_save_heist_preset(mode)
 
     local clean_name = hp_sanitize_preset_name(state_tbl.name)
     if clean_name == "" then
-        if notify then notify.push("Heist Presets", "Failed to save. Name is empty.", 2200) end
+        hp_notify_presets("Failed to save. Name is empty.", 2200)
         return
     end
 
@@ -836,33 +906,33 @@ function hp_save_heist_preset(mode)
     local path = hp_get_heist_preset_path(mode, clean_name)
     local handlers = HP_PRESET_MODE_HANDLERS[mode]
     if not handlers or type(handlers.collect) ~= "function" then
-        if notify then notify.push("Heist Presets", "Unsupported preset mode", 2000) end
+        hp_notify_presets("Unsupported preset mode", 2000)
         return
     end
     local content = handlers.collect()
 
     local ok = hp_write_json_file(path, content)
     if not ok then
-        if notify then notify.push("Heist Presets", "Failed to save preset", 2200) end
+        hp_notify_presets("Failed to save preset", 2200)
         return
     end
 
     state_tbl.name = ""
     hp_update_preset_name_label(mode)
     hp_refresh_heist_preset_files(mode, clean_name)
-    if notify then notify.push("Heist Presets", "Saved: " .. clean_name, 2200) end
+    hp_notify_presets("Saved: " .. clean_name, 2200)
 end
 
 function hp_load_heist_preset(mode)
     local selected = hp_get_selected_preset_name(mode)
     if not selected then
-        if notify then notify.push("Heist Presets", "No preset selected", 2000) end
+        hp_notify_presets("No preset selected", 2000)
         return
     end
 
     local path = hp_get_heist_preset_path(mode, selected)
     if not file.exists(path) then
-        if notify then notify.push("Heist Presets", "Preset does not exist", 2000) end
+        hp_notify_presets("Preset does not exist", 2000)
         hp_refresh_heist_preset_files(mode)
         return
     end
@@ -870,34 +940,34 @@ function hp_load_heist_preset(mode)
     local preps = hp_read_json_file(path)
     local ok_preset, err_message = hp_validate_heist_preset(mode, preps)
     if not ok_preset then
-        if notify then notify.push("Heist Presets", err_message or "Invalid preset JSON", 2200) end
+        hp_notify_presets(err_message or "Invalid preset JSON", 2200)
         return
     end
 
     local handlers = HP_PRESET_MODE_HANDLERS[mode]
     if not handlers or type(handlers.apply) ~= "function" then
-        if notify then notify.push("Heist Presets", "Unsupported preset mode", 2000) end
+        hp_notify_presets("Unsupported preset mode", 2000)
         return
     end
     local applied = handlers.apply(preps)
 
     if applied then
-        if notify then notify.push("Heist Presets", "Loaded: " .. selected, 2200) end
+        hp_notify_presets("Loaded: " .. selected, 2200)
     else
-        if notify then notify.push("Heist Presets", "Failed to apply preset", 2200) end
+        hp_notify_presets("Failed to apply preset", 2200)
     end
 end
 
 function hp_remove_heist_preset(mode)
     local selected = hp_get_selected_preset_name(mode)
     if not selected then
-        if notify then notify.push("Heist Presets", "No preset selected", 2000) end
+        hp_notify_presets("No preset selected", 2000)
         return
     end
 
     local path = hp_get_heist_preset_path(mode, selected)
     if not file.exists(path) then
-        if notify then notify.push("Heist Presets", "Preset does not exist", 2000) end
+        hp_notify_presets("Preset does not exist", 2000)
         hp_refresh_heist_preset_files(mode)
         return
     end
@@ -905,9 +975,9 @@ function hp_remove_heist_preset(mode)
     local removed = file.remove(path)
     hp_refresh_heist_preset_files(mode)
     if removed then
-        if notify then notify.push("Heist Presets", "Removed: " .. selected, 2000) end
+        hp_notify_presets("Removed: " .. selected, 2000)
     else
-        if notify then notify.push("Heist Presets", "Failed to remove preset", 2200) end
+        hp_notify_presets("Failed to remove preset", 2200)
     end
 end
 
@@ -918,7 +988,7 @@ function hp_copy_heist_preset_folder(mode)
     end
     hp_ensure_heist_preset_dirs()
     input.set_clipboard_text(state_tbl.dir)
-    if notify then notify.push("Heist Presets", "Folder path copied", 2000) end
+    hp_notify_presets("Folder path copied", 2000)
 end
 
 apartment_bonus_enabled = false

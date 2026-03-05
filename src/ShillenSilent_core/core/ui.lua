@@ -331,6 +331,7 @@ local BUTTON_COLOR_STYLES = {
 }
 
 local HEIST_SUBTAB_NAMES = { "Cayo", "Casino", "Doomsday", "Apartment", "Cluckin" }
+local HEIST_SUBTAB_KEYS = { "cayo", "casino", "doomsday", "apartment", "cluckin" }
 
 -- Legacy visual order hints. Used only to flatten groups into a stable sequence.
 local HEIST_GROUP_LAYOUTS = {
@@ -416,7 +417,7 @@ local function flatten_groups_by_order(activeGroups, heist_subtab)
     return ordered
 end
 
-local function estimate_group_layout_height(group)
+local function get_group_actual_height(group)
     local h = config.item_height.header_padding + config.space.x5
     local items = group and group.items or {}
 
@@ -467,7 +468,7 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
     local weights = {}
     local prefix = { [0] = 0 }
     for i = 1, total do
-        local group_h = estimate_group_layout_height(flattened[i].group)
+        local group_h = get_group_actual_height(flattened[i].group)
         weights[i] = group_h + gap
         prefix[i] = prefix[i - 1] + weights[i]
     end
@@ -555,19 +556,6 @@ end
 -- ---------------------------------------------------------
 -- 4. Rendering Implementations
 -- ---------------------------------------------------------
-
-local function get_group_actual_height(group)
-    local h = config.item_height.header_padding + config.space.x5
-    for _, item in ipairs(group.items) do
-        if item.type == "toggle" then h = h + config.item_height.toggle
-        elseif item.type == "button" then h = h + config.item_height.button
-        elseif item.type == "button_pair" then h = h + config.item_height.button
-        elseif item.type == "slider" then h = h + config.item_height.slider
-        elseif item.type == "dropdown" then h = h + get_dropdown_item_height(item)
-        elseif item.type == "label" then h = h + config.space.x6 end
-    end
-    return math.max(group.rect.h, h)
-end
 
 local function draw_toggle_item(item, x, y, w, original_y)
     local pad_x = config.space.x5
@@ -834,6 +822,39 @@ local function draw_dropdown_item(item, x, y, w, original_y)
     end
 end
 
+local function draw_label_item(item, x, y, pad_x)
+    local labelCol = item.color or config.colors.text_sec
+    render_text(item.text, x + pad_x, y + config.space.x3, config.font_scale_small, labelCol)
+    return y + config.space.x6
+end
+
+local function render_group_item(item, group_x, item_y, group_w, pad_x)
+    if item.type == "toggle" then
+        draw_toggle_item(item, group_x, item_y, group_w, item_y)
+        return item_y + config.item_height.toggle, nil
+    end
+    if item.type == "button" then
+        draw_button_item(item, group_x, item_y, group_w)
+        return item_y + config.item_height.button, nil
+    end
+    if item.type == "button_pair" then
+        draw_button_pair_item(item, group_x, item_y, group_w)
+        return item_y + config.item_height.button, nil
+    end
+    if item.type == "slider" then
+        draw_slider_item(item, group_x, item_y, group_w, item_y)
+        return item_y + config.item_height.slider, nil
+    end
+    if item.type == "dropdown" then
+        local dd = draw_dropdown_item(item, group_x, item_y, group_w, item_y)
+        return item_y + get_dropdown_item_height(item), dd
+    end
+    if item.type == "label" then
+        return draw_label_item(item, group_x, item_y, pad_x), nil
+    end
+    return item_y, nil
+end
+
 -- ---------------------------------------------------------
 -- 5. Main Render Loop
 -- ---------------------------------------------------------
@@ -985,15 +1006,10 @@ ui.render = function()
     clear_array(activeGroups)
     if ui.currentTab then
         if ui.currentTab.id == "heist" then
-            -- Filter groups based on subtab (1=Cayo, 2=Casino, 3=Doomsday, 4=Apartment)
+            -- Filter groups based on active heist subtab.
+            local selected_heist_key = HEIST_SUBTAB_KEYS[state.heist_subtab]
             for _, group in ipairs(ui.currentTab.groups) do
-                local show = false
-                if state.heist_subtab == 1 and group.heist_subtab == "cayo" then show = true end
-                if state.heist_subtab == 2 and group.heist_subtab == "casino" then show = true end
-                if state.heist_subtab == 3 and group.heist_subtab == "doomsday" then show = true end
-                if state.heist_subtab == 4 and group.heist_subtab == "apartment" then show = true end
-                if state.heist_subtab == 5 and group.heist_subtab == "cluckin" then show = true end
-                if show then
+                if selected_heist_key and group.heist_subtab == selected_heist_key then
                     table.insert(activeGroups, group)
                 end
             end
@@ -1050,26 +1066,10 @@ ui.render = function()
 
                     local itemY = gY + config.item_height.header_padding + config.space.x3
                     for _, item in ipairs(group.items) do
-                        if item.type == "toggle" then
-                            draw_toggle_item(item, gX, itemY, col_w, itemY)
-                            itemY = itemY + config.item_height.toggle
-                        elseif item.type == "button" then
-                            draw_button_item(item, gX, itemY, col_w)
-                            itemY = itemY + config.item_height.button
-                        elseif item.type == "button_pair" then
-                            draw_button_pair_item(item, gX, itemY, col_w)
-                            itemY = itemY + config.item_height.button
-                        elseif item.type == "slider" then
-                            draw_slider_item(item, gX, itemY, col_w, itemY)
-                            itemY = itemY + config.item_height.slider
-                        elseif item.type == "dropdown" then
-                            local dd = draw_dropdown_item(item, gX, itemY, col_w, itemY)
-                            if dd then pendingDropdown = dd end
-                            itemY = itemY + get_dropdown_item_height(item)
-                        elseif item.type == "label" then
-                            local labelCol = item.color or config.colors.text_sec
-                            render_text(item.text, gX + pad_x, itemY + config.space.x3, config.font_scale_small, labelCol)
-                            itemY = itemY + config.space.x6
+                        local dd = nil
+                        itemY, dd = render_group_item(item, gX, itemY, col_w, pad_x)
+                        if dd then
+                            pendingDropdown = dd
                         end
                     end
                 end

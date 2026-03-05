@@ -261,45 +261,7 @@ ui.label(gCasinoInfo, "Max transaction: $3,619,000", config.colors.text_main)
 ui.label(gCasinoInfo, "Transaction cooldown: 30 min", config.colors.text_sec)
 ui.label(gCasinoInfo, "Heist cooldown: ~45 min (skip)", config.colors.text_sec)
 
-casinoPresetsGroup = ui.group(heistTab, "Presets (JSON)", nil, nil, nil, nil, "casino")
-hp_heist_presets.casino.name_label = ui.label(casinoPresetsGroup, "Name: QuickPreset", config.colors.text_sec)
-ui.button(casinoPresetsGroup, "casino_preset_set_name", "Set Name From Keyboard", function()
-    hp_open_heist_preset_name_keyboard("casino")
-end)
-ui.button(casinoPresetsGroup, "casino_preset_name_clip", "Set Name From Clipboard", function()
-    local clip = input.get_clipboard_text()
-    local clean = hp_sanitize_preset_name(clip)
-    if clean == "" then
-        if notify then notify.push("Heist Presets", "Clipboard is empty/invalid", 2000) end
-        return
-    end
-    hp_heist_presets.casino.name = clean
-    hp_update_preset_name_label("casino")
-    if notify then notify.push("Heist Presets", "Name set: " .. clean, 2000) end
-end)
-hp_heist_presets.casino.dropdown = ui.dropdown(
-    casinoPresetsGroup,
-    "casino_preset_file",
-    "Preset File",
-    hp_heist_presets.casino.options,
-    hp_heist_presets.casino.selected,
-    function(opt)
-        hp_heist_presets.casino.selected = hp_find_option_index(hp_heist_presets.casino.options, opt, 1)
-    end
-)
-ui.button_pair(
-    casinoPresetsGroup,
-    "casino_preset_save", "Save", function() hp_save_heist_preset("casino") end,
-    "casino_preset_load", "Load", function() hp_load_heist_preset("casino") end
-)
-ui.button_pair(
-    casinoPresetsGroup,
-    "casino_preset_remove", "Remove", function() hp_remove_heist_preset("casino") end,
-    "casino_preset_refresh", "Refresh", function() hp_refresh_heist_preset_files("casino") end
-)
-ui.button(casinoPresetsGroup, "casino_preset_copy", "Copy Folder Path", function() hp_copy_heist_preset_folder("casino") end)
-hp_update_preset_name_label("casino")
-hp_refresh_heist_preset_files("casino")
+casinoPresetsGroup = hp_build_heist_preset_group(heistTab, "casino", "casino", "casino")
 
 local gTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "casino")
 ui.button_pair(

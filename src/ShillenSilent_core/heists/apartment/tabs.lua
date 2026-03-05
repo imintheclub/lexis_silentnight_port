@@ -25,45 +25,7 @@ local gApartmentPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "apartme
 ui.button(gApartmentPreps, "apartment_complete_preps", "Complete Preps", function() apartment_complete_preps() end)
 ui.button(gApartmentPreps, "apartment_change_session", "Change Session", function() apartment_change_session() end)
 
-local apartmentPresetsGroup = ui.group(heistTab, "Presets (JSON)", nil, nil, nil, nil, "apartment")
-hp_heist_presets.apartment.name_label = ui.label(apartmentPresetsGroup, "Name: QuickPreset", config.colors.text_sec)
-ui.button(apartmentPresetsGroup, "apartment_preset_set_name", "Set Name From Keyboard", function()
-    hp_open_heist_preset_name_keyboard("apartment")
-end)
-ui.button(apartmentPresetsGroup, "apartment_preset_name_clip", "Set Name From Clipboard", function()
-    local clip = input.get_clipboard_text()
-    local clean = hp_sanitize_preset_name(clip)
-    if clean == "" then
-        if notify then notify.push("Heist Presets", "Clipboard is empty/invalid", 2000) end
-        return
-    end
-    hp_heist_presets.apartment.name = clean
-    hp_update_preset_name_label("apartment")
-    if notify then notify.push("Heist Presets", "Name set: " .. clean, 2000) end
-end)
-hp_heist_presets.apartment.dropdown = ui.dropdown(
-    apartmentPresetsGroup,
-    "apartment_preset_file",
-    "Preset File",
-    hp_heist_presets.apartment.options,
-    hp_heist_presets.apartment.selected,
-    function(opt)
-        hp_heist_presets.apartment.selected = hp_find_option_index(hp_heist_presets.apartment.options, opt, 1)
-    end
-)
-ui.button_pair(
-    apartmentPresetsGroup,
-    "apartment_preset_save", "Save", function() hp_save_heist_preset("apartment") end,
-    "apartment_preset_load", "Load", function() hp_load_heist_preset("apartment") end
-)
-ui.button_pair(
-    apartmentPresetsGroup,
-    "apartment_preset_remove", "Remove", function() hp_remove_heist_preset("apartment") end,
-    "apartment_preset_refresh", "Refresh", function() hp_refresh_heist_preset_files("apartment") end
-)
-ui.button(apartmentPresetsGroup, "apartment_preset_copy", "Copy Folder Path", function() hp_copy_heist_preset_folder("apartment") end)
-hp_update_preset_name_label("apartment")
-hp_refresh_heist_preset_files("apartment")
+local apartmentPresetsGroup = hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
 
 local function apartment_fleeca_hack()
     if script.running("fm_mission_controller") then

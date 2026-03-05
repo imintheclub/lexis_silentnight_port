@@ -1180,6 +1180,21 @@ local function disable_control_action(...)
     end
 end
 
+local function heist_skip_cutscene(heist_name)
+    local ok = pcall(function()
+        invoker.call(0xD220BDD222AC4A1E) -- STOP_CUTSCENE_IMMEDIATELY
+    end)
+
+    if notify then
+        local title = (heist_name and heist_name ~= "") and (heist_name .. " Tools") or "Heist Tools"
+        if ok then
+            notify.push(title, "Cutscene skip requested", 2000)
+        else
+            notify.push(title, "Failed to skip cutscene", 2000)
+        end
+    end
+end
+
 -- ---------------------------------------------------------
 -- 6.5. Heist Functions (Casino)
 -- ---------------------------------------------------------
@@ -3925,7 +3940,11 @@ ui.button_pair(
     "tool_objective", "Skip Objective", function() casino_skip_objective() end,
     "tool_cooldown", "Remove Cooldown", function() casino_remove_cooldown() end
 )
-ui.button(gTools, "tool_lives", "Set Team Lives", function() casino_set_team_lives() end)
+ui.button_pair(
+    gTools,
+    "casino_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Casino") end,
+    "tool_lives", "Set Team Lives", function() casino_set_team_lives() end
+)
 casinoAutograbberToggle = ui.toggle(gTools, "casino_autograbber", "Autograbber", casino_autograbber_enabled, function(val)
     casino_set_autograbber(val)
 end)
@@ -4425,7 +4444,11 @@ ui.button_pair(
     "cayo_tool_finish", "Instant Finish", function() cayo_instant_finish() end,
     "cayo_force_ready", "Force Ready", function() cayo_force_ready() end
 )
-ui.button(gCayoTools, "cayo_fix_board", "Fix White Board", function() cayo_reload_planning_screen() end)
+ui.button_pair(
+    gCayoTools,
+    "cayo_fix_board", "Fix White Board", function() cayo_reload_planning_screen() end,
+    "cayo_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Cayo") end
+)
 
 -- Teleport section - In Residence
 local gCayoTeleportInResidence = ui.group(heistTab, "Teleport - In Residence", nil, nil, nil, nil, "cayo")
@@ -4795,6 +4818,7 @@ ui.button(gApartmentTools, "apartment_fleeca_drill", "Fleeca Drill", function() 
 ui.button(gApartmentTools, "apartment_pacific_hack", "Pacific Hack", function() apartment_pacific_hack() end)
 ui.button(gApartmentTools, "apartment_play_unavailable", "Play Unavailable", function() apartment_play_unavailable() end)
 ui.button(gApartmentTools, "apartment_unlock_all", "Unlock All Jobs", function() apartment_unlock_all_jobs() end)
+ui.button(gApartmentTools, "apartment_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Apartment") end)
 
 local gApartmentInstantFinish = ui.group(heistTab, "Instant Finish", nil, nil, nil, nil, "apartment")
 ui.button(gApartmentInstantFinish, "apartment_instant_finish_pacific", "Instant Finish (Pacific Standard)", function() apartment_instant_finish_pacific() end)
@@ -5260,9 +5284,13 @@ ui.button_pair(
         doomsday_doomsday_hack()
     end
 )
-ui.button(gDoomsdayTools, "doomsday_instant_finish", "Instant Finish", function()
-    doomsday_instant_finish()
-end)
+ui.button_pair(
+    gDoomsdayTools,
+    "doomsday_instant_finish", "Instant Finish", function()
+        doomsday_instant_finish()
+    end,
+    "doomsday_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Doomsday") end
+)
 end -- End Doomsday section do block
 
 -- -------------------------------------------------------------------------

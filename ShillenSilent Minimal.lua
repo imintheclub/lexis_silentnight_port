@@ -3886,6 +3886,21 @@ local function apply_casino_manual_preps()
     if notify then notify.push("Casino Manual Preps", "Applied Granular Configuration", 2000) end
 end
 
+local cooldown_danger_warning_lines = {
+    "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG",
+    "I WARNED YOU. Only use this if you know what you're doing",
+    "but honestly still don't."
+}
+
+local function build_skip_cooldown_danger_group(tab_ref, heist_subtab, button_id, on_click)
+    local group = ui.group(tab_ref, "DANGER", nil, nil, nil, nil, heist_subtab)
+    for i = 1, #cooldown_danger_warning_lines do
+        ui.label(group, cooldown_danger_warning_lines[i], config.colors.danger_text)
+    end
+    ui.button(group, button_id, "Skip Heist Cooldown", on_click, nil, false, "danger")
+    return group
+end
+
 -- Casino Tab Content
 local heistTab = ui.tabs[1]
 local gCasinoInfo = ui.group(heistTab, "Info", nil, nil, nil, 140, "casino")
@@ -3960,10 +3975,12 @@ casinoAutograbberToggle = ui.toggle(gTools, "casino_autograbber", "Autograbber",
     casino_set_autograbber(val)
 end)
 
-local gCasinoDanger = ui.group(heistTab, "DANGER", nil, nil, nil, nil, "casino")
-ui.label(gCasinoDanger, "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG I WARNED YOU.", config.colors.danger_text)
-ui.label(gCasinoDanger, "Only use this if you know what you're doing, but honestly still don't.", config.colors.danger_text)
-ui.button(gCasinoDanger, "casino_skip_heist_cooldown", "Skip Heist Cooldown", function() casino_remove_cooldown() end, nil, false, "danger")
+local gCasinoDanger = build_skip_cooldown_danger_group(
+    heistTab,
+    "casino",
+    "casino_skip_heist_cooldown",
+    function() casino_remove_cooldown() end
+)
 
 -- Launch group
 local gLaunch = ui.group(heistTab, "Launch", nil, nil, nil, nil, "casino")
@@ -4462,10 +4479,12 @@ ui.button_pair(
 )
 ui.button(gCayoTools, "cayo_tool_reload", "Reload Planning Screen", function() cayo_reload_planning_screen() end)
 
-local gCayoDanger = ui.group(heistTab, "DANGER", nil, nil, nil, nil, "cayo")
-ui.label(gCayoDanger, "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG I WARNED YOU.", config.colors.danger_text)
-ui.label(gCayoDanger, "Only use this if you know what you're doing, but honestly still don't.", config.colors.danger_text)
-ui.button(gCayoDanger, "cayo_skip_heist_cooldown", "Skip Heist Cooldown", function() cayo_remove_cooldown() end, nil, false, "danger")
+local gCayoDanger = build_skip_cooldown_danger_group(
+    heistTab,
+    "cayo",
+    "cayo_skip_heist_cooldown",
+    function() cayo_remove_cooldown() end
+)
 
 -- Teleport section - In Residence
 local gCayoTeleportInResidence = ui.group(heistTab, "Teleport - In Residence", nil, nil, nil, nil, "cayo")
@@ -4853,10 +4872,12 @@ local gApartmentTeleport = ui.group(heistTab, "Teleport", nil, nil, nil, nil, "a
 ui.button(gApartmentTeleport, "apartment_tp_entrance", "Teleport to Entrance", function() apartment_teleport_to_entrance() end)
 ui.button(gApartmentTeleport, "apartment_tp_heist_board", "Teleport to Heist Board", function() apartment_teleport_to_heist_board() end)
 
-local gApartmentDanger = ui.group(heistTab, "DANGER", nil, nil, nil, nil, "apartment")
-ui.label(gApartmentDanger, "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG I WARNED YOU.", config.colors.danger_text)
-ui.label(gApartmentDanger, "Only use this if you know what you're doing, but honestly still don't.", config.colors.danger_text)
-ui.button(gApartmentDanger, "apartment_skip_heist_cooldown", "Skip Heist Cooldown", function() apartment_kill_cooldown() end, nil, false, "danger")
+local gApartmentDanger = build_skip_cooldown_danger_group(
+    heistTab,
+    "apartment",
+    "apartment_skip_heist_cooldown",
+    function() apartment_kill_cooldown() end
+)
 
 -- Apply Apartment Cuts
 function apply_apartment_cuts()

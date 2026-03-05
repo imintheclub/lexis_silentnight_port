@@ -520,7 +520,6 @@ local function button_variant_for(btn)
         or id:find("_apply", 1, true)
         or id:find("preset_save", 1, true)
         or id:find("preset_load", 1, true)
-        or id:find("force_ready", 1, true)
     then
         return "primary"
     end
@@ -3887,7 +3886,7 @@ local function apply_casino_manual_preps()
 end
 
 local cooldown_danger_warning_lines = {
-    "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG",
+    "WARNING: DO NOT USE THIS. IF YOU GET BANNED GG",
     "I WARNED YOU. Only use this if you know what you're doing",
     "but honestly still don't."
 }

@@ -584,7 +584,7 @@ local function button_colors_for(btn, hovered)
     else
         return {
             bg = hovered and config.colors.bg_control_hover or config.colors.bg_control,
-            border = hovered and config.colors.border_strong or config.colors.border,
+            border = config.colors.border_strong,
             text = config.colors.text_main
         }
     end

@@ -611,7 +611,7 @@ local function button_colors_for(btn, hovered)
         }
     else
         return {
-            bg = hovered and config.colors.transparent or config.colors.bg_ghost_hover,
+            bg = hovered and config.colors.bg_panel or config.colors.bg_ghost_hover,
             border = config.colors.transparent,
             text = config.colors.text_main
         }
@@ -681,8 +681,17 @@ local function draw_toggle_item(item, x, y, w, original_y)
     render_text(item.label, x + pad_x, textY, config.font_scale_body, config.colors.text_main)
 end
 
-local function draw_button_surface(btn, btnX, btnY, btnW, btnH, hitY, disabled_message)
-    local hovered = is_hovered_content(btnX, hitY, btnW, btnH)
+local function is_button_hovered(btnX, btnY, btnW, btnH)
+    if is_hovered_content(btnX, btnY, btnW, btnH) then
+        return true
+    end
+
+    local ox, oy = get_win_offset()
+    return input.is_mouse_within(vec(btnX + ox, btnY + oy), vec(btnW, btnH))
+end
+
+local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message)
+    local hovered = is_button_hovered(btnX, btnY, btnW, btnH)
 
     if hovered and state.mouse.clicked and not state.active_dropdown then
         if btn.disabled then
@@ -710,7 +719,7 @@ local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSiz
     render_text(tostring(label or ""), btnX + btnW / 2, textY, textSize, textColor, "center")
 end
 
-local function draw_button_item(item, x, y, w, original_y)
+local function draw_button_item(item, x, y, w)
     local pad_x = config.space.x5
     local btnH = config.item_height.button - config.space.x1
     local btnW = w - (pad_x * 2)
@@ -723,7 +732,6 @@ local function draw_button_item(item, x, y, w, original_y)
         btnY,
         btnW,
         btnH,
-        original_y + config.space.x1,
         "Instant Finish function has been disabled"
     )
 
@@ -731,7 +739,7 @@ local function draw_button_item(item, x, y, w, original_y)
     render_button_label_center(item.label, btnX, btnY, btnW, btnH, textSize, style.text)
 end
 
-local function draw_button_pair_item(item, x, y, w, original_y)
+local function draw_button_pair_item(item, x, y, w)
     local pad_x = config.space.x5
     local btnH = config.item_height.button - config.space.x1
     local totalW = w - (pad_x * 2)
@@ -747,7 +755,6 @@ local function draw_button_pair_item(item, x, y, w, original_y)
             btnY,
             btnW,
             btnH,
-            original_y + config.space.x1,
             "This action is disabled"
         )
 
@@ -1130,10 +1137,10 @@ ui.render = function()
                             draw_toggle_item(item, gX, itemY, col_w, itemY)
                             itemY = itemY + config.item_height.toggle
                         elseif item.type == "button" then
-                            draw_button_item(item, gX, itemY, col_w, itemY)
+                            draw_button_item(item, gX, itemY, col_w)
                             itemY = itemY + config.item_height.button
                         elseif item.type == "button_pair" then
-                            draw_button_pair_item(item, gX, itemY, col_w, itemY)
+                            draw_button_pair_item(item, gX, itemY, col_w)
                             itemY = itemY + config.item_height.button
                         elseif item.type == "slider" then
                             draw_slider_item(item, gX, itemY, col_w, itemY)

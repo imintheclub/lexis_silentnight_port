@@ -156,7 +156,7 @@ local function init_config()
             min_menu_width = math.max(min_w_from_subtabs, min_w_from_columns),
             max_menu_width = menu_width,
             min_menu_height = min_h_from_content,
-            max_menu_height = menu_height,
+            max_menu_height = menu_height * 2,
             max_screen_margin = tw(10)
         },
         

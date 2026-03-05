@@ -3950,12 +3950,12 @@ ui.button_pair(
     "tool_arcade", "Skip Arcade Setup", function() casino_skip_arcade_setup() end,
     "tool_keycards", "Fix Keycards", function() casino_fix_stuck_keycards() end
 )
-ui.button(gTools, "tool_objective", "Skip Objective", function() casino_skip_objective() end)
 ui.button_pair(
     gTools,
     "casino_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Casino") end,
     "tool_lives", "Set Team Lives", function() casino_set_team_lives() end
 )
+ui.button(gTools, "tool_objective", "Skip Objective", function() casino_skip_objective() end)
 casinoAutograbberToggle = ui.toggle(gTools, "casino_autograbber", "Autograbber", casino_autograbber_enabled, function(val)
     casino_set_autograbber(val)
 end)
@@ -4450,7 +4450,6 @@ ui.button_pair(
     "cayo_tool_plasma", "Bypass Plasma Cutter", function() cayo_bypass_plasma_cutter() end,
     "cayo_tool_drainage", "Bypass Drainage Pipe", function() cayo_bypass_drainage_pipe() end
 )
-ui.button(gCayoTools, "cayo_tool_reload", "Reload Planning Screen", function() cayo_reload_planning_screen() end)
 ui.button_pair(
     gCayoTools,
     "cayo_tool_finish", "Instant Finish", function() cayo_instant_finish() end,
@@ -4461,6 +4460,7 @@ ui.button_pair(
     "cayo_fix_board", "Fix White Board", function() cayo_reload_planning_screen() end,
     "cayo_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Cayo") end
 )
+ui.button(gCayoTools, "cayo_tool_reload", "Reload Planning Screen", function() cayo_reload_planning_screen() end)
 
 local gCayoDanger = ui.group(heistTab, "DANGER", nil, nil, nil, nil, "cayo")
 ui.label(gCayoDanger, "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG I WARNED YOU.", config.colors.danger_text)
@@ -4829,12 +4829,21 @@ local function apartment_teleport_to_heist_board()
 end
 
 local gApartmentTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "apartment")
-ui.button(gApartmentTools, "apartment_fleeca_hack", "Fleeca Hack", function() apartment_fleeca_hack() end)
-ui.button(gApartmentTools, "apartment_fleeca_drill", "Fleeca Drill", function() apartment_fleeca_drill() end)
-ui.button(gApartmentTools, "apartment_pacific_hack", "Pacific Hack", function() apartment_pacific_hack() end)
-ui.button(gApartmentTools, "apartment_play_unavailable", "Play Unavailable", function() apartment_play_unavailable() end)
-ui.button(gApartmentTools, "apartment_unlock_all", "Unlock All Jobs", function() apartment_unlock_all_jobs() end)
-ui.button(gApartmentTools, "apartment_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Apartment") end)
+ui.button_pair(
+    gApartmentTools,
+    "apartment_fleeca_hack", "Fleeca Hack", function() apartment_fleeca_hack() end,
+    "apartment_fleeca_drill", "Fleeca Drill", function() apartment_fleeca_drill() end
+)
+ui.button_pair(
+    gApartmentTools,
+    "apartment_pacific_hack", "Pacific Hack", function() apartment_pacific_hack() end,
+    "apartment_play_unavailable", "Play Unavailable", function() apartment_play_unavailable() end
+)
+ui.button_pair(
+    gApartmentTools,
+    "apartment_unlock_all", "Unlock All Jobs", function() apartment_unlock_all_jobs() end,
+    "apartment_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Apartment") end
+)
 
 local gApartmentInstantFinish = ui.group(heistTab, "Instant Finish", nil, nil, nil, nil, "apartment")
 ui.button(gApartmentInstantFinish, "apartment_instant_finish_pacific", "Instant Finish (Pacific Standard)", function() apartment_instant_finish_pacific() end)
@@ -5373,18 +5382,24 @@ ui.label(gCluckinInfo, "Cluckin Bell Farm Raid", config.colors.accent)
 ui.label(gCluckinInfo, "Farm Raid Heist", config.colors.text_main)
 
 local gCluckinTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "cluckin")
-ui.button(gCluckinTools, "cluckin_skip_finale", "Skip to Finale", function()
-    cluckin_skip_to_finale()
-end)
-ui.button(gCluckinTools, "cluckin_remove_cooldown", "Remove Cooldown", function()
-    cluckin_remove_cooldown()
-end)
-ui.button(gCluckinTools, "cluckin_reset_progress", "Reset Progress", function()
-    cluckin_reset_progress()
-end)
-ui.button(gCluckinTools, "cluckin_instant_finish", "Instant Finish", function()
-    cluckin_instant_finish()
-end)
+ui.button_pair(
+    gCluckinTools,
+    "cluckin_skip_finale", "Skip to Finale", function()
+        cluckin_skip_to_finale()
+    end,
+    "cluckin_remove_cooldown", "Remove Cooldown", function()
+        cluckin_remove_cooldown()
+    end
+)
+ui.button_pair(
+    gCluckinTools,
+    "cluckin_reset_progress", "Reset Progress", function()
+        cluckin_reset_progress()
+    end,
+    "cluckin_instant_finish", "Instant Finish", function()
+        cluckin_instant_finish()
+    end
+)
 
 -- ---------------------------------------------------------
 -- 8. Loop

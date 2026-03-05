@@ -56,6 +56,19 @@ local function get_path(path)
     return base .. path
 end
 
+local SHILLENSILENT_CORE_DIR = get_path("\\ShillenSilent_core")
+local SHILLENSILENT_CORE_FONTS_DIR = SHILLENSILENT_CORE_DIR .. "\\fonts"
+local SHILLENSILENT_CORE_PRESETS_DIR = SHILLENSILENT_CORE_DIR .. "\\HeistPresets"
+
+local function ensure_core_dirs()
+    if not dirs.exists(SHILLENSILENT_CORE_DIR) then
+        dirs.create(SHILLENSILENT_CORE_DIR)
+    end
+    if not dirs.exists(SHILLENSILENT_CORE_FONTS_DIR) then
+        dirs.create(SHILLENSILENT_CORE_FONTS_DIR)
+    end
+end
+
 -- ---------------------------------------------------------
 -- 1. Configuration & Assets
 -- ---------------------------------------------------------
@@ -102,7 +115,10 @@ local function init_config()
     local menu_height = tw(150)
 
     return {
-        font_path = "/Users/shiv/dev/projects/personal/lexis_silentnight_port/InterVariable.ttf",
+        font_path = SHILLENSILENT_CORE_FONTS_DIR .. "\\InterVariable.ttf",
+        font_fallback_paths = {
+            get_path("\\InterVariable.ttf")
+        },
 
         -- Typography scale tuned for Inter.
         font_scale_title = 24.0 * scale,
@@ -262,11 +278,28 @@ local state = {
 local function ensure_assets()
     if state.font_load_attempted then return end
     state.font_load_attempted = true
-    
+    ensure_core_dirs()
+
+    local font_candidates = {}
     if config.font_path and config.font_path ~= "" then
-        local status, font = pcall(gui.load_font, config.font_path, 50.0)
+        font_candidates[#font_candidates + 1] = config.font_path
+    end
+    if type(config.font_fallback_paths) == "table" then
+        local i
+        for i = 1, #config.font_fallback_paths do
+            local path = config.font_fallback_paths[i]
+            if path and path ~= "" then
+                font_candidates[#font_candidates + 1] = path
+            end
+        end
+    end
+
+    local i
+    for i = 1, #font_candidates do
+        local status, font = pcall(gui.load_font, font_candidates[i], 50.0)
         if status and font then
             state.fonts.regular = font
+            break
         end
     end
 end
@@ -821,15 +854,19 @@ local function draw_dropdown_item(item, x, y, w, original_y)
     render_rect(boxX, boxY, boxW, boxH, boxBg, config.radius.md)
     render_outline(boxX, boxY, boxW, boxH, boxBorder, 1, config.radius.md)
     local selected = item.options[item.value] or ""
+    local selectedTextH = config.font_scale_body * 0.7
+    local selectedTextY = boxY + (boxH / 2) - (selectedTextH / 2)
     if is_preset_file then
-        render_text(selected, boxX + config.space.x3, boxY + config.space.x1_5, config.font_scale_body, boxText)
+        render_text(selected, boxX + config.space.x3, selectedTextY, config.font_scale_body, boxText)
     else
         -- Center the selected option text in normal dropdown boxes
-        render_text(selected, boxX + boxW / 2, boxY + config.space.x1_5, config.font_scale_body, boxText, "center")
+        render_text(selected, boxX + boxW / 2, selectedTextY, config.font_scale_body, boxText, "center")
     end
     
     -- Dropdown Arrow
-    render_text("v", boxX + boxW - config.space.x4, boxY + config.space.x1_5, config.font_scale_small, boxArrow)
+    local arrowTextH = config.font_scale_small * 0.7
+    local arrowTextY = boxY + (boxH / 2) - (arrowTextH / 2)
+    render_text("v", boxX + boxW - config.space.x4, arrowTextY, config.font_scale_small, boxArrow)
 
     if item.isOpen then
         return {
@@ -1281,7 +1318,7 @@ end
 hp_keyboard_guard = nil
 
 hp_heist_presets = {
-    root = paths.script .. "\\HeistPresets",
+    root = SHILLENSILENT_CORE_PRESETS_DIR,
     apartment = {
         dir = "",
         name = "QuickPreset",
@@ -1529,6 +1566,7 @@ function hp_extract_preset_name(file_entry)
 end
 
 function hp_ensure_heist_preset_dirs()
+    ensure_core_dirs()
     if not dirs.exists(hp_heist_presets.root) then
         dirs.create(hp_heist_presets.root)
     end

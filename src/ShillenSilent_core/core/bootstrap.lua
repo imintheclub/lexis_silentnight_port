@@ -117,12 +117,12 @@ local function init_config()
     local column_gap = tw(4)
     local default_content_w = menu_width - (content_margin * 2)
     local fixed_column_w = math.floor((default_content_w - (2 * column_gap)) / 3)
-    local min_column_left_pad = tw(3)
+    local min_column_side_pad = tw(6)
     local subtab_count = 5
     local min_subtab_w = tw(18)
     local subtab_gap = tw(2)
     local min_w_from_subtabs = (content_margin * 2) + (subtab_count * min_subtab_w) + ((subtab_count - 1) * subtab_gap)
-    local min_w_from_columns = (content_margin * 2) + fixed_column_w + min_column_left_pad
+    local min_w_from_columns = (content_margin * 2) + fixed_column_w + (min_column_side_pad * 2)
 
         return {
             font_path = SHILLENSILENT_CORE_FONTS_DIR .. "\\InterVariable.ttf",

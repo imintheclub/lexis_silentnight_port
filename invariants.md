@@ -1,0 +1,38 @@
+Project context:
+- I maintain a GTA V heist-focused Lua script for Lexis mod menu.
+- Repo root: /Users/shiv/dev/projects/personal/lexis_silentnight_port
+- Main script: /Users/shiv/dev/projects/personal/lexis_silentnight_port/ShillenSilent Minimal.lua
+
+Terminology:
+- Cherax: GTA V mod menu with its own Lua API.
+- Lexis: GTA V mod menu with a different Lua API.
+- Silent Night: a heist script originally for Cherax (source is in this repo).
+- My script is a Lexis-focused fork/port direction: heist editing + selected Silent Night features.
+
+Repo layout:
+- Silent Night source reference: /Users/shiv/dev/projects/personal/lexis_silentnight_port/SilentNight
+- Cherax Lua API docs: /Users/shiv/dev/projects/personal/lexis_silentnight_port/cherax_docs
+- Lexis Lua API docs: /Users/shiv/dev/projects/personal/lexis_silentnight_port/lexis_docs
+
+What I want from you:
+- Treat Silent Night as behavior/reference, then translate cleanly to Lexis API.
+- Before coding, inspect local code and docs in this repo.
+- Keep changes pragmatic and minimal-risk; preserve existing behavior unless asked.
+- When editing UI, keep the current light-style system consistent.
+- When you claim something is missing/present, verify in-file with exact function/line references.
+- Run syntax checks after edits (e.g., luac -p on the Lua file).
+- Give concise summaries: what changed, why, and file/line pointers.
+
+Baseline invariants (generic):
+- Keep this as a heist-focused Lexis Lua script; do not broaden scope unless requested.
+- Preserve current behavior by default; changes should be additive, not destructive.
+- Maintain compatibility with existing user data/config/presets unless migration is explicitly requested.
+- Reuse existing internal patterns/helpers instead of introducing parallel duplicate systems.
+- Keep UI structure coherent and consistent with the current menu framework (tabs/subtabs, groups, controls).
+- Preserve stable control semantics (buttons/toggles/sliders/dropdowns should continue to behave predictably).
+- Keep code changes localized and minimal-risk; avoid wide refactors unless asked.
+- Treat Silent Night as behavior/reference only; implement through Lexis APIs and conventions.
+- Keep runtime safety guards (clamping/validation) for user-entered or loaded values.
+- Do not change core offsets/stat write pathways without explicit approval.
+- Keep comments functional/explanatory only; avoid branding/narrative comments.
+- After edits, always run a syntax check and report result.

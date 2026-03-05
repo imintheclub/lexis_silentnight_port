@@ -4,6 +4,9 @@
 3. Load the script in Lexis
 
 # Changelog
+## v0.0.5
+- make responsive + resizable. menu (controller + kb) alternate layout coming next
+
 ## v0.0.4
 - modularize and refactor code so it's less fucking wack
 

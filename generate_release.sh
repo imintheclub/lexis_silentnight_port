@@ -12,13 +12,19 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RELEASE_DIR="${ROOT_DIR}/release-${VERSION}"
 SRC_DIR="${RELEASE_DIR}/src"
 ZIP_FILE="${RELEASE_DIR}/ShillenSilent-${VERSION}.zip"
+SOURCE_ROOT="${ROOT_DIR}/src"
 
-SCRIPT_FILE="${ROOT_DIR}/ShillenSilent.lua"
-CORE_DIR="${ROOT_DIR}/ShillenSilent_core"
+SCRIPT_FILE="${SOURCE_ROOT}/ShillenSilent.lua"
+CORE_DIR="${SOURCE_ROOT}/ShillenSilent_core"
 README_FILE="${ROOT_DIR}/README.md"
 
 if [[ -d "${RELEASE_DIR}" ]]; then
   echo "Error: release directory already exists: ${RELEASE_DIR}" >&2
+  exit 1
+fi
+
+if [[ ! -d "${SOURCE_ROOT}" ]]; then
+  echo "Error: missing source root directory: ${SOURCE_ROOT}" >&2
   exit 1
 fi
 

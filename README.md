@@ -4,6 +4,9 @@
 3. Load the script in Lexis
 
 # Changelog
+## v0.0.4
+- modularize and refactor code so it's less fucking wack
+
 ## v0.0.3
 - fixed algorithm for kosatka teleport
 - remove broken cayo perico teleport to drainage tunnel button for now

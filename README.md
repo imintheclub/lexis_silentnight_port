@@ -6,6 +6,7 @@
 # Changelog
 ## v0.0.3
 - fixed algorithm for kosatka teleport
+- remove broken cayo perico teleport to drainage tunnel button for now
 - memory fixes
 - some blocking operations moved to jobs
 

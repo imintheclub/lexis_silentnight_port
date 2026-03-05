@@ -416,23 +416,113 @@ local function flatten_groups_by_order(activeGroups, heist_subtab)
     return ordered
 end
 
+local function estimate_group_layout_height(group)
+    local h = config.item_height.header_padding + config.space.x5
+    local items = group and group.items or {}
+
+    for _, item in ipairs(items) do
+        if item.type == "toggle" then
+            h = h + config.item_height.toggle
+        elseif item.type == "button" then
+            h = h + config.item_height.button
+        elseif item.type == "button_pair" then
+            h = h + config.item_height.button
+        elseif item.type == "slider" then
+            h = h + config.item_height.slider
+        elseif item.type == "dropdown" then
+            h = h + get_dropdown_item_height(item)
+        elseif item.type == "label" then
+            h = h + config.space.x6
+        end
+    end
+
+    local min_h = (group and group.rect and group.rect.h) or 0
+    if h < min_h then
+        h = min_h
+    end
+    return h
+end
+
 local function distribute_groups_by_column(flattened, groups_by_column, column_count)
     for col = 1, column_count do
         clear_array(groups_by_column[col])
     end
 
     local total = #flattened
-    local base_size = math.floor(total / column_count)
-    local remainder = total % column_count
-    local idx = 1
+    if total == 0 then
+        return
+    end
 
-    for col = 1, column_count do
-        local target_size = base_size + ((col <= remainder) and 1 or 0)
-        for _ = 1, target_size do
-            local entry = flattened[idx]
-            if not entry then break end
-            groups_by_column[col][#groups_by_column[col] + 1] = { group = entry.group, order = idx }
-            idx = idx + 1
+    local cols = math.max(1, math.min(column_count, total))
+    local gap = config.space.x3_5
+
+    if cols == 1 then
+        for i = 1, total do
+            local entry = flattened[i]
+            groups_by_column[1][#groups_by_column[1] + 1] = { group = entry.group, order = i }
+        end
+        return
+    end
+
+    local weights = {}
+    local prefix = { [0] = 0 }
+    for i = 1, total do
+        local group_h = estimate_group_layout_height(flattened[i].group)
+        weights[i] = group_h + gap
+        prefix[i] = prefix[i - 1] + weights[i]
+    end
+
+    -- Linear partition DP: keep group order stable, split into contiguous columns,
+    -- minimize the tallest column.
+    local dp = {}
+    local split = {}
+    dp[1] = {}
+    for i = 1, total do
+        dp[1][i] = prefix[i]
+    end
+
+    for k = 2, cols do
+        dp[k] = {}
+        split[k] = {}
+        for i = k, total do
+            local best_cost = math.huge
+            local best_x = k - 1
+
+            for x = k - 1, i - 1 do
+                local left = dp[k - 1][x]
+                if left then
+                    local right = prefix[i] - prefix[x]
+                    local cost = (left > right) and left or right
+                    if cost < best_cost then
+                        best_cost = cost
+                        best_x = x
+                    end
+                end
+            end
+
+            dp[k][i] = best_cost
+            split[k][i] = best_x
+        end
+    end
+
+    local ranges = {}
+    local k = cols
+    local i = total
+    while k > 1 do
+        local x = split[k][i] or (k - 1)
+        ranges[k] = { s = x + 1, e = i }
+        i = x
+        k = k - 1
+    end
+    ranges[1] = { s = 1, e = i }
+
+    for col = 1, cols do
+        local range = ranges[col]
+        if range then
+            for idx = range.s, range.e do
+                local entry = flattened[idx]
+                groups_by_column[col][#groups_by_column[col] + 1] = { group = entry.group, order = idx }
+            end
         end
     end
 end

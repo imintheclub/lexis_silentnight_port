@@ -304,17 +304,8 @@ end
 
 -- -------------------------------------------------------------------------
 -- [Casino Launch Functions]
-local SOLO_LAUNCH_PLAYER_COUNT_BASE = 794954
-local SOLO_LAUNCH_PLAYER_COUNT_OFFSET_BASE = 4
-local SOLO_LAUNCH_PLAYER_COUNT_OFFSET_MULTIPLIER = 95
-local SOLO_LAUNCH_PLAYER_COUNT_OFFSET_FINAL = 75
-
-local function solo_launch_player_count_global(value)
-    return SOLO_LAUNCH_PLAYER_COUNT_BASE
-        + SOLO_LAUNCH_PLAYER_COUNT_OFFSET_BASE
-        + 1
-        + (value * SOLO_LAUNCH_PLAYER_COUNT_OFFSET_MULTIPLIER)
-        + SOLO_LAUNCH_PLAYER_COUNT_OFFSET_FINAL
+function hp_solo_launch_player_count_global(value)
+    return 794954 + 4 + 1 + (value * 95) + 75
 end
 
 -- Solo Launch: Generic function
@@ -331,7 +322,7 @@ local function solo_launch_generic()
 
     -- Set player count to solo (from data)
     -- Formula: BASE_LOBBY + 4 + 1 + (value * 95) + 75 controls player requirement
-    local player_count_global = solo_launch_player_count_global(value)
+    local player_count_global = hp_solo_launch_player_count_global(value)
     script.globals(player_count_global).int32 = 1  -- SOLO = 1
 
     -- Set launcher locals
@@ -389,7 +380,7 @@ local function solo_launch_reset_casino()
     if not value or value == 0 then return false end
 
     -- Casino: Always 2 players, use reset values from data
-    local player_count_global = solo_launch_player_count_global(value)
+    local player_count_global = hp_solo_launch_player_count_global(value)
     script.globals(player_count_global).int32 = 2  -- DUO = 2
     script.locals("fmmc_launcher", 20056 + 15).int32 = 2  -- PLAYER_COUNT = DUO
 
@@ -428,7 +419,7 @@ local function solo_launch_reset_doomsday()
     local value = script.locals("fmmc_launcher", 20056 + 34).int32
     if not value or value == 0 then return false end
 
-    local player_count_global = solo_launch_player_count_global(value)
+    local player_count_global = hp_solo_launch_player_count_global(value)
     script.globals(player_count_global).int32 = 2
     script.locals("fmmc_launcher", 20056 + 15).int32 = 2
 
@@ -453,7 +444,7 @@ local function solo_launch_reset_apartment()
     local is_fleeca = hp_is_apartment_fleeca()
     local required_players = is_fleeca and 2 or 4  -- FLEECA = 2, APARTMENT = 4
 
-    local player_count_global = solo_launch_player_count_global(value)
+    local player_count_global = hp_solo_launch_player_count_global(value)
     script.globals(player_count_global).int32 = required_players
     script.locals("fmmc_launcher", 20056 + 15).int32 = required_players  -- PLAYER_COUNT
     script.globals(4718592 + 3539).int32 = required_players  -- STEP_1

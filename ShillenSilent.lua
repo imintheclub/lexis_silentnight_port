@@ -4359,6 +4359,7 @@ ui.label(gCayoInfo, "Transaction cooldown: 30 min", config.colors.text_sec)
 ui.label(gCayoInfo, "Heist cooldown: 45 min (skip)", config.colors.text_sec)
 
 local gCayoPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "cayo")
+ui.button(gCayoPreps, "cayo_tp_kosatka", "Teleport to Kosatka", function() cayo_teleport_kosatka() end)
 ui.button(gCayoPreps, "cayo_unlock_poi", "Unlock All POI", function() cayo_unlock_all_poi() end)
 cayoWomansBagToggle = ui.toggle(gCayoPreps, "cayo_womans_bag", "Woman's Bag", cayo_womans_bag_enabled, function(val)
     cayo_set_womans_bag(val)
@@ -4593,7 +4594,6 @@ ui.button_pair(
     "cayo_tp_airport", "Airport", function() cayo_teleport_airport() end
 )
 ui.button(gCayoTeleportOutside, "cayo_tp_escape", "Escape", function() cayo_teleport_escape() end, nil, false, "green")
-ui.button(gCayoTeleportOutside, "cayo_tp_kosatka", "Kosatka", function() cayo_teleport_kosatka() end)
 
 local gCayoCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "cayo")
 cayoRemoveCrewCutsToggle = ui.toggle(gCayoCuts, "cayo_remove_crew_cuts", "Remove Crew Cuts", cayo_remove_crew_cuts_enabled, function(val)

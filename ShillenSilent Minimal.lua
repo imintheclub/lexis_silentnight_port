@@ -3588,6 +3588,48 @@ local function cayo_teleport_escape()
     end
 end
 
+local function cayo_teleport_kosatka()
+    local me = players.me()
+    if not me then
+        if notify then notify.push("Cayo Teleport", "Player not found", 2000) end
+        return false
+    end
+
+    util.create_job(function()
+        local ped = me.ped
+        local veh = me.vehicle
+        local entity = (veh and veh ~= 0) and veh or ped
+
+        invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
+
+        if me.in_interior then
+            invoker.call(0x239A3351AC1DA385, entity, -75.146, -818.687, 326.175, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET (Maze Bank relay)
+            util.yield(800)
+        end
+
+        local KOSATKA_BLIP_SPRITE = 760
+        local blip = invoker.call(0x1BEDE233E6CD2A1F, KOSATKA_BLIP_SPRITE) -- GET_FIRST_BLIP_INFO_ID
+        if blip and blip.int and blip.int ~= 0 then
+            local coords = invoker.call(0x586AFE3FF72D996E, blip.int) -- GET_BLIP_COORDS
+            if coords and coords.scr_vec3 then
+                invoker.call(0x239A3351AC1DA385, entity, coords.scr_vec3.x, coords.scr_vec3.y, coords.scr_vec3.z + 1.0, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+            else
+                invoker.call(0x239A3351AC1DA385, entity, 1561.087, 386.610, -49.685, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+            end
+            util.yield(500)
+            if notify then notify.push("Cayo Teleport", "Teleported to Kosatka", 2000) end
+        else
+            -- Silent Night fallback coordinates for Kosatka interior.
+            invoker.call(0x239A3351AC1DA385, entity, 1561.087, 386.610, -49.685, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+            util.yield(500)
+            if notify then notify.push("Cayo Teleport", "Teleported to Kosatka (fallback)", 2200) end
+        end
+
+        invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
+    end)
+    return true
+end
+
 -- ---------------------------------------------------------
 -- 6.7. Apartment Heist Functions
 -- ---------------------------------------------------------
@@ -4516,6 +4558,7 @@ ui.button_pair(
     "cayo_tp_airport", "Airport", function() cayo_teleport_airport() end
 )
 ui.button(gCayoTeleportOutside, "cayo_tp_escape", "Escape", function() cayo_teleport_escape() end, nil, false, "green")
+ui.button(gCayoTeleportOutside, "cayo_tp_kosatka", "Kosatka", function() cayo_teleport_kosatka() end)
 
 local gCayoCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "cayo")
 cayoRemoveCrewCutsToggle = ui.toggle(gCayoCuts, "cayo_remove_crew_cuts", "Remove Crew Cuts", cayo_remove_crew_cuts_enabled, function(val)
@@ -5060,24 +5103,6 @@ local function doomsday_reset_progress()
     script.locals("gb_gang_ops_planning", 211).int32 = 6
     
     if notify then notify.push("Doomsday", "Progress Reset", 2000) end
-end
-
-local function doomsday_reset_preps()
-    local prefix0 = "MP0_"
-    local prefix1 = "MP1_"
-    
-    account.stats(prefix0 .. "GANGOPS_FLOW_MISSION_PROG").int32 = 0
-    account.stats(prefix1 .. "GANGOPS_FLOW_MISSION_PROG").int32 = 0
-    account.stats(prefix0 .. "GANGOPS_HEIST_STATUS").int32 = 0
-    account.stats(prefix1 .. "GANGOPS_HEIST_STATUS").int32 = 0
-    account.stats(prefix0 .. "GANGOPS_FLOW_NOTIFICATIONS").int32 = 0
-    account.stats(prefix1 .. "GANGOPS_FLOW_NOTIFICATIONS").int32 = 0
-    
-    if script.running("gb_gang_ops_planning") then
-        script.locals("gb_gang_ops_planning", 211).int32 = 6
-    end
-    
-    if notify then notify.push("Doomsday", "Preps Reset", 2000) end
 end
 
 local function doomsday_reload_board()

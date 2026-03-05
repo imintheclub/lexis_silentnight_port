@@ -638,7 +638,7 @@ end
 local function draw_toggle_item(item, x, y, w, original_y)
     local pad_x = config.space.x5
     local hitbox_h = config.item_height.toggle - config.space.x1
-    local hovered = is_hovered_content(x, original_y, w, hitbox_h)
+    local hovered = (not state.active_dropdown) and is_hovered_content(x, original_y, w, hitbox_h)
 
     if hovered and state.mouse.clicked and not state.active_dropdown then
         item.state = not item.state
@@ -682,6 +682,10 @@ local function draw_toggle_item(item, x, y, w, original_y)
 end
 
 local function is_button_hovered(btnX, btnY, btnW, btnH)
+    if state.active_dropdown then
+        return false
+    end
+
     if is_hovered_content(btnX, btnY, btnW, btnH) then
         return true
     end
@@ -774,7 +778,7 @@ local function draw_slider_item(item, x, y, w, original_y)
     local barX = x + pad_x
     local barY = y + config.space.x8
 
-    local hovered = is_hovered_content(x, original_y, w, config.item_height.slider)
+    local hovered = (not state.active_dropdown) and is_hovered_content(x, original_y, w, config.item_height.slider)
     
     if hovered and state.mouse.clicked and not state.active_dropdown then
         state.dragging_slider = item.id
@@ -841,7 +845,8 @@ local function draw_dropdown_item(item, x, y, w, original_y)
     local boxX = is_preset_file and (x + pad_x) or (x + w - boxW - pad_x)
     local boxY = is_preset_file and (y + config.space.x5) or (y + config.space.x1_5)
     
-    local hovered = is_hovered_content(boxX, original_y + config.space.x1, boxW, boxH)
+    local allow_hover = (not state.active_dropdown) or (state.active_dropdown == item.id)
+    local hovered = allow_hover and is_hovered_content(boxX, original_y + config.space.x1, boxW, boxH)
 
     if hovered and state.mouse.clicked then
         state.window.is_dragging = false  -- Prevent window dragging
@@ -971,7 +976,7 @@ ui.render = function()
         for i, name in ipairs(subtab_names) do
             local subtab_x = contentX + (i - 1) * (subtab_w + subtab_gap)
             local is_active = (state.heist_subtab == i)
-            local hovered = is_hovered(subtab_x, subtab_y, subtab_w, subtab_h)
+            local hovered = (not state.active_dropdown) and is_hovered(subtab_x, subtab_y, subtab_w, subtab_h)
             
             if hovered and state.mouse.clicked and not state.active_dropdown then
                 state.heist_subtab = i
@@ -1184,7 +1189,7 @@ ui.render = function()
         render_rect(sb.x, sbY, sb.w, sbH, config.colors.scroll_track, config.radius.full)
         render_rect(sb.x, thumbY, sb.w, thumbH, config.colors.accent, config.radius.full)
         
-        if is_hovered(sb.x - config.control.scrollbar_grab_pad, sbY, sb.w + (config.control.scrollbar_grab_pad * 2), sbH) and state.mouse.clicked then
+        if (not state.active_dropdown) and is_hovered(sb.x - config.control.scrollbar_grab_pad, sbY, sb.w + (config.control.scrollbar_grab_pad * 2), sbH) and state.mouse.clicked then
             state.scroll.is_dragging = true
         end
         if state.scroll.is_dragging and state.mouse.down then

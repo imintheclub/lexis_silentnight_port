@@ -123,6 +123,7 @@ local function init_config()
     local subtab_gap = tw(2)
     local min_w_from_subtabs = (content_margin * 2) + (subtab_count * min_subtab_w) + ((subtab_count - 1) * subtab_gap)
     local min_w_from_columns = (content_margin * 2) + fixed_column_w + (min_column_side_pad * 2)
+    local min_h_from_content = (content_margin * 2) + tw(9) + tw(2) + tw(10) + tw(3) + tw(12) + tw(4)
 
         return {
             font_path = SHILLENSILENT_CORE_FONTS_DIR .. "\\InterVariable.ttf",
@@ -154,6 +155,8 @@ local function init_config()
             edge_hit_h = tw(6),
             min_menu_width = math.max(min_w_from_subtabs, min_w_from_columns),
             max_menu_width = menu_width,
+            min_menu_height = min_h_from_content,
+            max_menu_height = menu_height,
             max_screen_margin = tw(10)
         },
         
@@ -280,7 +283,7 @@ local state = {
         is_dragging = false,
         is_resizing = false,
         drag_offset = { x = 0, y = 0 },
-        resize_start = { x = 0, width = config.menu_width }
+        resize_start = { x = 0, y = 0, width = config.menu_width, height = config.menu_height }
     },
     animation = { open = false, progress = 0.0, target = 1.0, speed = 0.15 },
     active_tab_y = nil,

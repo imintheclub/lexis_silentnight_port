@@ -899,7 +899,9 @@ ui.render = function()
             state.window.is_resizing = true
             state.window.is_dragging = false
             state.window.resize_start.x = state.mouse.x
+            state.window.resize_start.y = state.mouse.y
             state.window.resize_start.width = config.menu_width
+            state.window.resize_start.height = config.menu_height
         elseif is_hovered(config.origin_x, menuStartY, config.menu_width, dynamicBodyH) then
             state.window.is_dragging = true
             state.window.drag_offset.x = state.mouse.x - state.window.x
@@ -914,14 +916,23 @@ ui.render = function()
 
     if state.window.is_resizing and state.mouse.down and not state.dragging_slider then
         local delta_x = state.mouse.x - state.window.resize_start.x
+        local delta_y = state.mouse.y - state.window.resize_start.y
         local next_w = state.window.resize_start.width + delta_x
+        local next_h = state.window.resize_start.height + delta_y
         local max_w_screen = math.floor(game.resolution().x - config.resize.max_screen_margin)
         local max_w_cfg = config.resize.max_menu_width or max_w_screen
         local max_w = math.min(max_w_cfg, max_w_screen)
         if max_w < config.resize.min_menu_width then
             max_w = config.resize.min_menu_width
         end
+        local max_h_screen = math.floor(game.resolution().y - config.resize.max_screen_margin)
+        local max_h_cfg = config.resize.max_menu_height or max_h_screen
+        local max_h = math.min(max_h_cfg, max_h_screen)
+        if max_h < config.resize.min_menu_height then
+            max_h = config.resize.min_menu_height
+        end
         config.menu_width = math.max(config.resize.min_menu_width, math.min(max_w, next_w))
+        config.menu_height = math.max(config.resize.min_menu_height, math.min(max_h, next_h))
     elseif state.window.is_dragging and state.mouse.down and not state.dragging_slider then
         state.window.x = state.mouse.x - state.window.drag_offset.x
         state.window.y = state.mouse.y - state.window.drag_offset.y

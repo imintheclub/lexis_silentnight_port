@@ -997,7 +997,8 @@ ui.render = function()
                     ["Cuts"] = { col = 1, order = 3 },
                     ["Tools"] = { col = 3, order = 1 },
                     ["Teleport - Outside Residence"] = { col = 3, order = 2 },
-                    ["Teleport - In Residence"] = { col = 3, order = 3 }
+                    ["Teleport - In Residence"] = { col = 3, order = 3 },
+                    ["DANGER"] = { col = 3, order = 4 }
                 }
             elseif state.heist_subtab == 2 then -- Casino
                 layout = {
@@ -1008,7 +1009,8 @@ ui.render = function()
                     ["Cuts"] = { col = 2, order = 3 },
                     ["Tools"] = { col = 3, order = 1 },
                     ["Teleport - Outside Casino"] = { col = 3, order = 2 },
-                    ["Teleport - In Casino"] = { col = 3, order = 3 }
+                    ["Teleport - In Casino"] = { col = 3, order = 3 },
+                    ["DANGER"] = { col = 3, order = 4 }
                 }
             elseif state.heist_subtab == 3 then -- Doomsday
                 layout = {
@@ -1018,6 +1020,19 @@ ui.render = function()
                     ["Cuts"] = { col = 2, order = 2 },
                     ["Tools"] = { col = 3, order = 1 },
                     ["Teleport"] = { col = 3, order = 2 }
+                }
+            elseif state.heist_subtab == 4 then -- Apartment
+                layout = {
+                    ["Info"] = { col = 1, order = 1 },
+                    ["Presets (JSON)"] = { col = 1, order = 2 },
+                    ["Cuts"] = { col = 1, order = 3 },
+                    ["Preps"] = { col = 2, order = 1 },
+                    ["Launch"] = { col = 2, order = 2 },
+                    ["Bonuses"] = { col = 2, order = 3 },
+                    ["Tools"] = { col = 3, order = 1 },
+                    ["Instant Finish"] = { col = 3, order = 2 },
+                    ["Teleport"] = { col = 3, order = 3 },
+                    ["DANGER"] = { col = 3, order = 4 }
                 }
             end
 
@@ -1443,7 +1458,7 @@ local function hp_clamp_cut_percent(value)
 end
 
 local function hp_clamp_apartment_cut_percent(value)
-    return math.floor(hp_clamp_number(value, 0, 3000))
+    return math.floor(hp_clamp_number(value, 0, 300))
 end
 
 local function hp_set_uniform_cuts(state_tbl, keys, sliders, cut, apply_fn)
@@ -3935,11 +3950,7 @@ ui.button_pair(
     "tool_arcade", "Skip Arcade Setup", function() casino_skip_arcade_setup() end,
     "tool_keycards", "Fix Keycards", function() casino_fix_stuck_keycards() end
 )
-ui.button_pair(
-    gTools,
-    "tool_objective", "Skip Objective", function() casino_skip_objective() end,
-    "tool_cooldown", "Remove Cooldown", function() casino_remove_cooldown() end
-)
+ui.button(gTools, "tool_objective", "Skip Objective", function() casino_skip_objective() end)
 ui.button_pair(
     gTools,
     "casino_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Casino") end,
@@ -3948,6 +3959,11 @@ ui.button_pair(
 casinoAutograbberToggle = ui.toggle(gTools, "casino_autograbber", "Autograbber", casino_autograbber_enabled, function(val)
     casino_set_autograbber(val)
 end)
+
+local gCasinoDanger = ui.group(heistTab, "DANGER", nil, nil, nil, nil, "casino")
+ui.label(gCasinoDanger, "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG I WARNED YOU.", config.colors.danger_text)
+ui.label(gCasinoDanger, "Only use this if you know what you're doing, but honestly still don't.", config.colors.danger_text)
+ui.button(gCasinoDanger, "casino_skip_heist_cooldown", "Skip Heist Cooldown", function() casino_remove_cooldown() end, nil, false, "danger")
 
 -- Launch group
 local gLaunch = ui.group(heistTab, "Launch", nil, nil, nil, nil, "casino")
@@ -4434,11 +4450,7 @@ ui.button_pair(
     "cayo_tool_plasma", "Bypass Plasma Cutter", function() cayo_bypass_plasma_cutter() end,
     "cayo_tool_drainage", "Bypass Drainage Pipe", function() cayo_bypass_drainage_pipe() end
 )
-ui.button_pair(
-    gCayoTools,
-    "cayo_tool_reload", "Reload Planning Screen", function() cayo_reload_planning_screen() end,
-    "cayo_tool_cooldown", "Remove Cooldown", function() cayo_remove_cooldown() end
-)
+ui.button(gCayoTools, "cayo_tool_reload", "Reload Planning Screen", function() cayo_reload_planning_screen() end)
 ui.button_pair(
     gCayoTools,
     "cayo_tool_finish", "Instant Finish", function() cayo_instant_finish() end,
@@ -4449,6 +4461,11 @@ ui.button_pair(
     "cayo_fix_board", "Fix White Board", function() cayo_reload_planning_screen() end,
     "cayo_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Cayo") end
 )
+
+local gCayoDanger = ui.group(heistTab, "DANGER", nil, nil, nil, nil, "cayo")
+ui.label(gCayoDanger, "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG I WARNED YOU.", config.colors.danger_text)
+ui.label(gCayoDanger, "Only use this if you know what you're doing, but honestly still don't.", config.colors.danger_text)
+ui.button(gCayoDanger, "cayo_skip_heist_cooldown", "Skip Heist Cooldown", function() cayo_remove_cooldown() end, nil, false, "danger")
 
 -- Teleport section - In Residence
 local gCayoTeleportInResidence = ui.group(heistTab, "Teleport - In Residence", nil, nil, nil, nil, "cayo")
@@ -4589,7 +4606,6 @@ ui.button(gApartmentLaunch, "apartment_redraw_board", "Redraw Board", function()
 
 local gApartmentPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "apartment")
 ui.button(gApartmentPreps, "apartment_complete_preps", "Complete Preps", function() apartment_complete_preps() end)
-ui.button(gApartmentPreps, "apartment_kill_cooldown", "Kill Cooldown", function() apartment_kill_cooldown() end)
 ui.button(gApartmentPreps, "apartment_change_session", "Change Session", function() apartment_change_session() end)
 
 local apartmentPresetsGroup = ui.group(heistTab, "Presets (JSON)", nil, nil, nil, nil, "apartment")
@@ -4828,6 +4844,11 @@ local gApartmentTeleport = ui.group(heistTab, "Teleport", nil, nil, nil, nil, "a
 ui.button(gApartmentTeleport, "apartment_tp_entrance", "Teleport to Entrance", function() apartment_teleport_to_entrance() end)
 ui.button(gApartmentTeleport, "apartment_tp_heist_board", "Teleport to Heist Board", function() apartment_teleport_to_heist_board() end)
 
+local gApartmentDanger = ui.group(heistTab, "DANGER", nil, nil, nil, nil, "apartment")
+ui.label(gApartmentDanger, "WARNING. DO NOT USE THIS. IF YOU GET BANNED GG I WARNED YOU.", config.colors.danger_text)
+ui.label(gApartmentDanger, "Only use this if you know what you're doing, but honestly still don't.", config.colors.danger_text)
+ui.button(gApartmentDanger, "apartment_skip_heist_cooldown", "Skip Heist Cooldown", function() apartment_kill_cooldown() end, nil, false, "danger")
+
 -- Apply Apartment Cuts
 function apply_apartment_cuts()
     local base_global = 1936013
@@ -4857,16 +4878,16 @@ function apply_apartment_cuts()
 end
 
 local gApartmentCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "apartment")
-apartmentP1SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p1", "Host Cut %", 0, 3000, ApartmentCutsValues.player1, function(val)
+apartmentP1SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p1", "Host Cut %", 0, 300, ApartmentCutsValues.player1, function(val)
     ApartmentCutsValues.player1 = math.floor(val)
 end, nil, 10)
-apartmentP2SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p2", "Player 2 Cut %", 0, 3000, ApartmentCutsValues.player2, function(val)
+apartmentP2SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p2", "Player 2 Cut %", 0, 300, ApartmentCutsValues.player2, function(val)
     ApartmentCutsValues.player2 = math.floor(val)
 end, nil, 10)
-apartmentP3SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p3", "Player 3 Cut %", 0, 3000, ApartmentCutsValues.player3, function(val)
+apartmentP3SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p3", "Player 3 Cut %", 0, 300, ApartmentCutsValues.player3, function(val)
     ApartmentCutsValues.player3 = math.floor(val)
 end, nil, 10)
-apartmentP4SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p4", "Player 4 Cut %", 0, 3000, ApartmentCutsValues.player4, function(val)
+apartmentP4SliderRef = ui.slider(gApartmentCuts, "apartment_cut_p4", "Player 4 Cut %", 0, 300, ApartmentCutsValues.player4, function(val)
     ApartmentCutsValues.player4 = math.floor(val)
 end, nil, 10)
 

@@ -11,7 +11,7 @@
 ### v0.0.2
 - Added cutscene skip button for Casino, Apartment
 - Added skip cooldown button WITH WARNING NOT TO USE IT !!! for Casino, Cayo, Doomsday
-- remove 1500% cap on apartment because 
+- remove 1500% cap on apartment because
 	- 1) tbh idk why it was that high 
 	- 2) it seems to be confusing people into thinking they CAN put the cut that high so i will clip it lower lol
 - some more styling tweaks

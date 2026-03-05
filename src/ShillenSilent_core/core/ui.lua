@@ -731,9 +731,7 @@ local function draw_slider_item(item, x, y, w, original_y)
     if not item.anim then item.anim = 0.0 end
     item.anim = lerp(item.anim, target, 0.2)
 
-    local labelTextH = config.font_scale_body * 0.7
-    local labelY = is_preset_file and (y + config.space.x1) or (boxY + (boxH / 2) - (labelTextH / 2))
-    render_text(item.label, x + pad_x, labelY, config.font_scale_body, config.colors.text_main)
+    render_text(item.label, x + pad_x, y + config.space.x1, config.font_scale_body, config.colors.text_main)
     -- Display integer value (no decimals)
     local displayValue = math.floor(item.value)
     render_text(tostring(displayValue), x + w - pad_x, y + config.space.x1, config.font_scale_body, config.colors.accent, "right")

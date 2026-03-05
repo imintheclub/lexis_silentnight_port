@@ -4040,15 +4040,14 @@ ui.button_pair(
 )
 ui.button_pair(
     gTools,
-    "tool_arcade", "Skip Arcade Setup", function() casino_skip_arcade_setup() end,
-    "tool_keycards", "Fix Keycards", function() casino_fix_stuck_keycards() end
+    "tool_keycards", "Fix Keycards", function() casino_fix_stuck_keycards() end,
+    "tool_objective", "Skip Objective", function() casino_skip_objective() end
 )
 ui.button_pair(
     gTools,
     "casino_skip_cutscene", "Skip Cutscene", function() heist_skip_cutscene("Casino") end,
     "tool_lives", "Set Team Lives", function() casino_set_team_lives() end
 )
-ui.button(gTools, "tool_objective", "Skip Objective", function() casino_skip_objective() end)
 casinoAutograbberToggle = ui.toggle(gTools, "casino_autograbber", "Autograbber", casino_autograbber_enabled, function(val)
     casino_set_autograbber(val)
 end)

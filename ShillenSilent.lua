@@ -681,6 +681,35 @@ local function draw_toggle_item(item, x, y, w, original_y)
     render_text(item.label, x + pad_x, textY, config.font_scale_body, config.colors.text_main)
 end
 
+local function draw_button_surface(btn, btnX, btnY, btnW, btnH, hitY, disabled_message)
+    local hovered = is_hovered_content(btnX, hitY, btnW, btnH)
+
+    if hovered and state.mouse.clicked and not state.active_dropdown then
+        if btn.disabled then
+            if disabled_message and notify then
+                notify.push("Error", disabled_message, 3000)
+            end
+        elseif btn.onClick then
+            btn.onClick()
+        end
+        state.window.is_dragging = false
+    end
+
+    local style = button_colors_for(btn, hovered)
+    render_rect(btnX, btnY, btnW, btnH, style.bg, config.radius.md)
+    if style.border.a and style.border.a > 0 then
+        render_outline(btnX, btnY, btnW, btnH, style.border, 1, config.radius.md)
+    end
+
+    return style
+end
+
+local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSize, textColor)
+    local textHeight = textSize * 0.7
+    local textY = btnY + (btnH / 2) - (textHeight / 2)
+    render_text(tostring(label or ""), btnX + btnW / 2, textY, textSize, textColor, "center")
+end
+
 local function draw_button_item(item, x, y, w, original_y)
     local pad_x = config.space.x5
     local btnH = config.item_height.button - config.space.x1
@@ -688,28 +717,18 @@ local function draw_button_item(item, x, y, w, original_y)
     local btnX = x + pad_x
     local btnY = y + config.space.x1
 
-    local hovered = is_hovered_content(btnX, original_y + config.space.x1, btnW, btnH)
-    
-    if hovered and state.mouse.clicked and not state.active_dropdown then
-        if item.disabled then
-            -- Show error message for disabled buttons
-            if notify then notify.push("Error", "Instant Finish function has been disabled", 3000) end
-        elseif item.onClick then
-            item.onClick()
-        end
-        state.window.is_dragging = false  -- Prevent window dragging
-    end
+    local style = draw_button_surface(
+        item,
+        btnX,
+        btnY,
+        btnW,
+        btnH,
+        original_y + config.space.x1,
+        "Instant Finish function has been disabled"
+    )
 
-    local style = button_colors_for(item, hovered)
-    render_rect(btnX, btnY, btnW, btnH, style.bg, config.radius.md)
-    if style.border.a and style.border.a > 0 then
-        render_outline(btnX, btnY, btnW, btnH, style.border, 1, config.radius.md)
-    end
-    -- Center text both horizontally and vertically
     local textSize = config.font_scale_small
-    local textHeight = textSize * 0.7
-    local textY = btnY + (btnH / 2) - (textHeight / 2)
-    render_text(item.label, btnX + btnW / 2, textY, textSize, style.text, "center")
+    render_button_label_center(item.label, btnX, btnY, btnW, btnH, textSize, style.text)
 end
 
 local function draw_button_pair_item(item, x, y, w, original_y)
@@ -722,29 +741,19 @@ local function draw_button_pair_item(item, x, y, w, original_y)
     local btnW = (totalW - gap) / 2
 
     local function draw_half(btn, btnX)
-        local hovered = is_hovered_content(btnX, original_y + config.space.x1, btnW, btnH)
-
-        if hovered and state.mouse.clicked and not state.active_dropdown then
-            if btn.disabled then
-                if notify then notify.push("Error", "This action is disabled", 3000) end
-            elseif btn.onClick then
-                btn.onClick()
-            end
-            state.window.is_dragging = false
-        end
-
-        local style = button_colors_for(btn, hovered)
-        render_rect(btnX, btnY, btnW, btnH, style.bg, config.radius.md)
-        if style.border.a and style.border.a > 0 then
-            render_outline(btnX, btnY, btnW, btnH, style.border, 1, config.radius.md)
-        end
+        local style = draw_button_surface(
+            btn,
+            btnX,
+            btnY,
+            btnW,
+            btnH,
+            original_y + config.space.x1,
+            "This action is disabled"
+        )
 
         -- Stability-first: fixed smaller font for split buttons (no dynamic measurement).
         local drawSize = config.font_scale_small
-        local textStr = tostring(btn.label or "")
-        local textHeight = drawSize * 0.7
-        local textY = btnY + (btnH / 2) - (textHeight / 2)
-        render_text(textStr, btnX + btnW / 2, textY, drawSize, style.text, "center")
+        render_button_label_center(btn.label, btnX, btnY, btnW, btnH, drawSize, style.text)
     end
 
     draw_half(item.left, baseX)
@@ -1488,10 +1497,6 @@ local function hp_clamp_cut_percent(value)
     return math.floor(hp_clamp_number(value, 0, 300))
 end
 
-local function hp_clamp_apartment_cut_percent(value)
-    return math.floor(hp_clamp_number(value, 0, 300))
-end
-
 local function hp_set_uniform_cuts(state_tbl, keys, sliders, cut, apply_fn)
     local value = hp_clamp_cut_percent(cut)
 
@@ -1512,6 +1517,23 @@ local function hp_set_uniform_cuts(state_tbl, keys, sliders, cut, apply_fn)
     end
 
     return value
+end
+
+local function hp_read_player_cut(preps, player_key, legacy_key, fallback, clamp_fn)
+    local player_tbl = preps[player_key]
+    local value = fallback
+
+    if type(player_tbl) == "table" and tonumber(player_tbl.cut) then
+        value = tonumber(player_tbl.cut)
+    elseif tonumber(preps[legacy_key]) then
+        value = tonumber(preps[legacy_key])
+    end
+
+    if clamp_fn then
+        return clamp_fn(value or 0)
+    end
+
+    return math.floor(tonumber(value) or 0)
 end
 
 local SAFE_PAYOUT_TARGETS = {
@@ -1803,29 +1825,10 @@ function hp_apply_cayo_preset_data(preps)
     if tonumber(preps.gold_value) then CayoConfig.val_gold = math.floor(tonumber(preps.gold_value)) end
     if tonumber(preps.arts_value) then CayoConfig.val_art = math.floor(tonumber(preps.arts_value)) end
 
-    if type(preps.player1) == "table" and tonumber(preps.player1.cut) then
-        CayoCutsValues.host = math.floor(tonumber(preps.player1.cut))
-    elseif tonumber(preps.host_cut) then
-        CayoCutsValues.host = math.floor(tonumber(preps.host_cut))
-    end
-
-    if type(preps.player2) == "table" and tonumber(preps.player2.cut) then
-        CayoCutsValues.player2 = math.floor(tonumber(preps.player2.cut))
-    elseif tonumber(preps.player2_cut) then
-        CayoCutsValues.player2 = math.floor(tonumber(preps.player2_cut))
-    end
-
-    if type(preps.player3) == "table" and tonumber(preps.player3.cut) then
-        CayoCutsValues.player3 = math.floor(tonumber(preps.player3.cut))
-    elseif tonumber(preps.player3_cut) then
-        CayoCutsValues.player3 = math.floor(tonumber(preps.player3_cut))
-    end
-
-    if type(preps.player4) == "table" and tonumber(preps.player4.cut) then
-        CayoCutsValues.player4 = math.floor(tonumber(preps.player4.cut))
-    elseif tonumber(preps.player4_cut) then
-        CayoCutsValues.player4 = math.floor(tonumber(preps.player4_cut))
-    end
+    CayoCutsValues.host = hp_read_player_cut(preps, "player1", "host_cut", CayoCutsValues.host, hp_clamp_cut_percent)
+    CayoCutsValues.player2 = hp_read_player_cut(preps, "player2", "player2_cut", CayoCutsValues.player2, hp_clamp_cut_percent)
+    CayoCutsValues.player3 = hp_read_player_cut(preps, "player3", "player3_cut", CayoCutsValues.player3, hp_clamp_cut_percent)
+    CayoCutsValues.player4 = hp_read_player_cut(preps, "player4", "player4_cut", CayoCutsValues.player4, hp_clamp_cut_percent)
 
     if cayoUnlockOnApplyToggle then cayoUnlockOnApplyToggle.state = CayoConfig.unlock_all_poi end
     if cayoDifficultyDropdown then cayoDifficultyDropdown.value = hp_option_index_by_value(CayoPrepOptions.difficulties, CayoConfig.diff, 1) end
@@ -1917,26 +1920,10 @@ function hp_apply_casino_preset_data(preps)
         casino_set_autograbber(preps.autograbber, true)
     end
 
-    if type(preps.player1) == "table" and tonumber(preps.player1.cut) then
-        CutsValues.host = math.floor(tonumber(preps.player1.cut))
-    elseif tonumber(preps.host_cut) then
-        CutsValues.host = math.floor(tonumber(preps.host_cut))
-    end
-    if type(preps.player2) == "table" and tonumber(preps.player2.cut) then
-        CutsValues.player2 = math.floor(tonumber(preps.player2.cut))
-    elseif tonumber(preps.player2_cut) then
-        CutsValues.player2 = math.floor(tonumber(preps.player2_cut))
-    end
-    if type(preps.player3) == "table" and tonumber(preps.player3.cut) then
-        CutsValues.player3 = math.floor(tonumber(preps.player3.cut))
-    elseif tonumber(preps.player3_cut) then
-        CutsValues.player3 = math.floor(tonumber(preps.player3_cut))
-    end
-    if type(preps.player4) == "table" and tonumber(preps.player4.cut) then
-        CutsValues.player4 = math.floor(tonumber(preps.player4.cut))
-    elseif tonumber(preps.player4_cut) then
-        CutsValues.player4 = math.floor(tonumber(preps.player4_cut))
-    end
+    CutsValues.host = hp_read_player_cut(preps, "player1", "host_cut", CutsValues.host, hp_clamp_cut_percent)
+    CutsValues.player2 = hp_read_player_cut(preps, "player2", "player2_cut", CutsValues.player2, hp_clamp_cut_percent)
+    CutsValues.player3 = hp_read_player_cut(preps, "player3", "player3_cut", CutsValues.player3, hp_clamp_cut_percent)
+    CutsValues.player4 = hp_read_player_cut(preps, "player4", "player4_cut", CutsValues.player4, hp_clamp_cut_percent)
 
     if manualDifficultyDropdown then
         manualDifficultyDropdown.value = hp_option_index_by_value(CasinoPrepOptions.difficulties, CasinoManualPreps.difficulty, 1)
@@ -2049,20 +2036,10 @@ function hp_apply_apartment_preset_data(preps)
         apartment_cut_preset_index = math.floor(hp_clamp_number(preset + 1, 1, #APARTMENT_CUT_PRESET_OPTIONS))
     end
 
-    local function read_cut(player_tbl, legacy_key, fallback)
-        local value = fallback
-        if type(player_tbl) == "table" and tonumber(player_tbl.cut) then
-            value = tonumber(player_tbl.cut)
-        elseif tonumber(preps[legacy_key]) then
-            value = tonumber(preps[legacy_key])
-        end
-        return hp_clamp_apartment_cut_percent(value or 0)
-    end
-
-    ApartmentCutsValues.player1 = read_cut(preps.player1, "player1_cut", ApartmentCutsValues.player1)
-    ApartmentCutsValues.player2 = read_cut(preps.player2, "player2_cut", ApartmentCutsValues.player2)
-    ApartmentCutsValues.player3 = read_cut(preps.player3, "player3_cut", ApartmentCutsValues.player3)
-    ApartmentCutsValues.player4 = read_cut(preps.player4, "player4_cut", ApartmentCutsValues.player4)
+    ApartmentCutsValues.player1 = hp_read_player_cut(preps, "player1", "player1_cut", ApartmentCutsValues.player1, hp_clamp_cut_percent)
+    ApartmentCutsValues.player2 = hp_read_player_cut(preps, "player2", "player2_cut", ApartmentCutsValues.player2, hp_clamp_cut_percent)
+    ApartmentCutsValues.player3 = hp_read_player_cut(preps, "player3", "player3_cut", ApartmentCutsValues.player3, hp_clamp_cut_percent)
+    ApartmentCutsValues.player4 = hp_read_player_cut(preps, "player4", "player4_cut", ApartmentCutsValues.player4, hp_clamp_cut_percent)
 
     if apartmentSoloLaunchToggle then apartmentSoloLaunchToggle.state = state.solo_launch.apartment end
     if apartmentBonusToggleRef then apartmentBonusToggleRef.state = apartment_bonus_enabled end
@@ -2082,6 +2059,21 @@ function hp_apply_apartment_preset_data(preps)
     return true
 end
 
+local HP_PRESET_MODE_HANDLERS = {
+    apartment = {
+        collect = hp_collect_apartment_preset_data,
+        apply = hp_apply_apartment_preset_data
+    },
+    cayo = {
+        collect = hp_collect_cayo_preset_data,
+        apply = hp_apply_cayo_preset_data
+    },
+    casino = {
+        collect = hp_collect_casino_preset_data,
+        apply = hp_apply_casino_preset_data
+    }
+}
+
 function hp_save_heist_preset(mode)
     local state_tbl = hp_get_preset_state(mode)
     if not state_tbl then
@@ -2096,17 +2088,12 @@ function hp_save_heist_preset(mode)
 
     hp_ensure_heist_preset_dirs()
     local path = hp_get_heist_preset_path(mode, clean_name)
-    local content
-    if mode == "apartment" then
-        content = hp_collect_apartment_preset_data()
-    elseif mode == "cayo" then
-        content = hp_collect_cayo_preset_data()
-    elseif mode == "casino" then
-        content = hp_collect_casino_preset_data()
-    else
+    local handlers = HP_PRESET_MODE_HANDLERS[mode]
+    if not handlers or type(handlers.collect) ~= "function" then
         if notify then notify.push("Heist Presets", "Unsupported preset mode", 2000) end
         return
     end
+    local content = handlers.collect()
 
     local ok = hp_write_json_file(path, content)
     if not ok then
@@ -2141,17 +2128,12 @@ function hp_load_heist_preset(mode)
         return
     end
 
-    local applied
-    if mode == "apartment" then
-        applied = hp_apply_apartment_preset_data(preps)
-    elseif mode == "cayo" then
-        applied = hp_apply_cayo_preset_data(preps)
-    elseif mode == "casino" then
-        applied = hp_apply_casino_preset_data(preps)
-    else
+    local handlers = HP_PRESET_MODE_HANDLERS[mode]
+    if not handlers or type(handlers.apply) ~= "function" then
         if notify then notify.push("Heist Presets", "Unsupported preset mode", 2000) end
         return
     end
+    local applied = handlers.apply(preps)
 
     if applied then
         if notify then notify.push("Heist Presets", "Loaded: " .. selected, 2200) end
@@ -2262,31 +2244,21 @@ local function hp_get_apartment_max_payout_cut(double_rewards)
 
     local divisor = (double_rewards and true or false) and 2 or 1
     local cut = math.floor(SAFE_PAYOUT_TARGETS.apartment / (payout / 100) / divisor)
-    return hp_clamp_apartment_cut_percent(cut), heist, difficulty
+    return hp_clamp_cut_percent(cut), heist, difficulty
 end
 
 function hp_set_apartment_uniform_cuts(cut, apply_now)
-    local value = hp_clamp_apartment_cut_percent(cut)
-
     if type(ApartmentCutsValues) ~= "table" then
-        return value
+        return hp_clamp_cut_percent(cut)
     end
 
-    ApartmentCutsValues.player1 = value
-    ApartmentCutsValues.player2 = value
-    ApartmentCutsValues.player3 = value
-    ApartmentCutsValues.player4 = value
-
-    if apartmentP1SliderRef then apartmentP1SliderRef.value = value end
-    if apartmentP2SliderRef then apartmentP2SliderRef.value = value end
-    if apartmentP3SliderRef then apartmentP3SliderRef.value = value end
-    if apartmentP4SliderRef then apartmentP4SliderRef.value = value end
-
-    if apply_now and type(apply_apartment_cuts) == "function" then
-        apply_apartment_cuts()
-    end
-
-    return value
+    return hp_set_uniform_cuts(
+        ApartmentCutsValues,
+        { "player1", "player2", "player3", "player4" },
+        { apartmentP1SliderRef, apartmentP2SliderRef, apartmentP3SliderRef, apartmentP4SliderRef },
+        cut,
+        (apply_now and type(apply_apartment_cuts) == "function") and apply_apartment_cuts or nil
+    )
 end
 
 function hp_apply_selected_apartment_cut_preset(apply_now)
@@ -2391,66 +2363,42 @@ local function apply_casino_cuts()
 end
 
 local function reset_heist_preps()
-    local prefix0 = "MP0_"
-    local prefix1 = "MP1_"
-    account.stats(prefix0 .. "H3OPT_DISRUPTSHIP").int32 = 0
-    account.stats(prefix1 .. "H3OPT_DISRUPTSHIP").int32 = 0
-    account.stats(prefix0 .. "H3OPT_BODYARMORLVL").int32 = 0
-    account.stats(prefix1 .. "H3OPT_BODYARMORLVL").int32 = 0
-    account.stats(prefix0 .. "H3OPT_CREWWEAP").int32 = 0
-    account.stats(prefix1 .. "H3OPT_CREWWEAP").int32 = 0
-    account.stats(prefix0 .. "H3OPT_CREWDRIVER").int32 = 0
-    account.stats(prefix1 .. "H3OPT_CREWDRIVER").int32 = 0
-    account.stats(prefix0 .. "H3OPT_CREWHACKER").int32 = 0
-    account.stats(prefix1 .. "H3OPT_CREWHACKER").int32 = 0
-    account.stats(prefix0 .. "H3OPT_KEYLEVELS").int32 = 0
-    account.stats(prefix1 .. "H3OPT_KEYLEVELS").int32 = 0
-    account.stats(prefix0 .. "H3OPT_MODVEH").int32 = 0
-    account.stats(prefix1 .. "H3OPT_MODVEH").int32 = 0
-    account.stats(prefix0 .. "H3OPT_MASKS").int32 = 0
-    account.stats(prefix1 .. "H3OPT_MASKS").int32 = 0
-    account.stats(prefix0 .. "H3OPT_WEAPS").int32 = 0
-    account.stats(prefix1 .. "H3OPT_WEAPS").int32 = 0
-    account.stats(prefix0 .. "H3OPT_VEHS").int32 = 0
-    account.stats(prefix1 .. "H3OPT_VEHS").int32 = 0
-    account.stats(prefix0 .. "H3OPT_APPROACH").int32 = 0
-    account.stats(prefix1 .. "H3OPT_APPROACH").int32 = 0
-    account.stats(prefix0 .. "H3OPT_BITSET0").int32 = 0
-    account.stats(prefix1 .. "H3OPT_BITSET0").int32 = 0
-    account.stats(prefix0 .. "H3OPT_ACCESSPOINTS").int32 = 0
-    account.stats(prefix1 .. "H3OPT_ACCESSPOINTS").int32 = 0
-    account.stats(prefix0 .. "H3OPT_TARGET").int32 = 0
-    account.stats(prefix1 .. "H3OPT_TARGET").int32 = 0
-    account.stats(prefix0 .. "H3OPT_POI").int32 = 0
-    account.stats(prefix1 .. "H3OPT_POI").int32 = 0
-    account.stats(prefix0 .. "H3OPT_BITSET1").int32 = 0
-    account.stats(prefix1 .. "H3OPT_BITSET1").int32 = 0
-    account.stats(prefix0 .. "H3_PARTIALPASS").int32 = 0
-    account.stats(prefix1 .. "H3_PARTIALPASS").int32 = 0
-    account.stats(prefix0 .. "CAS_HEIST_NOTS").int32 = 0
-    account.stats(prefix1 .. "CAS_HEIST_NOTS").int32 = 0
-    account.stats(prefix0 .. "CAS_HEIST_FLOW").int32 = -1
-    account.stats(prefix1 .. "CAS_HEIST_FLOW").int32 = -1
-    account.stats(prefix0 .. "H3_LAST_APPROACH").int32 = 0
-    account.stats(prefix1 .. "H3_LAST_APPROACH").int32 = 0
-    account.stats(prefix0 .. "H3_HARD_APPROACH").int32 = 0
-    account.stats(prefix1 .. "H3_HARD_APPROACH").int32 = 0
-    account.stats(prefix0 .. "H3_SKIPCOUNT").int32 = 0
-    account.stats(prefix1 .. "H3_SKIPCOUNT").int32 = 0
-    account.stats(prefix0 .. "H3_MISSIONSKIPPED").int32 = 0
-    account.stats(prefix1 .. "H3_MISSIONSKIPPED").int32 = 0
-    account.stats(prefix0 .. "H3_BOARD_DIALOGUE0").int32 = 0
-    account.stats(prefix1 .. "H3_BOARD_DIALOGUE0").int32 = 0
-    account.stats(prefix0 .. "H3_BOARD_DIALOGUE1").int32 = 0
-    account.stats(prefix1 .. "H3_BOARD_DIALOGUE1").int32 = 0
-    account.stats(prefix0 .. "H3_BOARD_DIALOGUE2").int32 = 0
-    account.stats(prefix1 .. "H3_BOARD_DIALOGUE2").int32 = 0
-    account.stats(prefix0 .. "H3_VEHICLESUSED").int32 = 0
-    account.stats(prefix1 .. "H3_VEHICLESUSED").int32 = 0
-    account.stats(prefix0 .. "MPPLY_H3_COOLDOWN").int32 = 0
-    account.stats(prefix1 .. "MPPLY_H3_COOLDOWN").int32 = 0
-    account.stats(prefix0 .. "H3_COMPLETEDPOSIX").int32 = 0
-    account.stats("MP1_H3_COMPLETEDPOSIX").int32 = 0
+    local reset_pairs = {
+        { "H3OPT_DISRUPTSHIP", 0 },
+        { "H3OPT_BODYARMORLVL", 0 },
+        { "H3OPT_CREWWEAP", 0 },
+        { "H3OPT_CREWDRIVER", 0 },
+        { "H3OPT_CREWHACKER", 0 },
+        { "H3OPT_KEYLEVELS", 0 },
+        { "H3OPT_MODVEH", 0 },
+        { "H3OPT_MASKS", 0 },
+        { "H3OPT_WEAPS", 0 },
+        { "H3OPT_VEHS", 0 },
+        { "H3OPT_APPROACH", 0 },
+        { "H3OPT_BITSET0", 0 },
+        { "H3OPT_ACCESSPOINTS", 0 },
+        { "H3OPT_TARGET", 0 },
+        { "H3OPT_POI", 0 },
+        { "H3OPT_BITSET1", 0 },
+        { "H3_PARTIALPASS", 0 },
+        { "CAS_HEIST_NOTS", 0 },
+        { "CAS_HEIST_FLOW", -1 },
+        { "H3_LAST_APPROACH", 0 },
+        { "H3_HARD_APPROACH", 0 },
+        { "H3_SKIPCOUNT", 0 },
+        { "H3_MISSIONSKIPPED", 0 },
+        { "H3_BOARD_DIALOGUE0", 0 },
+        { "H3_BOARD_DIALOGUE1", 0 },
+        { "H3_BOARD_DIALOGUE2", 0 },
+        { "H3_VEHICLESUSED", 0 },
+        { "MPPLY_H3_COOLDOWN", 0 },
+        { "H3_COMPLETEDPOSIX", 0 }
+    }
+
+    for i = 1, #reset_pairs do
+        hp_set_stat_for_all_characters(reset_pairs[i][1], reset_pairs[i][2])
+    end
+
     script.locals("gb_casino_heist_planning", 212).int32 = 2
     if notify then notify.push("Preset", "Reset preparations", 2000) end
 end
@@ -3408,211 +3356,122 @@ end
 -- Teleport cooldown to prevent spam
 local teleport_cooldown = 0
 
+local function try_begin_teleport_cooldown()
+    local current_time = os.clock()
+    if current_time < teleport_cooldown then
+        return false
+    end
+    teleport_cooldown = current_time + 1.0
+    return true
+end
+
+local function run_coords_teleport(title, success_message, x, y, z, include_error_details, on_success)
+    if not try_begin_teleport_cooldown() then
+        return false
+    end
+
+    local success, error_msg = teleport_to_coords(x, y, z)
+    if success then
+        if on_success then
+            on_success()
+        end
+        if notify then notify.push(title, success_message, 2000) end
+        return true
+    end
+
+    local msg = "Failed to teleport"
+    if include_error_details and error_msg then
+        msg = msg .. ": " .. error_msg
+    end
+    if notify then
+        notify.push(title, msg, include_error_details and 3000 or 2000)
+    end
+    return false
+end
+
 local function cayo_teleport_underwater_tunnel()
     -- Underwater tunnel entrance coordinates (Cayo Perico)
     -- Coordinates: 5051, -5822, 2 (Zone: Cayo Perico)
-    
-    -- Check cooldown to prevent spam
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0 -- 1 second cooldown
-    
-    local success, error_msg = teleport_to_coords(5051.0, -5822.0, 2.0)
-    
-    if success then
-        -- Automatically bypass drainage pipe after teleporting to tunnel
-        -- This ensures the game recognizes players are in the tunnel (especially when using Longfin)
-        util.create_thread(function()
-            util.yield(500)  -- Wait a bit for teleport to complete
-            
-                -- Bypass drainage pipe to make game recognize players in tunnel
+
+    -- Automatically bypass drainage pipe after teleporting to tunnel.
+    -- This ensures the game recognizes players are in the tunnel (especially when using Longfin).
+    run_coords_teleport(
+        "Cayo Teleport",
+        "Teleported to Underwater Tunnel",
+        5051.0, -5822.0, 2.0,
+        true,
+        function()
+            util.create_thread(function()
+                util.yield(500)
                 if script.running("fm_mission_controller_2020") then
-                    -- Apply bypass multiple times to ensure it's recognized
                     for _ = 1, 10 do
                         script.locals("fm_mission_controller_2020", 31349).int32 = 6
                         util.yield(50)
                     end
                 end
-        end)
-        
-        if notify then notify.push("Cayo Teleport", "Teleported to Underwater Tunnel", 2000) end
-    else
-        local msg = "Failed to teleport"
-        if error_msg then msg = msg .. ": " .. error_msg end
-        if notify then notify.push("Cayo Teleport", msg, 3000) end
-    end
+            end)
+        end
+    )
 end
 
 local function cayo_teleport_residence()
     -- Residence/Mansion coordinates (Cayo Perico)
     -- Coordinates: 5010, -5753, 30
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(5010.0, -5753.0, 30.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Residence", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Residence", 5010.0, -5753.0, 30.0)
 end
 
 local function cayo_teleport_main_target()
     -- Main target location (inside compound vault, Cayo Perico)
     -- Coordinates: 5006, -5754, 16
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(5006.0, -5754.0, 16.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Main Target", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Main Target", 5006.0, -5754.0, 16.0)
 end
 
 local function cayo_teleport_gate()
     -- Gate entrance coordinates (Cayo Perico compound main gate)
     -- Coordinates: 4992, -5720, 21
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(4992.0, -5720.0, 21.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Gate", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Gate", 4992.0, -5720.0, 21.0)
 end
 
 local function cayo_teleport_center()
     -- Center coordinates (Cayo Perico)
     -- Coordinates: 4971, -5136, 4
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(4971.0, -5136.0, 4.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Center", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Center", 4971.0, -5136.0, 4.0)
 end
 
 local function cayo_teleport_loot1()
     -- Loot #1 coordinates (Cayo Perico - In Residence)
     -- Coordinates: 5002, -5751, 16
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(5002.0, -5751.0, 16.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Loot #1", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Loot #1", 5002.0, -5751.0, 16.0)
 end
 
 local function cayo_teleport_loot2()
     -- Loot #2 coordinates (Cayo Perico - In Residence)
     -- Coordinates: 5031, -5737, 19
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(5031.0, -5737.0, 19.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Loot #2", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Loot #2", 5031.0, -5737.0, 19.0)
 end
 
 local function cayo_teleport_loot3()
     -- Loot #3 coordinates (Cayo Perico - In Residence)
     -- Coordinates: 5081, -5756, 17
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(5081.0, -5756.0, 17.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Loot #3", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Loot #3", 5081.0, -5756.0, 17.0)
 end
 
 local function cayo_teleport_gate_outside()
     -- Gate coordinates (Cayo Perico - Outside Residence)
     -- Coordinates: 4977, -5706, 20
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(4977.0, -5706.0, 20.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Gate", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Gate", 4977.0, -5706.0, 20.0)
 end
 
 local function cayo_teleport_airport()
     -- Airport coordinates (Cayo Perico - Outside Residence)
     -- Coordinates: 4443, -4510, 5
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(4443.0, -4510.0, 5.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Airport", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Airport", 4443.0, -4510.0, 5.0)
 end
 
 local function cayo_teleport_escape()
     -- Escape coordinates (Cayo Perico - Outside Residence)
     -- Coordinates: 3698, -6133, -5
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(3698.0, -6133.0, -5.0)
-    if success then
-        if notify then notify.push("Cayo Teleport", "Teleported to Escape", 2000) end
-    else
-        if notify then notify.push("Cayo Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Cayo Teleport", "Teleported to Escape", 3698.0, -6133.0, -5.0)
 end
 
 local function cayo_teleport_kosatka()
@@ -4243,86 +4102,31 @@ ui.button(gCuts, "cuts_apply", "Apply Cuts", function() apply_casino_cuts() end)
 local function casino_teleport_tunnel()
     -- Tunnel coordinates (Casino Heist - Outside Casino)
     -- Coordinates: 968, -73, 75
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(968.0, -73.0, 75.0)
-    if success then
-        if notify then notify.push("Casino Teleport", "Teleported to Tunnel", 2000) end
-    else
-        if notify then notify.push("Casino Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Casino Teleport", "Teleported to Tunnel", 968.0, -73.0, 75.0)
 end
 
 local function casino_teleport_staff_lobby()
     -- Staff Lobby coordinates (Casino Heist - Outside Casino)
     -- Coordinates: 982, 16, 82
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(982.0, 16.0, 82.0)
-    if success then
-        if notify then notify.push("Casino Teleport", "Teleported to Staff Lobby", 2000) end
-    else
-        if notify then notify.push("Casino Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Casino Teleport", "Teleported to Staff Lobby", 982.0, 16.0, 82.0)
 end
 
 local function casino_teleport_staff_lobby_inside()
     -- Staff Lobby coordinates (Casino Heist - In Casino)
     -- Coordinates: 2547, -270, -58
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(2547.0, -270.0, -58.0)
-    if success then
-        if notify then notify.push("Casino Teleport", "Teleported to Staff Lobby", 2000) end
-    else
-        if notify then notify.push("Casino Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Casino Teleport", "Teleported to Staff Lobby", 2547.0, -270.0, -58.0)
 end
 
 local function casino_teleport_side_safe()
     -- Side Safe coordinates (Casino Heist - In Casino)
     -- Coordinates: 2522, -287, -58
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(2522.0, -287.0, -58.0)
-    if success then
-        if notify then notify.push("Casino Teleport", "Teleported to Side Safe", 2000) end
-    else
-        if notify then notify.push("Casino Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Casino Teleport", "Teleported to Side Safe", 2522.0, -287.0, -58.0)
 end
 
 local function casino_teleport_tunnel_door()
     -- Tunnel Door coordinates (Casino Heist - In Casino)
     -- Coordinates: 2469, -279, -70
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
-        return
-    end
-    teleport_cooldown = current_time + 1.0
-    
-    local success = teleport_to_coords(2469.0, -279.0, -70.0)
-    if success then
-        if notify then notify.push("Casino Teleport", "Teleported to Tunnel Door", 2000) end
-    else
-        if notify then notify.push("Casino Teleport", "Failed to teleport", 2000) end
-    end
+    run_coords_teleport("Casino Teleport", "Teleported to Tunnel Door", 2469.0, -279.0, -70.0)
 end
 
 -- Teleport section - Outside Casino
@@ -4675,6 +4479,55 @@ local function get_blip_coords(blip_sprite)
     return nil
 end
 
+local function teleport_to_blip_with_job(blip_sprite, notify_title, success_message, not_found_message, opts)
+    opts = opts or {}
+    local me = players.me()
+    if not me then
+        if notify then notify.push(notify_title, "Player not found", 2000) end
+        return false
+    end
+
+    util.create_job(function()
+        local ped = me.ped
+        local veh = me.vehicle
+        local entity = (veh and veh ~= 0) and veh or ped
+
+        invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
+
+        if opts.relay_if_interior and me.in_interior then
+            local relay = opts.relay_coords or TELEPORT_COORDS_MAZEBANK
+            invoker.call(0x239A3351AC1DA385, entity, relay.x, relay.y, relay.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+            util.yield(opts.relay_delay_ms or 800)
+        end
+
+        local coords = get_blip_coords(blip_sprite)
+        if coords then
+            invoker.call(0x239A3351AC1DA385, entity, coords.x, coords.y, coords.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+            if opts.heading then
+                invoker.call(0x8E2530AA8ADA980E, entity, opts.heading) -- SET_ENTITY_HEADING
+            end
+            util.yield(opts.arrival_delay_ms or 500)
+            if notify and success_message then notify.push(notify_title, success_message, opts.success_duration_ms or 2000) end
+        elseif opts.fallback_coords then
+            local fb = opts.fallback_coords
+            invoker.call(0x239A3351AC1DA385, entity, fb.x, fb.y, fb.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+            if opts.heading then
+                invoker.call(0x8E2530AA8ADA980E, entity, opts.heading) -- SET_ENTITY_HEADING
+            end
+            util.yield(opts.arrival_delay_ms or 500)
+            if notify and opts.fallback_message then
+                notify.push(notify_title, opts.fallback_message, opts.fallback_duration_ms or 2200)
+            end
+        else
+            if notify and not_found_message then notify.push(notify_title, not_found_message, opts.not_found_duration_ms or 2000) end
+        end
+
+        invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
+    end)
+
+    return true
+end
+
 -- Apartment Tab Content (wrapped in do...end to reduce local variable count)
 do
 local gApartmentInfo = ui.group(heistTab, "Info", nil, nil, nil, 160, "apartment")
@@ -4846,71 +4699,23 @@ local function apartment_unlock_all_jobs()
 end
 
 local function apartment_teleport_to_entrance()
-    local me = players.me()
-    if not me then
-        if notify then notify.push("Teleport", "Player not found", 2000) end
-        return false
-    end
-    
-    util.create_job(function()
-        local ped = me.ped
-        local veh = me.vehicle
-        local entity = (veh and veh ~= 0) and veh or ped
-        
-        -- Freeze entity position
-        invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
-        
-        -- Smart relay: Transit via outdoor safe point if in interior
-        if me.in_interior then
-            local transit_point = {x = -75.146, y = -818.687, z = 326.175} -- MAZEBANK
-            invoker.call(0x239A3351AC1DA385, entity, transit_point.x, transit_point.y, transit_point.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-            util.yield(800)
-        end
-        
-        local coords = get_blip_coords(BLIP_SPRITES_APARTMENT)
-        if coords then
-            invoker.call(0x239A3351AC1DA385, entity, coords.x, coords.y, coords.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-            util.yield(500)
-            if notify then notify.push("Teleport", "Teleported to Entrance", 2000) end
-        else
-            if notify then notify.push("Teleport", "Entrance blip not found", 2000) end
-        end
-        
-        -- Unfreeze entity position
-        invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
-    end)
-    return true
+    return teleport_to_blip_with_job(
+        BLIP_SPRITES_APARTMENT,
+        "Teleport",
+        "Teleported to Entrance",
+        "Entrance blip not found",
+        { relay_if_interior = true }
+    )
 end
 
 local function apartment_teleport_to_heist_board()
-    local me = players.me()
-    if not me then
-        if notify then notify.push("Teleport", "Player not found", 2000) end
-        return false
-    end
-    
-    util.create_job(function()
-        local ped = me.ped
-        local veh = me.vehicle
-        local entity = (veh and veh ~= 0) and veh or ped
-        
-        -- Freeze entity position
-        invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
-        
-        local coords = get_blip_coords(BLIP_SPRITES_HEIST)
-        if coords then
-            invoker.call(0x239A3351AC1DA385, entity, coords.x, coords.y, coords.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-            invoker.call(0x8E2530AA8ADA980E, entity, 173.376) -- SET_ENTITY_HEADING
-            util.yield(500)
-            if notify then notify.push("Teleport", "Teleported to Heist Board", 2000) end
-        else
-            if notify then notify.push("Teleport", "Heist board blip not found (enter property first)", 2000) end
-        end
-        
-        -- Unfreeze entity position
-        invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
-    end)
-    return true
+    return teleport_to_blip_with_job(
+        BLIP_SPRITES_HEIST,
+        "Teleport",
+        "Teleported to Heist Board",
+        "Heist board blip not found (enter property first)",
+        { heading = 173.376 }
+    )
 end
 
 local gApartmentTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "apartment")
@@ -5073,9 +4878,6 @@ end -- End Apartment Tab do block
 -- Doomsday section (wrapped in do...end to reduce local variable count)
 do
 local function doomsday_complete_preps(act)
-    local prefix0 = "MP0_"
-    local prefix1 = "MP1_"
-    
     local flow, status, notifications
     
     if act == 1 then
@@ -5098,12 +4900,9 @@ local function doomsday_complete_preps(act)
         return false
     end
     
-    account.stats(prefix0 .. "GANGOPS_FLOW_MISSION_PROG").int32 = flow
-    account.stats(prefix1 .. "GANGOPS_FLOW_MISSION_PROG").int32 = flow
-    account.stats(prefix0 .. "GANGOPS_HEIST_STATUS").int32 = status
-    account.stats(prefix1 .. "GANGOPS_HEIST_STATUS").int32 = status
-    account.stats(prefix0 .. "GANGOPS_FLOW_NOTIFICATIONS").int32 = notifications
-    account.stats(prefix1 .. "GANGOPS_FLOW_NOTIFICATIONS").int32 = notifications
+    hp_set_stat_for_all_characters("GANGOPS_FLOW_MISSION_PROG", flow)
+    hp_set_stat_for_all_characters("GANGOPS_HEIST_STATUS", status)
+    hp_set_stat_for_all_characters("GANGOPS_FLOW_NOTIFICATIONS", notifications)
     
     -- Reload board
     script.locals("gb_gang_ops_planning", 211).int32 = 6
@@ -5113,15 +4912,9 @@ local function doomsday_complete_preps(act)
 end
 
 local function doomsday_reset_progress()
-    local prefix0 = "MP0_"
-    local prefix1 = "MP1_"
-    
-    account.stats(prefix0 .. "GANGOPS_FLOW_MISSION_PROG").int32 = 503
-    account.stats(prefix1 .. "GANGOPS_FLOW_MISSION_PROG").int32 = 503
-    account.stats(prefix0 .. "GANGOPS_HEIST_STATUS").int32 = 0
-    account.stats(prefix1 .. "GANGOPS_HEIST_STATUS").int32 = 0
-    account.stats(prefix0 .. "GANGOPS_FLOW_NOTIFICATIONS").int32 = 1557
-    account.stats(prefix1 .. "GANGOPS_FLOW_NOTIFICATIONS").int32 = 1557
+    hp_set_stat_for_all_characters("GANGOPS_FLOW_MISSION_PROG", 503)
+    hp_set_stat_for_all_characters("GANGOPS_HEIST_STATUS", 0)
+    hp_set_stat_for_all_characters("GANGOPS_FLOW_NOTIFICATIONS", 1557)
     
     -- Reload board
     script.locals("gb_gang_ops_planning", 211).int32 = 6
@@ -5131,70 +4924,23 @@ end
 
 -- Doomsday Teleportation
 local function doomsday_teleport_to_entrance()
-    local me = players.me()
-    if not me then
-        if notify then notify.push("Teleport", "Player not found", 2000) end
-        return false
-    end
-
-    util.create_job(function()
-        local ped = me.ped
-        local veh = me.vehicle
-        local entity = (veh and veh ~= 0) and veh or ped
-
-        -- Freeze entity position
-        invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
-
-        -- Smart relay: Transit via outdoor safe point if in interior
-        if me.in_interior then
-            invoker.call(0x239A3351AC1DA385, entity, TELEPORT_COORDS_MAZEBANK.x, TELEPORT_COORDS_MAZEBANK.y, TELEPORT_COORDS_MAZEBANK.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-            util.yield(800)
-        end
-
-        local coords = get_blip_coords(BLIP_SPRITES_FACILITY)
-        if coords then
-            invoker.call(0x239A3351AC1DA385, entity, coords.x, coords.y, coords.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-            util.yield(500)
-            if notify then notify.push("Teleport", "Teleported to Facility", 2000) end
-        else
-            if notify then notify.push("Teleport", "Facility blip not found", 2000) end
-        end
-
-        -- Unfreeze entity position
-        invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
-    end)
-    return true
+    return teleport_to_blip_with_job(
+        BLIP_SPRITES_FACILITY,
+        "Teleport",
+        "Teleported to Facility",
+        "Facility blip not found",
+        { relay_if_interior = true }
+    )
 end
 
 local function doomsday_teleport_to_screen()
-    local me = players.me()
-    if not me then
-        if notify then notify.push("Teleport", "Player not found", 2000) end
-        return false
-    end
-
-    util.create_job(function()
-        local ped = me.ped
-        local veh = me.vehicle
-        local entity = (veh and veh ~= 0) and veh or ped
-
-        -- Freeze entity position
-        invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
-
-        local coords = get_blip_coords(BLIP_SPRITES_HEIST)
-        if coords then
-            invoker.call(0x239A3351AC1DA385, entity, coords.x, coords.y, coords.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-            invoker.call(0x8E2530AA8ADA980E, entity, 325.726) -- SET_ENTITY_HEADING (Doomsday screen heading)
-            util.yield(500)
-            if notify then notify.push("Teleport", "Teleported to Doomsday Screen", 2000) end
-        else
-            if notify then notify.push("Teleport", "Heist board blip not found (enter Facility first)", 2000) end
-        end
-
-        -- Unfreeze entity position
-        invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
-    end)
-    return true
+    return teleport_to_blip_with_job(
+        BLIP_SPRITES_HEIST,
+        "Teleport",
+        "Teleported to Doomsday Screen",
+        "Heist board blip not found (enter Facility first)",
+        { heading = 325.726 }
+    )
 end
 
 -- Doomsday Tab Content
@@ -5387,25 +5133,21 @@ end -- End Doomsday section do block
 
 -- Cluckin Bell Functions
 local function cluckin_skip_to_finale()
-    account.stats("MP0_SALV23_INST_PROG").int32 = 31
-    account.stats("MP1_SALV23_INST_PROG").int32 = 31
+    hp_set_stat_for_all_characters("SALV23_INST_PROG", 31)
     
     local other_stats = { "SALV23_GEN_BS", "SALV23_SCOPE_BS", "SALV23_FM_PROG" }
     for _, stat in ipairs(other_stats) do
-        account.stats("MP0_" .. stat).int32 = -1
-        account.stats("MP1_" .. stat).int32 = -1
+        hp_set_stat_for_all_characters(stat, -1)
     end
 end
 
 local function cluckin_remove_cooldown()
-    account.stats("MP0_SALV23_CFR_COOLDOWN").int32 = -1
-    account.stats("MP1_SALV23_CFR_COOLDOWN").int32 = -1
+    hp_set_stat_for_all_characters("SALV23_CFR_COOLDOWN", -1)
     if notify then notify.push("Cluckin Bell", "Cooldown Removed", 2000) end
 end
 
 local function cluckin_reset_progress()
-    account.stats("MP0_SALV23_INST_PROG").int32 = 0
-    account.stats("MP1_SALV23_INST_PROG").int32 = 0
+    hp_set_stat_for_all_characters("SALV23_INST_PROG", 0)
 end
 
 local function cluckin_instant_finish()

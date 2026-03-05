@@ -17,6 +17,7 @@
 - add teleport to kosatka button to cayo preps
 - some more styling tweaks
 - refactor to keep all script related files (including heists preset folder) within ShillenSilent_core folder within scripts
+- some code cleanup
 
 ## Old
 ### v0.0.1

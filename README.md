@@ -16,6 +16,7 @@
 	- 2) it seems to be confusing people into thinking they CAN put the cut that high so i will clip it lower lol
 - add teleport to kosatka button to cayo preps
 - some more styling tweaks
+- refactor to keep all script related files (including heists preset folder) within ShillenSilent_core folder within scripts
 
 ## Old
 ### v0.0.1

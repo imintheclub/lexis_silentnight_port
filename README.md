@@ -4,6 +4,11 @@
 3. Load the script in Lexis
 
 # Changelog
+## v0.0.3
+- fixed algorithm for kosatka teleport
+- memory fixes
+- some blocking operations moved to jobs
+
 ## v0.0.2
 - Added cutscene skip button for 4 major heists
 - Added skip cooldown button WITH WARNING NOT TO USE IT !!! for Casino, Cayo, Doomsday

@@ -612,7 +612,7 @@ local function button_colors_for(btn, hovered)
     else
         return {
             bg = hovered and config.colors.transparent or config.colors.bg_ghost_hover,
-            border = config.colors.border_strong,
+            border = config.colors.transparent,
             text = config.colors.text_main
         }
     end

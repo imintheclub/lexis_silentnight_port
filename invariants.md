@@ -1,18 +1,28 @@
 Project context:
 - I maintain a GTA V heist-focused Lua script for Lexis mod menu.
 - Repo root: /Users/shiv/dev/projects/personal/lexis_silentnight_port
-- Main script: /Users/shiv/dev/projects/personal/lexis_silentnight_port/ShillenSilent Minimal.lua
+- Main script: /Users/shiv/dev/projects/personal/lexis_silentnight_port/ShillenSilent.lua
 
 Terminology:
 - Cherax: GTA V mod menu with its own Lua API.
 - Lexis: GTA V mod menu with a different Lua API.
-- Silent Night: a heist script originally for Cherax (source is in this repo).
+- Silent Night: a heist script originally for Cherax (source is in this repo under resources).
 - My script is a Lexis-focused fork/port direction: heist editing + selected Silent Night features.
 
 Repo layout:
-- Silent Night source reference: /Users/shiv/dev/projects/personal/lexis_silentnight_port/SilentNight
-- Cherax Lua API docs: /Users/shiv/dev/projects/personal/lexis_silentnight_port/cherax_docs
-- Lexis Lua API docs: /Users/shiv/dev/projects/personal/lexis_silentnight_port/lexis_docs
+- Silent Night source reference: /Users/shiv/dev/projects/personal/lexis_silentnight_port/resources/SilentNight
+- Cherax Lua API docs: /Users/shiv/dev/projects/personal/lexis_silentnight_port/resources/cherax_docs
+- Lexis Lua API docs: /Users/shiv/dev/projects/personal/lexis_silentnight_port/resources/lexis_docs
+- Core runtime dependency directory: /Users/shiv/dev/projects/personal/lexis_silentnight_port/ShillenSilent_core
+
+Core/runtime file model:
+- External dependencies for this script should live under `ShillenSilent_core` going forward.
+- Font loading model in script:
+- Primary: `ShillenSilent_core\fonts\InterVariable.ttf`
+- Preset JSON storage is under:
+- `ShillenSilent_core\HeistPresets\Apartment`
+- `ShillenSilent_core\HeistPresets\CayoPerico`
+- `ShillenSilent_core\HeistPresets\DiamondCasino`
 
 What I want from you:
 - Treat Silent Night as behavior/reference, then translate cleanly to Lexis API.
@@ -20,13 +30,12 @@ What I want from you:
 - Keep changes pragmatic and minimal-risk; preserve existing behavior unless asked.
 - When editing UI, keep the current light-style system consistent.
 - When you claim something is missing/present, verify in-file with exact function/line references.
-- Run syntax checks after edits (e.g., luac -p on the Lua file).
+- Run syntax checks after edits (e.g., `luac -p "ShillenSilent.lua"`).
 - Give concise summaries: what changed, why, and file/line pointers.
 
 Baseline invariants (generic):
 - Keep this as a heist-focused Lexis Lua script; do not broaden scope unless requested.
 - Preserve current behavior by default; changes should be additive, not destructive.
-- Maintain compatibility with existing user data/config/presets unless migration is explicitly requested.
 - Reuse existing internal patterns/helpers instead of introducing parallel duplicate systems.
 - Keep UI structure coherent and consistent with the current menu framework (tabs/subtabs, groups, controls).
 - Preserve stable control semantics (buttons/toggles/sliders/dropdowns should continue to behave predictably).

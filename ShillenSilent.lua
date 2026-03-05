@@ -114,11 +114,8 @@ local function init_config()
     local menu_width = tw(356)
     local menu_height = tw(150)
 
-    return {
-        font_path = SHILLENSILENT_CORE_FONTS_DIR .. "\\InterVariable.ttf",
-        font_fallback_paths = {
-            get_path("\\InterVariable.ttf")
-        },
+        return {
+            font_path = SHILLENSILENT_CORE_FONTS_DIR .. "\\InterVariable.ttf",
 
         -- Typography scale tuned for Inter.
         font_scale_title = 24.0 * scale,

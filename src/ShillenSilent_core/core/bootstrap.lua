@@ -211,7 +211,18 @@ local function init_config()
         },
 
         motion = {
-            open_y_offset = tw(7.5) -- 30px
+            -- Global motion tokens for consistent easing/timing.
+            reduced_motion = false,
+            open_y_offset = tw(7.5), -- 30px
+            speed_fast = 0.24,
+            speed_base = 0.16,
+            speed_slow = 0.11,
+            open_speed = 0.15,
+            subtab_switch_speed = 0.18,
+            subtab_switch_slide = tw(3),
+            subtab_active_speed = 0.2,
+            group_move_speed = 0.2,
+            dropdown_speed = 0.22
         },
 
         scale = scale,
@@ -285,7 +296,9 @@ local state = {
         drag_offset = { x = 0, y = 0 },
         resize_start = { x = 0, y = 0, width = config.menu_width, height = config.menu_height }
     },
-    animation = { open = false, progress = 0.0, target = 1.0, speed = 0.15 },
+    animation = { open = false, progress = 0.0, target = 1.0, speed = config.motion.open_speed or 0.15 },
+    render_alpha_mul = 1.0,
+    content_transition = { subtab = 1, progress = 1.0 },
     active_tab_y = nil,
     particles = {},
     mouse = { x = 0, y = 0, down = false, clicked = false },

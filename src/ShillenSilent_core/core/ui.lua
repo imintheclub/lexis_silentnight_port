@@ -75,6 +75,9 @@ local function to_gui_color(c, use_anim)
     if use_anim and state.animation then
         a = math.floor(a * state.animation.progress)
     end
+    if state.render_alpha_mul and state.render_alpha_mul < 0.999 then
+        a = math.floor(a * state.render_alpha_mul)
+    end
     return color(r, g, b, a)
 end
 
@@ -115,6 +118,72 @@ end
 
 local function lerp(a, b, t)
     return a + (b - a) * t
+end
+
+local animator = { values = {}, frame = 0 }
+
+function animator.clamp01(v)
+    if v < 0 then return 0 end
+    if v > 1 then return 1 end
+    return v
+end
+
+function animator.motion_disabled()
+    return config.motion and config.motion.reduced_motion
+end
+
+function animator.motion_speed(token_value, fallback)
+    if animator.motion_disabled() then
+        return 1.0
+    end
+    return token_value or fallback or 0.16
+end
+
+function animator.to(key, target, speed)
+    if animator.motion_disabled() then
+        animator.values[key] = { v = target, seen = animator.frame }
+        return target
+    end
+
+    local node = animator.values[key]
+    if not node then
+        node = { v = target, seen = animator.frame }
+        animator.values[key] = node
+        return target
+    end
+
+    node.v = lerp(node.v, target, speed)
+    if math.abs(node.v - target) < 0.01 then
+        node.v = target
+    end
+    node.seen = animator.frame
+    return node.v
+end
+
+function animator.vec2(key, target_x, target_y, speed)
+    local x = animator.to(key .. ":x", target_x, speed)
+    local y = animator.to(key .. ":y", target_y, speed)
+    return x, y
+end
+
+function animator.prune(max_age)
+    local cutoff = animator.frame - max_age
+    for key, node in pairs(animator.values) do
+        if not node.seen or node.seen < cutoff then
+            animator.values[key] = nil
+        end
+    end
+end
+
+function animator.blend_color(c1, c2, t, out)
+    local tt = animator.clamp01(t)
+    local inv = 1 - tt
+    out = out or {}
+    out.r = math.floor((c1.r or 0) * inv + (c2.r or 0) * tt)
+    out.g = math.floor((c1.g or 0) * inv + (c2.g or 0) * tt)
+    out.b = math.floor((c1.b or 0) * inv + (c2.b or 0) * tt)
+    out.a = math.floor((c1.a or 255) * inv + (c2.a or 255) * tt)
+    return out
 end
 
 local function manage_particles(w, h)
@@ -388,8 +457,12 @@ local render_cache = {
     active_groups = {},
     col_x = {},
     groups_by_column = { {}, {}, {} },
-    ordered_groups = {}
+    ordered_groups = {},
+    pending_dropdowns = {}
 }
+render_cache.subtab_bg_col = { r = 255, g = 255, b = 255, a = 255 }
+render_cache.subtab_border_col = { r = 255, g = 255, b = 255, a = 255 }
+render_cache.subtab_text_col = { r = 255, g = 255, b = 255, a = 255 }
 
 local function flatten_groups_by_order(activeGroups, heist_subtab)
     local ordered = render_cache.ordered_groups
@@ -772,12 +845,13 @@ local function draw_dropdown_item(item, x, y, w, original_y)
     local boxX = is_preset_file and (x + pad_x) or (x + w - boxW - pad_x)
     local boxY = is_preset_file and (y + config.space.x5) or (y + config.space.x1_5)
     
-    local allow_hover = (not state.active_dropdown) or (state.active_dropdown == item.id)
+    local is_active_dropdown = (state.active_dropdown == item.id)
+    local allow_hover = (not state.active_dropdown) or is_active_dropdown
     local hovered = allow_hover and is_hovered_content(boxX, original_y + config.space.x1, boxW, boxH)
 
     if hovered and state.mouse.clicked then
         state.window.is_dragging = false  -- Prevent window dragging
-        if state.active_dropdown == item.id then
+        if is_active_dropdown then
             item.isOpen = false
             state.active_dropdown = nil
         elseif not state.active_dropdown then
@@ -787,9 +861,21 @@ local function draw_dropdown_item(item, x, y, w, original_y)
         end
     end
 
+    local target_open = (state.active_dropdown == item.id) and 1.0 or 0.0
+    local open_t = animator.to(
+        "dropdown_open:" .. tostring(item.id),
+        target_open,
+        animator.motion_speed(config.motion.dropdown_speed, config.motion.speed_fast or 0.24)
+    )
+    if target_open > 0.5 then
+        item.isOpen = true
+    elseif open_t < 0.01 then
+        item.isOpen = false
+    end
+
     render_text(item.label, x + pad_x, y + config.space.x1, config.font_scale_body, config.colors.text_main)
     
-    local box_active = hovered or item.isOpen
+    local box_active = hovered or (open_t > 0.01)
     local boxBg = box_active and config.colors.accent or config.colors.bg_control
     local boxBorder = box_active and config.colors.accent_hover or config.colors.border
     local boxText = box_active and config.colors.text_on_accent or config.colors.text_sec
@@ -806,18 +892,24 @@ local function draw_dropdown_item(item, x, y, w, original_y)
         render_text(selected, boxX + boxW / 2, selectedTextY, config.font_scale_body, boxText, "center")
     end
     
-    -- Dropdown Arrow
+    -- Dropdown Arrow (ASCII-safe frames to simulate rotation)
     local arrowTextH = config.font_scale_small * 0.7
     local arrowTextY = boxY + (boxH / 2) - (arrowTextH / 2)
-    render_text("v", boxX + boxW - config.space.x4, arrowTextY, config.font_scale_small, boxArrow)
+    local arrowFrames = { "v", ">", "^" }
+    local arrowIdx = 1 + math.floor((open_t or 0.0) * (#arrowFrames - 1) + 0.5)
+    if arrowIdx < 1 then arrowIdx = 1 end
+    if arrowIdx > #arrowFrames then arrowIdx = #arrowFrames end
+    render_text(arrowFrames[arrowIdx], boxX + boxW - config.space.x4, arrowTextY, config.font_scale_small, boxArrow)
 
-    if item.isOpen then
+    if open_t > 0.01 then
         return {
             item = item,
             x = boxX,
             y = boxY + boxH + config.space.x1,
             w = boxW,
-            align = is_preset_file and "left" or "center"
+            align = is_preset_file and "left" or "center",
+            open_t = open_t,
+            interactive = (target_open > 0.5) and (open_t > 0.95)
         }
     end
 end
@@ -862,11 +954,17 @@ end
 ui.render = function()
     ensure_assets()
     update_input()
+    animator.frame = animator.frame + 1
+    if animator.frame % 240 == 0 then
+        animator.prune(720)
+    end
+    state.render_alpha_mul = 1.0
 
     -- Heist-only layout: always keep the Heist tab selected.
     ui.currentTab = ui.tabs[1]
 
     -- Animation
+    state.animation.speed = config.motion.open_speed or state.animation.speed
     local diff = state.animation.target - state.animation.progress
     if math.abs(diff) > 0.001 then
         state.animation.progress = state.animation.progress + diff * state.animation.speed
@@ -973,7 +1071,23 @@ ui.render = function()
     -- Render subtabs for Heist tab (BEFORE clip, so they stay fixed at top)
     local subtab_bar_height = 0
     local groups_start_y = contentY
+    local content_intro_t = 1.0
+    if state.content_transition.subtab ~= state.heist_subtab then
+        state.content_transition.subtab = state.heist_subtab
+        state.content_transition.progress = 0.0
+        animator.values["content_transition"] = { v = 0.0, seen = animator.frame }
+    end
+    state.content_transition.progress = animator.to(
+        "content_transition",
+        1.0,
+        animator.motion_speed(config.motion.subtab_switch_speed, config.motion.speed_base or 0.16)
+    )
+    content_intro_t = state.content_transition.progress
+
     if ui.currentTab and ui.currentTab.id == "heist" then
+        local subtab_bg_col = render_cache.subtab_bg_col
+        local subtab_border_col = render_cache.subtab_border_col
+        local subtab_text_col = render_cache.subtab_text_col
         local subtab_names = HEIST_SUBTAB_NAMES
         local subtab_count = #subtab_names
         local subtab_h = config.space.x9
@@ -985,21 +1099,31 @@ ui.render = function()
             local subtab_x = contentX + (i - 1) * (subtab_w + subtab_gap)
             local is_active = (state.heist_subtab == i)
             local hovered = (not state.active_dropdown) and is_hovered(subtab_x, subtab_y, subtab_w, subtab_h)
+            local active_t = animator.to(
+                "subtab_active:" .. i,
+                is_active and 1.0 or 0.0,
+                animator.motion_speed(config.motion.subtab_active_speed, config.motion.speed_fast or 0.24)
+            )
             
             if hovered and state.mouse.clicked and not state.active_dropdown then
                 state.heist_subtab = i
+                state.content_transition.subtab = i
+                state.content_transition.progress = 0.0
+                animator.values["content_transition"] = { v = 0.0, seen = animator.frame }
                 state.scroll.y = 0
                 state.window.is_dragging = false
             end
             
-            local bg_col = is_active and config.colors.accent or config.colors.bg_control
-            if hovered and not is_active then
-                bg_col = config.colors.bg_control_hover
+            animator.blend_color(config.colors.bg_control, config.colors.accent, active_t, subtab_bg_col)
+            if hovered and active_t < 0.99 then
+                animator.blend_color(subtab_bg_col, config.colors.bg_control_hover, 0.7, subtab_bg_col)
             end
-            render_rect(subtab_x, subtab_y, subtab_w, subtab_h, bg_col, config.radius.md)
-            render_outline(subtab_x, subtab_y, subtab_w, subtab_h, is_active and config.colors.accent_hover or config.colors.border, 1, config.radius.md)
-            local text_col = is_active and config.colors.text_on_accent or config.colors.text_main
-            render_text(name, subtab_x + subtab_w / 2, subtab_y + subtab_h / 2 - config.space.x2, config.font_scale_body, text_col, "center")
+            animator.blend_color(config.colors.border, config.colors.accent_hover, active_t, subtab_border_col)
+            animator.blend_color(config.colors.text_main, config.colors.text_on_accent, active_t, subtab_text_col)
+
+            render_rect(subtab_x, subtab_y, subtab_w, subtab_h, subtab_bg_col, config.radius.md)
+            render_outline(subtab_x, subtab_y, subtab_w, subtab_h, subtab_border_col, 1, config.radius.md)
+            render_text(name, subtab_x + subtab_w / 2, subtab_y + subtab_h / 2 - config.space.x2, config.font_scale_body, subtab_text_col, "center")
         end
         
         subtab_bar_height = subtab_h + config.space.x2
@@ -1011,7 +1135,8 @@ ui.render = function()
     local clip_h = contentH - subtab_bar_height
     gui.push_clip(vec(contentX + ox, clip_y + oy), vec(contentW, clip_h))
 
-    local pendingDropdown = nil
+    local pendingDropdowns = render_cache.pending_dropdowns
+    clear_array(pendingDropdowns)
 
     local activeGroups = render_cache.active_groups
     clear_array(activeGroups)
@@ -1055,6 +1180,8 @@ ui.render = function()
         local ordered = flatten_groups_by_order(activeGroups, state.heist_subtab)
         distribute_groups_by_column(ordered, groups_by_column, column_count)
 
+        local group_move_speed = animator.motion_speed(config.motion.group_move_speed, config.motion.speed_base or 0.16)
+        local intro_slide_dist = config.motion.subtab_switch_slide or config.space.x3
         local max_col_y = base_y
         for col = 1, column_count do
             local gX = col_x[col]
@@ -1064,25 +1191,34 @@ ui.render = function()
                 local group = entry.group
                 local gY = col_y
                 local actual_h = get_group_actual_height(group)
+                local subkey = HEIST_SUBTAB_KEYS[state.heist_subtab] or tostring(state.heist_subtab or 0)
+                local anim_key = "group:" .. subkey .. ":" .. tostring(entry.order or 0) .. ":" .. tostring(group and group.label or "")
+                local drawX, drawY = animator.vec2(anim_key, gX, gY, group_move_speed)
+                local stagger = math.min(0.45, ((entry.order or 1) - 1) * 0.06)
+                local reveal_t = (content_intro_t <= stagger) and 0.0 or ((content_intro_t - stagger) / (1.0 - stagger))
+                reveal_t = animator.clamp01(reveal_t)
+                drawY = drawY + ((1.0 - reveal_t) * intro_slide_dist)
 
                 local available_height = contentH - subtab_bar_height
                 local clip_start = groups_start_y
-                if (gY + actual_h > clip_start) and (gY < clip_start + available_height) then
+                if reveal_t > 0.01 and (drawY + actual_h > clip_start) and (drawY < clip_start + available_height) then
                     local pad_x = config.space.x5
-                    render_card(gX, gY, col_w, actual_h, config.colors.bg_panel, config.colors.border, config.radius.lg)
+                    state.render_alpha_mul = reveal_t
+                    render_card(drawX, drawY, col_w, actual_h, config.colors.bg_panel, config.colors.border, config.radius.lg)
                     -- Group Header Label
-                    render_text(group.label, gX + pad_x, gY + config.space.x3, config.font_scale_header, config.colors.text_main)
-                    local dividerY = gY + config.item_height.header_padding - config.space.x1
-                    render_rect(gX + pad_x, dividerY, col_w - (pad_x * 2), config.space.x1, config.colors.border, config.radius.full)
+                    render_text(group.label, drawX + pad_x, drawY + config.space.x3, config.font_scale_header, config.colors.text_main)
+                    local dividerY = drawY + config.item_height.header_padding - config.space.x1
+                    render_rect(drawX + pad_x, dividerY, col_w - (pad_x * 2), config.space.x1, config.colors.border, config.radius.full)
 
-                    local itemY = gY + config.item_height.header_padding + config.space.x3
+                    local itemY = drawY + config.item_height.header_padding + config.space.x3
                     for _, item in ipairs(group.items) do
                         local dd = nil
-                        itemY, dd = render_group_item(item, gX, itemY, col_w, pad_x)
+                        itemY, dd = render_group_item(item, drawX, itemY, col_w, pad_x)
                         if dd then
-                            pendingDropdown = dd
+                            pendingDropdowns[#pendingDropdowns + 1] = dd
                         end
                     end
+                    state.render_alpha_mul = 1.0
                 end
 
                 col_y = col_y + actual_h + config.space.x4
@@ -1098,6 +1234,7 @@ ui.render = function()
         state.scroll.max_y = math.max(0, total_h - available_height)
     end
     
+    state.render_alpha_mul = 1.0
     gui.pop_clip()
 
     -- Scrollbar
@@ -1122,39 +1259,50 @@ ui.render = function()
         end
     end
 
-    if pendingDropdown then
-        local dd = pendingDropdown
-        local itemHeight = config.space.x9
-        local optsH = #dd.item.options * itemHeight
-        render_card(dd.x, dd.y, dd.w, optsH, config.colors.bg_panel, config.colors.border, config.radius.md)
-        
-        for i, opt in ipairs(dd.item.options) do
-            local optY = dd.y + (i-1)*itemHeight
-            local optTextCol = config.colors.text_main
-            if is_hovered(dd.x, optY, dd.w, itemHeight) then
-                render_rect(dd.x, optY, dd.w, itemHeight, config.colors.accent, config.radius.none)
-                if state.mouse.clicked and not state.dropdown_just_opened then
-                    dd.item.value = i
-                    dd.item.isOpen = false
-                    state.active_dropdown = nil
-                    state.window.is_dragging = false
-                    if dd.item.onChange then dd.item.onChange(opt) end
+    if #pendingDropdowns > 0 then
+        for dd_idx = 1, #pendingDropdowns do
+            local dd = pendingDropdowns[dd_idx]
+            local itemHeight = config.space.x9
+            local fullOptsH = #dd.item.options * itemHeight
+            local open_t = dd.open_t or 1.0
+            local optsH = math.max(1, math.floor(fullOptsH * open_t))
+            local can_interact = dd.interactive and (open_t > 0.95)
+
+            state.render_alpha_mul = open_t
+            render_card(dd.x, dd.y, dd.w, optsH, config.colors.bg_panel, config.colors.border, config.radius.md)
+            gui.push_clip(vec(dd.x + ox, dd.y + oy), vec(dd.w, optsH))
+
+            for i, opt in ipairs(dd.item.options) do
+                local optY = dd.y + (i-1)*itemHeight
+                local optTextCol = config.colors.text_main
+                if can_interact and is_hovered(dd.x, optY, dd.w, itemHeight) then
+                    render_rect(dd.x, optY, dd.w, itemHeight, config.colors.accent, config.radius.none)
+                    if state.mouse.clicked and not state.dropdown_just_opened then
+                        dd.item.value = i
+                        dd.item.isOpen = false
+                        state.active_dropdown = nil
+                        state.window.is_dragging = false
+                        if dd.item.onChange then dd.item.onChange(opt) end
+                    end
+                    optTextCol = config.colors.text_on_accent
                 end
-                optTextCol = config.colors.text_on_accent
+                local optTextH = config.font_scale_body * 0.7
+                local optTextY = optY + (itemHeight / 2) - (optTextH / 2)
+                if dd.align == "left" then
+                    render_text(opt, dd.x + config.space.x3, optTextY, config.font_scale_body, optTextCol)
+                else
+                    render_text(opt, dd.x + dd.w / 2, optTextY, config.font_scale_body, optTextCol, "center")
+                end
             end
-            local optTextH = config.font_scale_body * 0.7
-            local optTextY = optY + (itemHeight / 2) - (optTextH / 2)
-            if dd.align == "left" then
-                render_text(opt, dd.x + config.space.x3, optTextY, config.font_scale_body, optTextCol)
-            else
-                render_text(opt, dd.x + dd.w / 2, optTextY, config.font_scale_body, optTextCol, "center")
+
+            gui.pop_clip()
+            state.render_alpha_mul = 1.0
+
+            if can_interact and state.mouse.clicked and not state.dropdown_just_opened and not is_hovered(dd.x, dd.y, dd.w, fullOptsH) then
+                dd.item.isOpen = false
+                state.active_dropdown = nil
+                state.window.is_dragging = false
             end
-        end
-        
-        if state.mouse.clicked and not state.dropdown_just_opened and not is_hovered(dd.x, dd.y, dd.w, optsH) then
-            dd.item.isOpen = false
-            state.active_dropdown = nil
-            state.window.is_dragging = false  
         end
         state.dropdown_just_opened = false
     end

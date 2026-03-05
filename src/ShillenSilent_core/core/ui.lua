@@ -946,7 +946,7 @@ ui.render = function()
     end
 
     -- Bottom-right corner grip to indicate draggable resize area.
-    local grip_color = config.colors.border_strong
+    local grip_color = config.colors.accent
     local grip_right = config.origin_x + config.menu_width - config.space.x1
     local grip_bottom = bodyY + bodyH - config.space.x1
     render_rect(grip_right - config.space.x7, grip_bottom - config.space.x1, config.space.x5, config.space.x1, grip_color, config.radius.full)

@@ -613,8 +613,8 @@ local function button_colors_for(btn, hovered)
         }
     else
         return {
-            bg = hovered and config.colors.bg_control_hover or config.colors.bg_control,
-            border = config.colors.border_strong,
+            bg = hovered and config.colors.bg_control_hover or config.colors.transparent,
+            border = config.colors.accent,
             text = config.colors.text_main
         }
     end
@@ -1200,10 +1200,12 @@ ui.render = function()
                 end
                 optTextCol = config.colors.text_on_accent
             end
+            local optTextH = config.font_scale_body * 0.7
+            local optTextY = optY + (itemHeight / 2) - (optTextH / 2)
             if dd.align == "left" then
-                render_text(opt, dd.x + config.space.x3, optY + config.space.x1, config.font_scale_body, optTextCol)
+                render_text(opt, dd.x + config.space.x3, optTextY, config.font_scale_body, optTextCol)
             else
-                render_text(opt, dd.x + dd.w / 2, optY + config.space.x1, config.font_scale_body, optTextCol, "center")
+                render_text(opt, dd.x + dd.w / 2, optTextY, config.font_scale_body, optTextCol, "center")
             end
         end
         

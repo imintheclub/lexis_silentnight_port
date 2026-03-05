@@ -5,10 +5,10 @@
 
 # Changelog
 ## v0.0.2
-- Added cutscene skip button for Casino, Apartment
+- Added cutscene skip button for 4 major heists
 - Added skip cooldown button WITH WARNING NOT TO USE IT !!! for Casino, Cayo, Doomsday
-- remove 1500% cap on apartment because
-	- 1) tbh idk why it was that high 
+- remove 1500% cap on apartment and change to 300%
+	- 1) tbh idk why it was that high on silentnight. maybe i will find out later if someone complains
 	- 2) it seems to be confusing people into thinking they CAN put the cut that high so i will clip it lower lol
 - add teleport to kosatka button to cayo preps
 - some more styling tweaks

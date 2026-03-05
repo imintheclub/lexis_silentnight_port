@@ -14,6 +14,7 @@
 - remove 1500% cap on apartment because
 	- 1) tbh idk why it was that high 
 	- 2) it seems to be confusing people into thinking they CAN put the cut that high so i will clip it lower lol
+- add teleport to kosatka button to cayo preps
 - some more styling tweaks
 
 ## Old

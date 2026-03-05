@@ -1,14 +1,10 @@
-# "Install Instructions"
-1. press windows + R to open the run dialog and paste in `%USERPROFILE%` (without the enclosing backticks)
-2. from there open the location `Lexis/Grand Theft Auto V/Scripts`
-	a. IF YOU ARE *UPDATING* 
-	b. Delete ANY old files related to this script (Inter font file, `ShillenSilent.lua`, `ShillenMinimal.lua`)
-3. Copy the stuff you unzipped from this release (everything except this file) into the folder from 2)
-4. Load the script in Lexis
+# Install Instructions
+1. press windows + R to open the run dialog and paste in `%USERPROFILE%/Lexis/Grand Theft Auto V/Scripts` (without the enclosing backticks)
+2. Copy everything from the src folder into the folder you opened in step 1)
+3. Load the script in Lexis
 
 # Changelog
-## Current
-### v0.0.2
+## v0.0.2
 - Added cutscene skip button for Casino, Apartment
 - Added skip cooldown button WITH WARNING NOT TO USE IT !!! for Casino, Cayo, Doomsday
 - remove 1500% cap on apartment because
@@ -19,12 +15,11 @@
 - refactor to keep all script related files (including heists preset folder) within ShillenSilent_core folder within scripts
 - some code cleanup
 
-## Old
-### v0.0.1
+## v0.0.1
 - Improve Doomsday Heist instant finish button to autodetect all difficulty permutations across all doomsday heist acts
 - restyle the menu away from ShillenLua's base look
 
-### v0.0.0
+## v0.0.0
 - add the ability to create heist setup presets for Cayo and Casino (as found in Silent Night)
 - More granular prep for Cayo and Casino (as found in Silent Night)
 - Removed all non-heist portions of ShillenLua

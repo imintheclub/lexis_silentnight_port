@@ -2403,13 +2403,13 @@ local function reset_heist_preps()
         { "H3_BOARD_DIALOGUE1", 0 },
         { "H3_BOARD_DIALOGUE2", 0 },
         { "H3_VEHICLESUSED", 0 },
-        { "MPPLY_H3_COOLDOWN", 0 },
         { "H3_COMPLETEDPOSIX", 0 }
     }
 
     for i = 1, #reset_pairs do
         hp_set_stat_for_all_characters(reset_pairs[i][1], reset_pairs[i][2])
     end
+    account.stats("MPPLY_H3_COOLDOWN").int32 = 0
 
     script.locals("gb_casino_heist_planning", 212).int32 = 2
     if notify then notify.push("Preset", "Reset preparations", 2000) end
@@ -2463,7 +2463,7 @@ end
 local function casino_remove_cooldown()
     local p = GetMP()
     account.stats(p .. "H3_COMPLETEDPOSIX").int32 = -1
-    account.stats(p .. "MPPLY_H3_COOLDOWN").int32 = -1
+    account.stats("MPPLY_H3_COOLDOWN").int32 = -1
     if notify then notify.push("Casino Tools", "Cooldown Removed", 2000) end
 end
 
@@ -3219,7 +3219,15 @@ local function cayo_remove_cooldown()
     account.stats(p .. "H4_TARGET_POSIX").int32 = 1659643454
     account.stats(p .. "H4_COOLDOWN").int32 = 0
     account.stats(p .. "H4_COOLDOWN_HARD").int32 = 0
-    if notify then notify.push("Cayo Tools", "Cooldown Removed", 2000) end
+    if notify then notify.push("Cayo Tools", "Cooldown Removed (Solo)", 2000) end
+end
+
+local function cayo_remove_cooldown_team()
+    local p = GetMP()
+    account.stats(p .. "H4_TARGET_POSIX").int32 = 1659429119
+    account.stats(p .. "H4_COOLDOWN").int32 = 0
+    account.stats(p .. "H4_COOLDOWN_HARD").int32 = 0
+    if notify then notify.push("Cayo Tools", "Cooldown Removed (Team)", 2000) end
 end
 
 local function cayo_instant_finish()
@@ -4363,12 +4371,18 @@ ui.button_pair(
 )
 ui.button(gCayoTools, "cayo_tool_reload", "Reload Planning Screen", function() cayo_reload_planning_screen() end)
 
-build_skip_cooldown_danger_group(
-    heistTab,
-    "cayo",
-    "cayo_skip_heist_cooldown",
-    function() cayo_remove_cooldown() end
-)
+do
+    local gCayoDanger = ui.group(heistTab, "DANGER", nil, nil, nil, nil, "cayo")
+    for i = 1, #cooldown_danger_warning_lines do
+        ui.label(gCayoDanger, cooldown_danger_warning_lines[i], config.colors.danger_text)
+    end
+    ui.button(gCayoDanger, "cayo_skip_heist_cooldown_solo", "Skip Heist Cooldown (Solo)", function()
+        cayo_remove_cooldown()
+    end, nil, false, "danger")
+    ui.button(gCayoDanger, "cayo_skip_heist_cooldown_team", "Skip Heist Cooldown (Team)", function()
+        cayo_remove_cooldown_team()
+    end, nil, false, "danger")
+end
 
 -- Teleport section - In Residence
 local gCayoTeleportInResidence = ui.group(heistTab, "Teleport - In Residence", nil, nil, nil, nil, "cayo")

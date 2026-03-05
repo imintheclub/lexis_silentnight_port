@@ -568,53 +568,117 @@ local function get_dropdown_item_height(item)
     return config.item_height.dropdown
 end
 
-local function button_colors_for(btn, hovered)
-    local variant = button_variant_for(btn)
+local BUTTON_COLOR_STYLES = {
+    disabled = {
+        normal = { bg = config.colors.danger, border = config.colors.danger, text = config.colors.text_on_accent },
+        hover = { bg = config.colors.danger_hover, border = config.colors.danger_hover, text = config.colors.text_on_accent }
+    },
+    primary = {
+        normal = { bg = config.colors.accent, border = config.colors.accent, text = config.colors.text_on_accent },
+        hover = { bg = config.colors.accent_hover, border = config.colors.accent_hover, text = config.colors.text_on_accent }
+    },
+    success = {
+        normal = { bg = config.colors.success, border = config.colors.success, text = config.colors.text_on_accent },
+        hover = { bg = config.colors.success_hover, border = config.colors.success_hover, text = config.colors.text_on_accent }
+    },
+    danger = {
+        normal = { bg = config.colors.danger, border = config.colors.danger, text = config.colors.text_on_accent },
+        hover = { bg = config.colors.danger_hover, border = config.colors.danger_hover, text = config.colors.text_on_accent }
+    },
+    ghost = {
+        normal = { bg = config.colors.transparent, border = config.colors.transparent, text = config.colors.text_main },
+        hover = { bg = config.colors.bg_ghost_hover, border = config.colors.transparent, text = config.colors.text_main }
+    },
+    ghost_danger = {
+        normal = { bg = config.colors.transparent, border = config.colors.transparent, text = config.colors.danger_text },
+        hover = { bg = config.colors.danger_soft, border = config.colors.transparent, text = config.colors.danger_text }
+    },
+    outline = {
+        normal = { bg = config.colors.bg_ghost_hover, border = config.colors.transparent, text = config.colors.text_main },
+        hover = { bg = config.colors.bg_panel, border = config.colors.transparent, text = config.colors.text_main }
+    }
+}
 
+local HEIST_SUBTAB_NAMES = { "Cayo", "Casino", "Doomsday", "Apartment", "Cluckin" }
+
+local HEIST_GROUP_LAYOUTS = {
+    [1] = { -- Cayo
+        ["Info"] = { col = 1, order = 1 },
+        ["Presets (JSON)"] = { col = 1, order = 2 },
+        ["Preps"] = { col = 2, order = 1 },
+        ["Cuts"] = { col = 1, order = 3 },
+        ["Tools"] = { col = 3, order = 1 },
+        ["Teleport - Outside Residence"] = { col = 3, order = 2 },
+        ["Teleport - In Residence"] = { col = 3, order = 3 },
+        ["DANGER"] = { col = 3, order = 4 }
+    },
+    [2] = { -- Casino
+        ["Info"] = { col = 1, order = 1 },
+        ["Presets (JSON)"] = { col = 1, order = 2 },
+        ["Preps"] = { col = 2, order = 1 },
+        ["Launch"] = { col = 2, order = 2 },
+        ["Cuts"] = { col = 2, order = 3 },
+        ["Tools"] = { col = 3, order = 1 },
+        ["Teleport - Outside Casino"] = { col = 3, order = 2 },
+        ["Teleport - In Casino"] = { col = 3, order = 3 },
+        ["DANGER"] = { col = 3, order = 4 }
+    },
+    [3] = { -- Doomsday
+        ["Info"] = { col = 1, order = 1 },
+        ["Prep Presets"] = { col = 1, order = 2 },
+        ["Launch"] = { col = 2, order = 1 },
+        ["Cuts"] = { col = 2, order = 2 },
+        ["Tools"] = { col = 3, order = 1 },
+        ["Teleport"] = { col = 3, order = 2 }
+    },
+    [4] = { -- Apartment
+        ["Info"] = { col = 1, order = 1 },
+        ["Presets (JSON)"] = { col = 1, order = 2 },
+        ["Cuts"] = { col = 1, order = 3 },
+        ["Preps"] = { col = 2, order = 1 },
+        ["Launch"] = { col = 2, order = 2 },
+        ["Bonuses"] = { col = 2, order = 3 },
+        ["Tools"] = { col = 3, order = 1 },
+        ["Instant Finish"] = { col = 3, order = 2 },
+        ["Teleport"] = { col = 3, order = 3 },
+        ["DANGER"] = { col = 3, order = 4 }
+    }
+}
+
+local function clear_array(tbl)
+    for i = #tbl, 1, -1 do
+        tbl[i] = nil
+    end
+end
+
+local render_cache = {
+    active_groups = {},
+    col_x = {},
+    groups_by_column = { {}, {}, {} }
+}
+
+local TOGGLE_INACTIVE_COLOR = { r = 148, g = 163, b = 184, a = 255 }
+local toggle_track_color = { r = 148, g = 163, b = 184, a = 255 }
+local slider_glow_color = { r = 255, g = 255, b = 255, a = 0 }
+
+local function button_colors_for(btn, hovered)
     if btn.disabled then
-        return {
-            bg = hovered and config.colors.danger_hover or config.colors.danger,
-            border = hovered and config.colors.danger_hover or config.colors.danger,
-            text = config.colors.text_on_accent
-        }
+        return hovered and BUTTON_COLOR_STYLES.disabled.hover or BUTTON_COLOR_STYLES.disabled.normal
     end
 
+    local variant = button_variant_for(btn)
     if variant == "primary" then
-        return {
-            bg = hovered and config.colors.accent_hover or config.colors.accent,
-            border = hovered and config.colors.accent_hover or config.colors.accent,
-            text = config.colors.text_on_accent
-        }
+        return hovered and BUTTON_COLOR_STYLES.primary.hover or BUTTON_COLOR_STYLES.primary.normal
     elseif variant == "success" then
-        return {
-            bg = hovered and config.colors.success_hover or config.colors.success,
-            border = hovered and config.colors.success_hover or config.colors.success,
-            text = config.colors.text_on_accent
-        }
+        return hovered and BUTTON_COLOR_STYLES.success.hover or BUTTON_COLOR_STYLES.success.normal
     elseif variant == "danger" then
-        return {
-            bg = hovered and config.colors.danger_hover or config.colors.danger,
-            border = hovered and config.colors.danger_hover or config.colors.danger,
-            text = config.colors.text_on_accent
-        }
+        return hovered and BUTTON_COLOR_STYLES.danger.hover or BUTTON_COLOR_STYLES.danger.normal
     elseif variant == "ghost" then
-        return {
-            bg = hovered and config.colors.bg_ghost_hover or config.colors.transparent,
-            border = config.colors.transparent,
-            text = config.colors.text_main
-        }
+        return hovered and BUTTON_COLOR_STYLES.ghost.hover or BUTTON_COLOR_STYLES.ghost.normal
     elseif variant == "ghost_danger" then
-        return {
-            bg = hovered and config.colors.danger_soft or config.colors.transparent,
-            border = config.colors.transparent,
-            text = config.colors.danger_text
-        }
+        return hovered and BUTTON_COLOR_STYLES.ghost_danger.hover or BUTTON_COLOR_STYLES.ghost_danger.normal
     else
-        return {
-            bg = hovered and config.colors.bg_panel or config.colors.bg_ghost_hover,
-            border = config.colors.transparent,
-            text = config.colors.text_main
-        }
+        return hovered and BUTTON_COLOR_STYLES.outline.hover or BUTTON_COLOR_STYLES.outline.normal
     end
 end
 
@@ -656,14 +720,16 @@ local function draw_toggle_item(item, x, y, w, original_y)
     local switchX = x + w - switchW - pad_x
     local switchY = y + config.space.x3
 
-    local inactiveCol = { r = 148, g = 163, b = 184, a = 255 } -- slate-400
     local activeCol = config.colors.accent
     
-    local trackR = math.floor(inactiveCol.r + (activeCol.r - inactiveCol.r) * item.anim)
-    local trackG = math.floor(inactiveCol.g + (activeCol.g - inactiveCol.g) * item.anim)
-    local trackB = math.floor(inactiveCol.b + (activeCol.b - inactiveCol.b) * item.anim)
+    local trackR = math.floor(TOGGLE_INACTIVE_COLOR.r + (activeCol.r - TOGGLE_INACTIVE_COLOR.r) * item.anim)
+    local trackG = math.floor(TOGGLE_INACTIVE_COLOR.g + (activeCol.g - TOGGLE_INACTIVE_COLOR.g) * item.anim)
+    local trackB = math.floor(TOGGLE_INACTIVE_COLOR.b + (activeCol.b - TOGGLE_INACTIVE_COLOR.b) * item.anim)
+    toggle_track_color.r = trackR
+    toggle_track_color.g = trackG
+    toggle_track_color.b = trackB
     
-    render_rect(switchX, switchY, switchW, switchH, {r=trackR, g=trackG, b=trackB, a=255}, config.radius.full)
+    render_rect(switchX, switchY, switchW, switchH, toggle_track_color, config.radius.full)
     render_outline(switchX, switchY, switchW, switchH, config.colors.border_strong, config.control.toggle_track_border_thickness, config.radius.full)
     
     local thumbPadding = math.max(1, math.floor(config.space.x1 / 2))
@@ -829,8 +895,11 @@ local function draw_slider_item(item, x, y, w, original_y)
         local glowSize = thumbSize + math.floor(config.space.x2 * item.anim)
         local glowX = thumbX - (glowSize - thumbSize)/2
         local glowY = thumbY - (glowSize - thumbSize)/2
-        local glowAlpha = math.floor(90 * item.anim)
-        render_rect(glowX, glowY, glowSize, glowSize, {r=config.colors.accent.r, g=config.colors.accent.g, b=config.colors.accent.b, a=glowAlpha}, glowSize/2)
+        slider_glow_color.r = config.colors.accent.r
+        slider_glow_color.g = config.colors.accent.g
+        slider_glow_color.b = config.colors.accent.b
+        slider_glow_color.a = math.floor(90 * item.anim)
+        render_rect(glowX, glowY, glowSize, glowSize, slider_glow_color, glowSize/2)
     end
     
     -- Main circle
@@ -966,7 +1035,7 @@ ui.render = function()
     local subtab_bar_height = 0
     local groups_start_y = contentY
     if ui.currentTab and ui.currentTab.id == "heist" then
-        local subtab_names = {"Cayo", "Casino", "Doomsday", "Apartment", "Cluckin"}
+        local subtab_names = HEIST_SUBTAB_NAMES
         local subtab_count = #subtab_names
         local subtab_h = config.space.x9
         local subtab_gap = config.space.x2
@@ -1005,7 +1074,8 @@ ui.render = function()
 
     local pendingDropdown = nil
 
-    local activeGroups = {}
+    local activeGroups = render_cache.active_groups
+    clear_array(activeGroups)
     if ui.currentTab then
         if ui.currentTab.id == "heist" then
             -- Filter groups based on subtab (1=Cayo, 2=Casino, 3=Doomsday, 4=Apartment)
@@ -1021,7 +1091,9 @@ ui.render = function()
                 end
             end
         else
-            activeGroups = ui.currentTab.groups
+            for i = 1, #ui.currentTab.groups do
+                activeGroups[#activeGroups + 1] = ui.currentTab.groups[i]
+            end
         end
     end
     
@@ -1029,64 +1101,22 @@ ui.render = function()
         local column_count = 3
         local column_gap = config.space.x4
         local col_w = (contentW - ((column_count - 1) * column_gap)) / column_count
-        local col_x = {}
+        local col_x = render_cache.col_x
+        clear_array(col_x)
         local base_y = groups_start_y - state.scroll.y
 
         for col = 1, column_count do
             col_x[col] = contentX + ((col - 1) * (col_w + column_gap))
         end
 
-        local groups_by_column = { {}, {}, {} }
+        local groups_by_column = render_cache.groups_by_column
+        for col = 1, column_count do
+            clear_array(groups_by_column[col])
+        end
         local custom_layout_used = false
 
         if ui.currentTab and ui.currentTab.id == "heist" then
-            local layout = nil
-            if state.heist_subtab == 1 then -- Cayo
-                layout = {
-                    ["Info"] = { col = 1, order = 1 },
-                    ["Presets (JSON)"] = { col = 1, order = 2 },
-                    ["Preps"] = { col = 2, order = 1 },
-                    ["Cuts"] = { col = 1, order = 3 },
-                    ["Tools"] = { col = 3, order = 1 },
-                    ["Teleport - Outside Residence"] = { col = 3, order = 2 },
-                    ["Teleport - In Residence"] = { col = 3, order = 3 },
-                    ["DANGER"] = { col = 3, order = 4 }
-                }
-            elseif state.heist_subtab == 2 then -- Casino
-                layout = {
-                    ["Info"] = { col = 1, order = 1 },
-                    ["Presets (JSON)"] = { col = 1, order = 2 },
-                    ["Preps"] = { col = 2, order = 1 },
-                    ["Launch"] = { col = 2, order = 2 },
-                    ["Cuts"] = { col = 2, order = 3 },
-                    ["Tools"] = { col = 3, order = 1 },
-                    ["Teleport - Outside Casino"] = { col = 3, order = 2 },
-                    ["Teleport - In Casino"] = { col = 3, order = 3 },
-                    ["DANGER"] = { col = 3, order = 4 }
-                }
-            elseif state.heist_subtab == 3 then -- Doomsday
-                layout = {
-                    ["Info"] = { col = 1, order = 1 },
-                    ["Prep Presets"] = { col = 1, order = 2 },
-                    ["Launch"] = { col = 2, order = 1 },
-                    ["Cuts"] = { col = 2, order = 2 },
-                    ["Tools"] = { col = 3, order = 1 },
-                    ["Teleport"] = { col = 3, order = 2 }
-                }
-            elseif state.heist_subtab == 4 then -- Apartment
-                layout = {
-                    ["Info"] = { col = 1, order = 1 },
-                    ["Presets (JSON)"] = { col = 1, order = 2 },
-                    ["Cuts"] = { col = 1, order = 3 },
-                    ["Preps"] = { col = 2, order = 1 },
-                    ["Launch"] = { col = 2, order = 2 },
-                    ["Bonuses"] = { col = 2, order = 3 },
-                    ["Tools"] = { col = 3, order = 1 },
-                    ["Instant Finish"] = { col = 3, order = 2 },
-                    ["Teleport"] = { col = 3, order = 3 },
-                    ["DANGER"] = { col = 3, order = 4 }
-                }
-            end
+            local layout = HEIST_GROUP_LAYOUTS[state.heist_subtab]
 
             if layout then
                 custom_layout_used = true
@@ -1240,11 +1270,25 @@ end
 -- ---------------------------------------------------------
 -- 6. native api
 -- ---------------------------------------------------------
-local function disable_control_action(...)
-    local keys = {...}
+local CONTROL_ACTION_BLOCK_LIST = {
+    0, 1, 2, 3, 4, 5, 6, -- Movement
+    24, 25, -- Attack (Left/Right Mouse)
+    30, 31, 32, 33, 34, 35, -- Move
+    37, -- Weapon Wheel
+    44, 45, 47, 58, -- Cover
+    59, 60, -- Veh Move
+    71, 72, -- Veh Accel/Brake
+    75, -- Veh Exit
+    140, 141, 142, 143, -- Melee
+    257, 258, 261, 262, 263, 264, 265, -- Attack variants
+    266, 267, 268, -- More attack
+    27 -- ESC
+}
+
+local function disable_control_action(keys)
     for group = 0, 1 do
-        for _, v in pairs(keys) do
-            invoker.call(0xFE99B66D079CF6BC, group, v, true)
+        for i = 1, #keys do
+            invoker.call(0xFE99B66D079CF6BC, group, keys[i], true)
         end
     end
 end
@@ -3231,14 +3275,16 @@ local function cayo_remove_cooldown_team()
 end
 
 local function cayo_instant_finish()
-    if script.force_host("fm_mission_controller_2020") then
-        util.yield(1000)
-        script.locals("fm_mission_controller_2020", 56223).int32 = 9
-        script.locals("fm_mission_controller_2020", 58000).int32 = 50
-        if notify then notify.push("Cayo Tools", "Cayo Perico instant finish", 2000) end
-    else
-        if notify then notify.push("Cayo Tools", "Failed to force host", 2000) end
-    end
+    util.create_job(function()
+        if script.force_host("fm_mission_controller_2020") then
+            util.yield(1000)
+            script.locals("fm_mission_controller_2020", 56223).int32 = 9
+            script.locals("fm_mission_controller_2020", 58000).int32 = 50
+            if notify then notify.push("Cayo Tools", "Cayo Perico instant finish", 2000) end
+        else
+            if notify then notify.push("Cayo Tools", "Failed to force host", 2000) end
+        end
+    end)
 end
 
 -- Cayo Teleport functions using Lexis API
@@ -3374,14 +3420,15 @@ local function teleport_to_coords(x, y, z)
 end
 
 -- Teleport cooldown to prevent spam
-local teleport_cooldown = 0
+local teleport_cooldown_tick = 0
+local teleport_in_progress = false
 
 local function try_begin_teleport_cooldown()
-    local current_time = os.clock()
-    if current_time < teleport_cooldown then
+    local current_tick = util.get_tick_count()
+    if current_tick < teleport_cooldown_tick then
         return false
     end
-    teleport_cooldown = current_time + 1.0
+    teleport_cooldown_tick = current_tick + 1000
     return true
 end
 
@@ -3390,23 +3437,25 @@ local function run_coords_teleport(title, success_message, x, y, z, include_erro
         return false
     end
 
-    local success, error_msg = teleport_to_coords(x, y, z)
-    if success then
-        if on_success then
-            on_success()
+    util.create_job(function()
+        local success, error_msg = teleport_to_coords(x, y, z)
+        if success then
+            if on_success then
+                on_success()
+            end
+            if notify then notify.push(title, success_message, 2000) end
+            return
         end
-        if notify then notify.push(title, success_message, 2000) end
-        return true
-    end
 
-    local msg = "Failed to teleport"
-    if include_error_details and error_msg then
-        msg = msg .. ": " .. error_msg
-    end
-    if notify then
-        notify.push(title, msg, include_error_details and 3000 or 2000)
-    end
-    return false
+        local msg = "Failed to teleport"
+        if include_error_details and error_msg then
+            msg = msg .. ": " .. error_msg
+        end
+        if notify then
+            notify.push(title, msg, include_error_details and 3000 or 2000)
+        end
+    end)
+    return true
 end
 
 local function cayo_teleport_underwater_tunnel()
@@ -3421,7 +3470,7 @@ local function cayo_teleport_underwater_tunnel()
         5051.0, -5822.0, 2.0,
         true,
         function()
-            util.create_thread(function()
+            util.create_job(function()
                 util.yield(500)
                 if script.running("fm_mission_controller_2020") then
                     for _ = 1, 10 do
@@ -3495,44 +3544,153 @@ local function cayo_teleport_escape()
 end
 
 local function cayo_teleport_kosatka()
+    if teleport_in_progress then
+        return false
+    end
+    if not try_begin_teleport_cooldown() then
+        return false
+    end
+
+    local MAZE_RELAY = { x = -75.146, y = -818.687, z = 326.175, heading = 357.531 }
+    local KOSATKA_INTERIOR = { x = 1561.087, y = 386.610, z = -49.685, heading = 179.884 }
+    local BLIP_SPRITE_HEIST = 428
+    local LOOP_TIMEOUT_MS = 30000
+    local LOOP_STEP_MS = 100
+    local MAX_WAIT_ATTEMPTS = math.floor(LOOP_TIMEOUT_MS / LOOP_STEP_MS)
+    local KOSATKA_REQUEST_GLOBALS = {
+        2733138 + 613, -- EE
+        2733002 + 613  -- Legacy
+    }
+
+    local function get_local_player_id()
+        if players and players.user then
+            local id = players.user()
+            if type(id) == "number" and id >= 0 then
+                return id
+            end
+        end
+        local me = players and players.me and players.me() or nil
+        if me and type(me.id) == "number" and me.id >= 0 then
+            return me.id
+        end
+        return 0
+    end
+
+    local function player_owns_kosatka()
+        local p = GetMP()
+        return (account.stats(p .. "IH_SUB_OWNED").int32 or 0) ~= 0
+    end
+
+    local function request_kosatka_spawn()
+        for i = 1, #KOSATKA_REQUEST_GLOBALS do
+            script.globals(KOSATKA_REQUEST_GLOBALS[i]).int32 = 1
+        end
+    end
+
+    local function is_kosatka_in_ocean()
+        local player_id = get_local_player_id()
+        local status_ee = script.globals(2658294 + 1 + (player_id * 468) + 325 + 4).int32 or 0
+        if (status_ee & (1 << 31)) ~= 0 then
+            return true
+        end
+        local status_legacy = script.globals(2658291 + 1 + (player_id * 468) + 325 + 4).int32 or 0
+        return (status_legacy & (1 << 31)) ~= 0
+    end
+
+    local function has_heist_blip()
+        local result = invoker.call(0xD484BF71050CA1EE, BLIP_SPRITE_HEIST) -- GET_CLOSEST_BLIP_INFO_ID
+        return result and result.int and result.int ~= 0
+    end
+
+    if not player_owns_kosatka() then
+        if notify then notify.push("Cayo Teleport", "You do not own a Kosatka", 2200) end
+        return false
+    end
+
+    teleport_in_progress = true
     local me = players.me()
     if not me then
+        teleport_in_progress = false
         if notify then notify.push("Cayo Teleport", "Player not found", 2000) end
         return false
     end
 
-    util.create_job(function()
-        local ped = me.ped
-        local veh = me.vehicle
-        local entity = (veh and veh ~= 0) and veh or ped
+    local ped = me.ped
+    local entity = ped
 
+    local function set_coords(coords)
+        invoker.call(0x239A3351AC1DA385, entity, coords.x, coords.y, coords.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+    end
+
+    local function set_heading(heading)
+        invoker.call(0x8E2530AA8ADA980E, entity, heading) -- SET_ENTITY_HEADING
+    end
+
+    local function move_to_maze_bank()
+        set_coords(MAZE_RELAY)
+        set_heading(MAZE_RELAY.heading)
+    end
+
+    local ok, err = pcall(function()
         invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
+        move_to_maze_bank()
+        util.yield(700)
 
-        if me.in_interior then
-            invoker.call(0x239A3351AC1DA385, entity, -75.146, -818.687, 326.175, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET (Maze Bank relay)
-            util.yield(800)
+        local announced_request = false
+        local spawned = is_kosatka_in_ocean()
+        if not spawned then
+            for _ = 1, MAX_WAIT_ATTEMPTS do
+                if is_kosatka_in_ocean() then
+                    spawned = true
+                    break
+                end
+                request_kosatka_spawn()
+                if not announced_request and notify then
+                    notify.push("Cayo Teleport", "Requesting Kosatka...", 1200)
+                    announced_request = true
+                end
+                util.yield(LOOP_STEP_MS)
+            end
         end
 
-        local KOSATKA_BLIP_SPRITE = 760
-        local blip = invoker.call(0x1BEDE233E6CD2A1F, KOSATKA_BLIP_SPRITE) -- GET_FIRST_BLIP_INFO_ID
-        if blip and blip.int and blip.int ~= 0 then
-            local coords = invoker.call(0x586AFE3FF72D996E, blip.int) -- GET_BLIP_COORDS
-            if coords and coords.scr_vec3 then
-                invoker.call(0x239A3351AC1DA385, entity, coords.scr_vec3.x, coords.scr_vec3.y, coords.scr_vec3.z + 1.0, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-            else
-                invoker.call(0x239A3351AC1DA385, entity, 1561.087, 386.610, -49.685, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+        if not spawned then
+            move_to_maze_bank()
+            if notify then notify.push("Cayo Teleport", "Kosatka not ready after 30s. Stayed at Maze Bank.", 3000) end
+            invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
+            return
+        end
+
+        set_coords(KOSATKA_INTERIOR)
+        set_heading(KOSATKA_INTERIOR.heading)
+
+        local interior_loaded = false
+        for _ = 1, MAX_WAIT_ATTEMPTS do
+            if has_heist_blip() then
+                interior_loaded = true
+                break
             end
-            util.yield(500)
-            if notify then notify.push("Cayo Teleport", "Teleported to Kosatka", 2000) end
+            util.yield(LOOP_STEP_MS)
+        end
+
+        if interior_loaded then
+            if notify then notify.push("Cayo Teleport", "Teleported to Kosatka (Interior)", 2000) end
         else
-            -- Silent Night fallback coordinates for Kosatka interior.
-            invoker.call(0x239A3351AC1DA385, entity, 1561.087, 386.610, -49.685, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-            util.yield(500)
-            if notify then notify.push("Cayo Teleport", "Teleported to Kosatka (fallback)", 2200) end
+            move_to_maze_bank()
+            if notify then notify.push("Cayo Teleport", "Kosatka interior not ready after 30s. Stayed at Maze Bank.", 3000) end
         end
 
         invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
     end)
+
+    teleport_in_progress = false
+    if not ok then
+        pcall(function()
+            invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
+        end)
+        if notify then notify.push("Cayo Teleport", "Kosatka teleport failed: " .. tostring(err), 3000) end
+        return false
+    end
+
     return true
 end
 
@@ -4643,31 +4801,35 @@ end
 
 -- Instant Finish (Pacific Standard)
 local function apartment_instant_finish_pacific()
-    if script.force_host("fm_mission_controller") then
-        util.yield(1000)
-        script.locals("fm_mission_controller", 21457).int32 = 5
-        script.locals("fm_mission_controller", 22136).int32 = 80
-        script.locals("fm_mission_controller", 23081).int32 = 10000000
-        script.locals("fm_mission_controller", 29017).int32 = 99999
-        script.locals("fm_mission_controller", 32541).int32 = 99999
-        if notify then notify.push("Apartment", "Instant Finish (Pacific Standard)", 2000) end
-    else
-        if notify then notify.push("Apartment", "Failed to force host", 2000) end
-    end
+    util.create_job(function()
+        if script.force_host("fm_mission_controller") then
+            util.yield(1000)
+            script.locals("fm_mission_controller", 21457).int32 = 5
+            script.locals("fm_mission_controller", 22136).int32 = 80
+            script.locals("fm_mission_controller", 23081).int32 = 10000000
+            script.locals("fm_mission_controller", 29017).int32 = 99999
+            script.locals("fm_mission_controller", 32541).int32 = 99999
+            if notify then notify.push("Apartment", "Instant Finish (Pacific Standard)", 2000) end
+        else
+            if notify then notify.push("Apartment", "Failed to force host", 2000) end
+        end
+    end)
 end
 
 -- Instant Finish (Other Classics)
 local function apartment_instant_finish_other()
-    if script.force_host("fm_mission_controller") then
-        util.yield(1000)
-        script.locals("fm_mission_controller", 20395).int32 = 12
-        script.locals("fm_mission_controller", 23081).int32 = 99999
-        script.locals("fm_mission_controller", 29017).int32 = 99999
-        script.locals("fm_mission_controller", 32541).int32 = 99999
-        if notify then notify.push("Apartment", "Instant Finish (Other Classics)", 2000) end
-    else
-        if notify then notify.push("Apartment", "Failed to force host", 2000) end
-    end
+    util.create_job(function()
+        if script.force_host("fm_mission_controller") then
+            util.yield(1000)
+            script.locals("fm_mission_controller", 20395).int32 = 12
+            script.locals("fm_mission_controller", 23081).int32 = 99999
+            script.locals("fm_mission_controller", 29017).int32 = 99999
+            script.locals("fm_mission_controller", 32541).int32 = 99999
+            if notify then notify.push("Apartment", "Instant Finish (Other Classics)", 2000) end
+        else
+            if notify then notify.push("Apartment", "Failed to force host", 2000) end
+        end
+    end)
 end
 
 local function apartment_play_unavailable()
@@ -5124,14 +5286,16 @@ end
 
 -- Instant Finish
 local function doomsday_instant_finish()
-    if script.force_host("fm_mission_controller") then
-        util.yield(1000)
-        script.locals("fm_mission_controller", 20395).int32 = 12
-        script.locals("fm_mission_controller", 22136).int32 = 150
-        script.locals("fm_mission_controller", 29017).int32 = 99999
-        script.locals("fm_mission_controller", 32541).int32 = 99999
-        script.locals("fm_mission_controller", 32569).int32 = 80
-    end
+    util.create_job(function()
+        if script.force_host("fm_mission_controller") then
+            util.yield(1000)
+            script.locals("fm_mission_controller", 20395).int32 = 12
+            script.locals("fm_mission_controller", 22136).int32 = 150
+            script.locals("fm_mission_controller", 29017).int32 = 99999
+            script.locals("fm_mission_controller", 32541).int32 = 99999
+            script.locals("fm_mission_controller", 32569).int32 = 80
+        end
+    end)
 end
 
 local gDoomsdayTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "doomsday")
@@ -5320,20 +5484,7 @@ util.create_thread(function()
             end
             
             -- Disable shooting and other actions
-            disable_control_action(
-                0, 1, 2, 3, 4, 5, 6, -- Movement
-                24, 25, -- Attack (Left/Right Mouse)
-                30, 31, 32, 33, 34, 35, -- Move
-                37, -- Weapon Wheel
-                44, 45, 47, 58, -- Cover
-                59, 60, -- Veh Move
-                71, 72, -- Veh Accel/Brake
-                75, -- Veh Exit
-                140, 141, 142, 143, -- Melee
-                257, 258, 261, 262, 263, 264, 265, -- Attack variants
-                266, 267, 268, -- More attack
-                27 -- ESC
-            )
+            disable_control_action(CONTROL_ACTION_BLOCK_LIST)
         else
             -- Enable player firing
             if players and players.user then

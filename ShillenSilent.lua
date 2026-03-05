@@ -3458,31 +3458,6 @@ local function run_coords_teleport(title, success_message, x, y, z, include_erro
     return true
 end
 
-local function cayo_teleport_underwater_tunnel()
-    -- Underwater tunnel entrance coordinates (Cayo Perico)
-    -- Coordinates: 5051, -5822, 2 (Zone: Cayo Perico)
-
-    -- Automatically bypass drainage pipe after teleporting to tunnel.
-    -- This ensures the game recognizes players are in the tunnel (especially when using Longfin).
-    run_coords_teleport(
-        "Cayo Teleport",
-        "Teleported to Underwater Tunnel",
-        5051.0, -5822.0, 2.0,
-        true,
-        function()
-            util.create_job(function()
-                util.yield(500)
-                if script.running("fm_mission_controller_2020") then
-                    for _ = 1, 10 do
-                        script.locals("fm_mission_controller_2020", 31349).int32 = 6
-                        util.yield(50)
-                    end
-                end
-            end)
-        end
-    )
-end
-
 local function cayo_teleport_residence()
     -- Residence/Mansion coordinates (Cayo Perico)
     -- Coordinates: 5010, -5753, 30
@@ -4564,15 +4539,15 @@ ui.button_pair(
 local gCayoTeleportOutside = ui.group(heistTab, "Teleport - Outside Residence", nil, nil, nil, nil, "cayo")
 ui.button_pair(
     gCayoTeleportOutside,
-    "cayo_tp_tunnel", "Underwater Tunnel", function() cayo_teleport_underwater_tunnel() end,
-    "cayo_tp_center", "Center", function() cayo_teleport_center() end
+    "cayo_tp_center", "Center", function() cayo_teleport_center() end,
+    "cayo_tp_gate_outside", "Gate", function() cayo_teleport_gate_outside() end
 )
 ui.button_pair(
     gCayoTeleportOutside,
-    "cayo_tp_gate_outside", "Gate", function() cayo_teleport_gate_outside() end,
-    "cayo_tp_airport", "Airport", function() cayo_teleport_airport() end
+    "cayo_tp_airport", "Airport", function() cayo_teleport_airport() end,
+    "cayo_tp_escape", "Escape", function() cayo_teleport_escape() end,
+    nil, nil, false, false, nil, "green"
 )
-ui.button(gCayoTeleportOutside, "cayo_tp_escape", "Escape", function() cayo_teleport_escape() end, nil, false, "green")
 
 local gCayoCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "cayo")
 cayoRemoveCrewCutsToggle = ui.toggle(gCayoCuts, "cayo_remove_crew_cuts", "Remove Crew Cuts", cayo_remove_crew_cuts_enabled, function(val)

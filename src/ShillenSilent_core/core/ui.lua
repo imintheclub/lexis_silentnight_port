@@ -721,24 +721,31 @@ local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message
     return style
 end
 
+local BUTTON_TEXT_Y_BIAS = 1
+
 local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSize, textColor)
     if state.animation.progress < 0.01 then return end
 
     local value = tostring(label or "")
     local ox, oy = get_win_offset()
-    local text = gui.text(value):scale(textSize or 1.0):color(to_gui_color(textColor, true))
+    local draw_size = textSize or 1.0
+    local size = gui.text_size and gui.text_size(
+        value,
+        draw_size,
+        { font = state.fonts.regular }
+    ) or nil
+    local textW = (size and size.x) or 0
+    local textH = (size and size.y) or (draw_size * 0.7)
+    local textX = btnX + math.floor((btnW - textW) / 2)
+    local textY = btnY + math.floor((btnH - textH) / 2) + BUTTON_TEXT_Y_BIAS
+
+    local text = gui.text(value):scale(draw_size):color(to_gui_color(textColor, true))
     if state.fonts.regular then
         text:font(state.fonts.regular)
     end
     if gui.justify and gui.justify.left then
         text:justify(gui.justify.left)
     end
-
-    local size = text:get_size()
-    local textW = (size and size.x) or 0
-    local textH = (size and size.y) or ((textSize or 1.0) * 0.7)
-    local textX = btnX + math.floor((btnW - textW) / 2)
-    local textY = btnY + math.floor((btnH - textH) / 2)
 
     if gui.push_clip and gui.pop_clip then
         gui.push_clip(vec(btnX + ox, btnY + oy), vec(btnW, btnH))

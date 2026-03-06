@@ -4,6 +4,12 @@
 3. Load the script in Lexis
 
 # Changelog
+## v0.0.6
+- I didn't even realize this, but the custom font was not working, so made that work
+- Made it easier to "update" the script by moving the heist preset directory outside. So from now on, you'll be able to just directly delete the core folder and the main script and just copy in the new one. 
+- Basic animations on resize/dropdown
+- Remove dud toggle on Cayo preps
+
 ## v0.0.5
 - make responsive + resizable. menu (controller + kb) alternate layout coming next
 

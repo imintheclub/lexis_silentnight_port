@@ -51,10 +51,20 @@ local cayo_teleport_gate_outside = cayo_logic.cayo_teleport_gate_outside
 local cayo_teleport_airport = cayo_logic.cayo_teleport_airport
 local cayo_teleport_escape = cayo_logic.cayo_teleport_escape
 
+local function cayo_init_default_cuts()
+	CayoCutsValues.host = 100
+	CayoCutsValues.player2 = 100
+	CayoCutsValues.player3 = 100
+	CayoCutsValues.player4 = 100
+end
+
 local function register(heistTab)
 	if type(heistTab) ~= "table" then
 		return nil
 	end
+
+	-- Ensure first render and first apply use the same defaults.
+	cayo_init_default_cuts()
 
 	local gCayoInfo = ui.group(heistTab, "Info", nil, nil, nil, 140, "cayo")
 	ui.label(gCayoInfo, "Cayo Perico Heist", config.colors.accent)
@@ -427,18 +437,58 @@ local function register(heistTab)
 			cayo_set_remove_crew_cuts(val)
 		end
 	)
-	cayo_refs.host_slider = ui.slider(gCayoCuts, "cayo_cut_host", "Host Cut %", 0, 300, 100, function(val)
-		CayoCutsValues.host = math.floor(val)
-	end, nil, 5)
-	cayo_refs.p2_slider = ui.slider(gCayoCuts, "cayo_cut_p2", "Player 2 Cut %", 0, 300, 100, function(val)
-		CayoCutsValues.player2 = math.floor(val)
-	end, nil, 5)
-	cayo_refs.p3_slider = ui.slider(gCayoCuts, "cayo_cut_p3", "Player 3 Cut %", 0, 300, 100, function(val)
-		CayoCutsValues.player3 = math.floor(val)
-	end, nil, 5)
-	cayo_refs.p4_slider = ui.slider(gCayoCuts, "cayo_cut_p4", "Player 4 Cut %", 0, 300, 100, function(val)
-		CayoCutsValues.player4 = math.floor(val)
-	end, nil, 5)
+	cayo_refs.host_slider = ui.slider(
+		gCayoCuts,
+		"cayo_cut_host",
+		"Host Cut %",
+		0,
+		300,
+		CayoCutsValues.host,
+		function(val)
+			CayoCutsValues.host = math.floor(val)
+		end,
+		nil,
+		5
+	)
+	cayo_refs.p2_slider = ui.slider(
+		gCayoCuts,
+		"cayo_cut_p2",
+		"Player 2 Cut %",
+		0,
+		300,
+		CayoCutsValues.player2,
+		function(val)
+			CayoCutsValues.player2 = math.floor(val)
+		end,
+		nil,
+		5
+	)
+	cayo_refs.p3_slider = ui.slider(
+		gCayoCuts,
+		"cayo_cut_p3",
+		"Player 3 Cut %",
+		0,
+		300,
+		CayoCutsValues.player3,
+		function(val)
+			CayoCutsValues.player3 = math.floor(val)
+		end,
+		nil,
+		5
+	)
+	cayo_refs.p4_slider = ui.slider(
+		gCayoCuts,
+		"cayo_cut_p4",
+		"Player 4 Cut %",
+		0,
+		300,
+		CayoCutsValues.player4,
+		function(val)
+			CayoCutsValues.player4 = math.floor(val)
+		end,
+		nil,
+		5
+	)
 	ui.button_pair(
 		gCayoCuts,
 		"cayo_cuts_max",

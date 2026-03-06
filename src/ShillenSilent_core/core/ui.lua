@@ -736,7 +736,7 @@ local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSiz
     ) or nil
     local textW = (size and size.x) or 0
     local textH = (size and size.y) or (draw_size * 0.7)
-    local textX = btnX + math.floor((btnW - textW) / 2)
+    local textX = btnX + math.floor(((btnW - textW) / 2) + 0.5)
     local textY = btnY + math.floor((btnH - textH) / 2) + BUTTON_TEXT_Y_BIAS
 
     local text = gui.text(value):scale(draw_size):color(to_gui_color(textColor, true))
@@ -783,9 +783,11 @@ local function draw_button_pair_item(item, x, y, w)
     local baseX = x + pad_x
     local btnY = y + config.space.x1
     local gap = config.space.x2_5
-    local btnW = (totalW - gap) / 2
+    local innerW = math.max(2, math.floor((totalW - gap) + 0.5))
+    local leftW = math.floor(innerW / 2)
+    local rightW = innerW - leftW
 
-    local function draw_half(btn, btnX)
+    local function draw_half(btn, btnX, btnW)
         local style = draw_button_surface(
             btn,
             btnX,
@@ -800,8 +802,8 @@ local function draw_button_pair_item(item, x, y, w)
         render_button_label_center(btn.label, btnX, btnY, btnW, btnH, drawSize, style.text)
     end
 
-    draw_half(item.left, baseX)
-    draw_half(item.right, baseX + btnW + gap)
+    draw_half(item.left, baseX, leftW)
+    draw_half(item.right, baseX + leftW + gap, rightW)
 end
 
 local function draw_slider_item(item, x, y, w, original_y)

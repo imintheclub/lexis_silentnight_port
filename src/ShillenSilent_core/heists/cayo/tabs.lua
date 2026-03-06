@@ -103,9 +103,7 @@ cayoIslandAmountDropdown = ui.dropdown(
         CayoConfig.amt_isl = hp_option_value_by_name(CayoPrepOptions.island_amounts, opt, CayoConfig.amt_isl)
     end
 )
-cayoAdvancedToggle = ui.toggle(gCayoPreps, "cayo_advanced", "Advanced Value Editing", CayoConfig.advanced, function(val)
-    CayoConfig.advanced = val
-end)
+cayoAdvancedToggle = nil
 cayoCashValueSlider = ui.slider(gCayoPreps, "cayo_cash_value", "Cash Value", 0, 2550000, CayoConfig.val_cash, function(val)
     CayoConfig.val_cash = math.floor(val)
 end, nil, 50000)

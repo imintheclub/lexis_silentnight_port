@@ -110,8 +110,15 @@ local function render_text(str, x, y, size, col, align)
         t:font(state.fonts.regular)
     end
 
-    if align == "center" and gui.justify then t:justify(gui.justify.center)
-    elseif align == "right" and gui.justify then t:justify(gui.justify.right) end
+    if gui.justify then
+        if align == "center" then
+            t:justify(gui.justify.center)
+        elseif align == "right" then
+            t:justify(gui.justify.right)
+        else
+            t:justify(gui.justify.left)
+        end
+    end
     t:draw()
     return t
 end

@@ -129,7 +129,7 @@ local function init_config()
     local min_h_from_content = (content_margin * 2) + tw(9) + tw(2) + tw(10) + tw(3) + tw(12) + tw(4)
 
         return {
-            font_path = SHILLENSILENT_CORE_FONTS_DIR .. "\\InterVariable.ttf",
+            font_path = SHILLENSILENT_CORE_FONTS_DIR .. "\\Inter-SemiBold.ttf",
 
         -- Typography scale tuned for Inter.
         font_scale_title = 24.0 * scale,

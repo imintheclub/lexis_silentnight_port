@@ -722,7 +722,9 @@ local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message
 end
 
 local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSize, textColor)
-    render_text(tostring(label or ""), btnX + config.space.x3, btnY + config.space.x1, textSize, textColor)
+    local text_h = (textSize or 1.0) * 0.7
+    local text_y = btnY + math.floor((btnH - text_h) / 2)
+    render_text(tostring(label or ""), btnX + math.floor(btnW / 2), text_y, textSize, textColor, "center")
 end
 
 local function draw_button_item(item, x, y, w)

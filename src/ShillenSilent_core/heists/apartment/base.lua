@@ -2,6 +2,9 @@
 -- 6.7. Apartment Heist Functions
 -- ---------------------------------------------------------
 
+local core = require_module("core/bootstrap")
+local run_guarded_job = core.run_guarded_job
+
 -- Apartment Globals
 local ApartmentGlobals = {
 	ReadyBase = 2658294,
@@ -16,11 +19,10 @@ local ApartmentGlobals = {
 
 -- Apartment Force Ready
 local function apartment_force_ready()
-	if script and script.force_host then
-		script.force_host("fm_mission_controller")
-	end
-
-	util.create_job(function()
+	return run_guarded_job("apartment_force_ready", function()
+		if script and script.force_host then
+			script.force_host("fm_mission_controller")
+		end
 		util.yield(1000)
 
 		script.globals(ApartmentGlobals.Ready.PLAYER2).int32 = 6
@@ -30,8 +32,11 @@ local function apartment_force_ready()
 		if notify then
 			notify.push("Apartment Launch", "All Players Ready", 2000)
 		end
+	end, function()
+		if notify then
+			notify.push("Apartment Launch", "Force Ready already running", 1500)
+		end
 	end)
-	return true
 end
 
 local function apartment_redraw_board()
@@ -57,9 +62,12 @@ local function apartment_kill_cooldown()
 	end
 end
 
--- ---------------------------------------------------------
--- 7. Setup Data (Example)
--- ---------------------------------------------------------
-ui.tab("heist", "HEIST", "ui/components/network.png")
+local apartment_base = {
+	ApartmentGlobals = ApartmentGlobals,
+	apartment_force_ready = apartment_force_ready,
+	apartment_redraw_board = apartment_redraw_board,
+	apartment_complete_preps = apartment_complete_preps,
+	apartment_kill_cooldown = apartment_kill_cooldown,
+}
 
--- Casino granular prep options (aligned with SilentNight behavior)
+return apartment_base

@@ -2,6 +2,15 @@
 -- 6.5. Heist Functions (Casino)
 -- ---------------------------------------------------------
 
+local core = require_module("core/bootstrap")
+local ui = require_module("core/ui")
+local heist_state = require_module("shared/heist_state")
+local native = core.native
+local config = core.config
+local state = core.state
+local ensure_core_dirs = core.ensure_core_dirs
+local SHILLENSILENT_HEIST_PRESETS_DIR = core.SHILLENSILENT_HEIST_PRESETS_DIR
+
 -- Globals for Casino Heist
 local CasinoGlobals = {
 	Host = 1975557,
@@ -20,13 +29,34 @@ local CutsValues = {
 	player4 = 0,
 }
 
+local cayo_state = heist_state.cayo
+local CayoPrepOptions = cayo_state.prep_options
+local CayoConfig = cayo_state.config
+local CayoCutsValues = cayo_state.cuts
+local cayo_flags = cayo_state.flags
+local cayo_refs = cayo_state.refs
+local cayo_callbacks = cayo_state.callbacks
+
+local casino_state = heist_state.casino
+local CasinoPrepOptions = casino_state.prep_options
+local CasinoManualPreps = casino_state.manual_preps
+local casino_flags = casino_state.flags
+local casino_refs = casino_state.refs
+local casino_callbacks = casino_state.callbacks
+
+local apartment_state = heist_state.apartment
+local ApartmentCutsValues = apartment_state.cuts
+local apartment_flags = apartment_state.flags
+local apartment_refs = apartment_state.refs
+local apartment_callbacks = apartment_state.callbacks
+
 -- GetMP function
 local function GetMP()
 	local mp_idx = script.globals(MPGlobal).int32
 	return mp_idx == 1 and "MP1_" or "MP0_"
 end
 
-function hp_options_to_names(options)
+local function hp_options_to_names(options)
 	local names = {}
 	for i = 1, #options do
 		names[i] = options[i].name
@@ -34,7 +64,7 @@ function hp_options_to_names(options)
 	return names
 end
 
-function hp_option_index_by_value(options, value, default_index)
+local function hp_option_index_by_value(options, value, default_index)
 	for i = 1, #options do
 		if options[i].value == value then
 			return i
@@ -43,7 +73,7 @@ function hp_option_index_by_value(options, value, default_index)
 	return default_index or 1
 end
 
-function hp_option_value_by_name(options, name, default_value)
+local function hp_option_value_by_name(options, name, default_value)
 	for i = 1, #options do
 		if options[i].name == name then
 			return options[i].value
@@ -52,7 +82,7 @@ function hp_option_value_by_name(options, name, default_value)
 	return default_value
 end
 
-function hp_option_names_range(options, first, last)
+local function hp_option_names_range(options, first, last)
 	local names = {}
 	for i = first, last do
 		if options[i] then
@@ -62,14 +92,14 @@ function hp_option_names_range(options, first, last)
 	return names
 end
 
-function hp_set_stat_for_all_characters(stat_name, value)
+local function hp_set_stat_for_all_characters(stat_name, value)
 	account.stats("MP0_" .. stat_name).int32 = value
 	account.stats("MP1_" .. stat_name).int32 = value
 end
 
-hp_keyboard_guard = nil
+local hp_keyboard_guard = nil
 
-hp_heist_presets = {
+local hp_heist_presets = {
 	root = SHILLENSILENT_HEIST_PRESETS_DIR,
 	apartment = {
 		dir = "",
@@ -102,7 +132,14 @@ hp_heist_presets.apartment.dir = hp_heist_presets.root .. "\\Apartment"
 hp_heist_presets.cayo.dir = hp_heist_presets.root .. "\\CayoPerico"
 hp_heist_presets.casino.dir = hp_heist_presets.root .. "\\DiamondCasino"
 
-function hp_trim_text(text)
+-- Forward declarations for functions referenced before their definitions.
+local hp_save_heist_preset
+local hp_load_heist_preset
+local hp_remove_heist_preset
+local hp_copy_heist_preset_folder
+local hp_refresh_apartment_max_payout
+
+local function hp_trim_text(text)
 	if type(text) ~= "string" then
 		return ""
 	end
@@ -110,14 +147,14 @@ function hp_trim_text(text)
 	return trimmed
 end
 
-function hp_sanitize_preset_name(name)
+local function hp_sanitize_preset_name(name)
 	local clean = hp_trim_text(name)
 	clean = clean:gsub('[<>:"/\\|%?%*]', "_")
 	clean = clean:gsub("%.$", "")
 	return clean
 end
 
-function hp_get_preset_state(mode)
+local function hp_get_preset_state(mode)
 	if mode == "apartment" then
 		return hp_heist_presets.apartment
 	end
@@ -130,7 +167,7 @@ function hp_get_preset_state(mode)
 	return nil
 end
 
-function hp_get_invoker_string(result)
+local function hp_get_invoker_string(result)
 	if not result then
 		return ""
 	end
@@ -153,7 +190,7 @@ local function hp_notify_presets(message, duration)
 	end
 end
 
-function hp_update_preset_name_label(mode)
+local function hp_update_preset_name_label(mode)
 	local state_tbl = hp_get_preset_state(mode)
 	if not state_tbl or not state_tbl.name_label then
 		return
@@ -165,7 +202,7 @@ function hp_update_preset_name_label(mode)
 	state_tbl.name_label.text = "Name: " .. shown_name
 end
 
-function hp_set_heist_preset_name_from_clipboard(mode)
+local function hp_set_heist_preset_name_from_clipboard(mode)
 	local state_tbl = hp_get_preset_state(mode)
 	if not state_tbl then
 		return false
@@ -184,7 +221,7 @@ function hp_set_heist_preset_name_from_clipboard(mode)
 	return true
 end
 
-function hp_find_option_index(option_names, selected_name, fallback)
+local function hp_find_option_index(option_names, selected_name, fallback)
 	for i = 1, #option_names do
 		if option_names[i] == selected_name then
 			return i
@@ -193,7 +230,7 @@ function hp_find_option_index(option_names, selected_name, fallback)
 	return fallback or 1
 end
 
-function hp_resolve_option_value(options, raw_value, fallback_value)
+local function hp_resolve_option_value(options, raw_value, fallback_value)
 	local numeric = tonumber(raw_value)
 	if numeric then
 		local int_numeric = math.floor(numeric)
@@ -245,12 +282,12 @@ local function hp_validate_heist_preset(mode, preps)
 	return true, nil
 end
 
-function hp_get_zero_based_option_index(options, value, default_index)
+local function hp_get_zero_based_option_index(options, value, default_index)
 	local idx = hp_option_index_by_value(options, value, default_index or 1)
 	return idx - 1
 end
 
-function hp_clamp_number(value, min_value, max_value)
+local function hp_clamp_number(value, min_value, max_value)
 	local number = tonumber(value)
 	if not number then
 		return min_value
@@ -345,7 +382,7 @@ local APARTMENT_CUT_PRESET_OPTIONS = {
 	{ name = "All - 100%", value = 100 },
 }
 
-function hp_extract_preset_name(file_entry)
+local function hp_extract_preset_name(file_entry)
 	local name = tostring(file_entry or "")
 	name = name:gsub("/", "\\")
 	name = name:match("([^\\]+)$") or name
@@ -353,7 +390,7 @@ function hp_extract_preset_name(file_entry)
 	return name
 end
 
-function hp_ensure_heist_preset_dirs()
+local function hp_ensure_heist_preset_dirs()
 	ensure_core_dirs()
 	if not dirs.exists(hp_heist_presets.root) then
 		dirs.create(hp_heist_presets.root)
@@ -369,7 +406,7 @@ function hp_ensure_heist_preset_dirs()
 	end
 end
 
-function hp_refresh_heist_preset_files(mode, preferred_name)
+local function hp_refresh_heist_preset_files(mode, preferred_name)
 	local state_tbl = hp_get_preset_state(mode)
 	if not state_tbl then
 		return
@@ -408,7 +445,7 @@ function hp_refresh_heist_preset_files(mode, preferred_name)
 	end
 end
 
-function hp_get_selected_preset_name(mode)
+local function hp_get_selected_preset_name(mode)
 	local state_tbl = hp_get_preset_state(mode)
 	if not state_tbl then
 		return nil
@@ -420,7 +457,7 @@ function hp_get_selected_preset_name(mode)
 	return selected
 end
 
-function hp_get_heist_preset_path(mode, preset_name)
+local function hp_get_heist_preset_path(mode, preset_name)
 	local state_tbl = hp_get_preset_state(mode)
 	if not state_tbl then
 		return nil
@@ -428,7 +465,7 @@ function hp_get_heist_preset_path(mode, preset_name)
 	return state_tbl.dir .. "\\" .. preset_name .. ".json"
 end
 
-function hp_open_heist_preset_name_keyboard(mode)
+local function hp_open_heist_preset_name_keyboard(mode)
 	local state_tbl = hp_get_preset_state(mode)
 	if not state_tbl then
 		return
@@ -488,7 +525,7 @@ util.create_thread(function()
 	end
 end)
 
-function hp_build_heist_preset_group(tab_ref, mode, heist_subtab, id_prefix)
+local function hp_build_heist_preset_group(tab_ref, mode, heist_subtab, id_prefix)
 	local state_tbl = hp_get_preset_state(mode)
 	if not tab_ref or not state_tbl then
 		return nil
@@ -551,7 +588,7 @@ function hp_build_heist_preset_group(tab_ref, mode, heist_subtab, id_prefix)
 	return group
 end
 
-function hp_read_json_file(path)
+local function hp_read_json_file(path)
 	local ok, result = pcall(function()
 		local handle = file.open(path, { append = false, create_if_not_exists = false })
 		if not handle or not handle.valid then
@@ -584,7 +621,7 @@ function hp_read_json_file(path)
 	return result
 end
 
-function hp_write_json_file(path, content)
+local function hp_write_json_file(path, content)
 	local ok, err = pcall(function()
 		local handle = file.open(path, { create_if_not_exists = true })
 		if not handle or not handle.valid then
@@ -595,7 +632,7 @@ function hp_write_json_file(path, content)
 	return ok, err
 end
 
-function hp_collect_cayo_preset_data()
+local function hp_collect_cayo_preset_data()
 	local preps = {
 		schema = PRESET_SCHEMA_VERSION,
 		heist = "cayo_perico",
@@ -613,8 +650,8 @@ function hp_collect_cayo_preset_data()
 		coke_value = CayoConfig.val_coke,
 		gold_value = CayoConfig.val_gold,
 		arts_value = CayoConfig.val_art,
-		womans_bag = cayo_womans_bag_enabled and true or false,
-		remove_crew_cuts = cayo_remove_crew_cuts_enabled and true or false,
+		womans_bag = cayo_flags.womans_bag_enabled and true or false,
+		remove_crew_cuts = cayo_flags.remove_crew_cuts_enabled and true or false,
 		unlock_all_poi = CayoConfig.unlock_all_poi and true or false,
 		player1 = { enabled = true, cut = CayoCutsValues.host },
 		player2 = { enabled = (CayoCutsValues.player2 > 0), cut = CayoCutsValues.player2 },
@@ -624,7 +661,7 @@ function hp_collect_cayo_preset_data()
 	return preps
 end
 
-function hp_apply_cayo_preset_data(preps)
+local function hp_apply_cayo_preset_data(preps)
 	if type(preps) ~= "table" then
 		return false
 	end
@@ -647,10 +684,18 @@ function hp_apply_cayo_preset_data(preps)
 		CayoConfig.unlock_all_poi = preps.unlock_all_poi
 	end
 	if type(preps.womans_bag) == "boolean" then
-		cayo_set_womans_bag(preps.womans_bag, true)
+		if type(cayo_callbacks.set_womans_bag) == "function" then
+			cayo_callbacks.set_womans_bag(preps.womans_bag, true)
+		else
+			cayo_flags.womans_bag_enabled = preps.womans_bag
+		end
 	end
 	if type(preps.remove_crew_cuts) == "boolean" then
-		cayo_set_remove_crew_cuts(preps.remove_crew_cuts, true)
+		if type(cayo_callbacks.set_remove_crew_cuts) == "function" then
+			cayo_callbacks.set_remove_crew_cuts(preps.remove_crew_cuts, true)
+		else
+			cayo_flags.remove_crew_cuts_enabled = preps.remove_crew_cuts
+		end
 	end
 
 	if tonumber(preps.cash_value) then
@@ -677,77 +722,80 @@ function hp_apply_cayo_preset_data(preps)
 	CayoCutsValues.player4 =
 		hp_read_player_cut(preps, "player4", "player4_cut", CayoCutsValues.player4, hp_clamp_cut_percent)
 
-	if cayoUnlockOnApplyToggle then
-		cayoUnlockOnApplyToggle.state = CayoConfig.unlock_all_poi
+	if cayo_refs.unlock_on_apply_toggle then
+		cayo_refs.unlock_on_apply_toggle.state = CayoConfig.unlock_all_poi
 	end
-	if cayoDifficultyDropdown then
-		cayoDifficultyDropdown.value = hp_option_index_by_value(CayoPrepOptions.difficulties, CayoConfig.diff, 1)
+	if cayo_refs.difficulty_dropdown then
+		cayo_refs.difficulty_dropdown.value = hp_option_index_by_value(CayoPrepOptions.difficulties, CayoConfig.diff, 1)
 	end
-	if cayoApproachDropdown then
-		cayoApproachDropdown.value = hp_option_index_by_value(CayoPrepOptions.approaches, CayoConfig.app, 1)
+	if cayo_refs.approach_dropdown then
+		cayo_refs.approach_dropdown.value = hp_option_index_by_value(CayoPrepOptions.approaches, CayoConfig.app, 1)
 	end
-	if cayoLoadoutDropdown then
-		cayoLoadoutDropdown.value = hp_option_index_by_value(CayoPrepOptions.loadouts, CayoConfig.wep, 1)
+	if cayo_refs.loadout_dropdown then
+		cayo_refs.loadout_dropdown.value = hp_option_index_by_value(CayoPrepOptions.loadouts, CayoConfig.wep, 1)
 	end
-	if cayoPrimaryTargetDropdown then
-		cayoPrimaryTargetDropdown.value = hp_option_index_by_value(CayoPrepOptions.primary_targets, CayoConfig.tgt, 1)
+	if cayo_refs.primary_target_dropdown then
+		cayo_refs.primary_target_dropdown.value =
+			hp_option_index_by_value(CayoPrepOptions.primary_targets, CayoConfig.tgt, 1)
 	end
-	if cayoCompoundTargetDropdown then
-		cayoCompoundTargetDropdown.value =
+	if cayo_refs.compound_target_dropdown then
+		cayo_refs.compound_target_dropdown.value =
 			hp_option_index_by_value(CayoPrepOptions.secondary_targets, CayoConfig.sec_comp, 1)
 	end
-	if cayoCompoundAmountDropdown then
-		cayoCompoundAmountDropdown.value =
+	if cayo_refs.compound_amount_dropdown then
+		cayo_refs.compound_amount_dropdown.value =
 			hp_option_index_by_value(CayoPrepOptions.compound_amounts, CayoConfig.amt_comp, 1)
 	end
-	if cayoArtsAmountDropdown then
-		cayoArtsAmountDropdown.value = hp_option_index_by_value(CayoPrepOptions.arts_amounts, CayoConfig.paint, 1)
+	if cayo_refs.arts_amount_dropdown then
+		cayo_refs.arts_amount_dropdown.value =
+			hp_option_index_by_value(CayoPrepOptions.arts_amounts, CayoConfig.paint, 1)
 	end
-	if cayoIslandTargetDropdown then
-		cayoIslandTargetDropdown.value =
+	if cayo_refs.island_target_dropdown then
+		cayo_refs.island_target_dropdown.value =
 			hp_option_index_by_value(CayoPrepOptions.secondary_targets, CayoConfig.sec_isl, 1)
 	end
-	if cayoIslandAmountDropdown then
-		cayoIslandAmountDropdown.value = hp_option_index_by_value(CayoPrepOptions.island_amounts, CayoConfig.amt_isl, 1)
+	if cayo_refs.island_amount_dropdown then
+		cayo_refs.island_amount_dropdown.value =
+			hp_option_index_by_value(CayoPrepOptions.island_amounts, CayoConfig.amt_isl, 1)
 	end
-	if cayoCashValueSlider then
-		cayoCashValueSlider.value = CayoConfig.val_cash
+	if cayo_refs.cash_value_slider then
+		cayo_refs.cash_value_slider.value = CayoConfig.val_cash
 	end
-	if cayoWeedValueSlider then
-		cayoWeedValueSlider.value = CayoConfig.val_weed
+	if cayo_refs.weed_value_slider then
+		cayo_refs.weed_value_slider.value = CayoConfig.val_weed
 	end
-	if cayoCokeValueSlider then
-		cayoCokeValueSlider.value = CayoConfig.val_coke
+	if cayo_refs.coke_value_slider then
+		cayo_refs.coke_value_slider.value = CayoConfig.val_coke
 	end
-	if cayoGoldValueSlider then
-		cayoGoldValueSlider.value = CayoConfig.val_gold
+	if cayo_refs.gold_value_slider then
+		cayo_refs.gold_value_slider.value = CayoConfig.val_gold
 	end
-	if cayoArtValueSlider then
-		cayoArtValueSlider.value = CayoConfig.val_art
+	if cayo_refs.art_value_slider then
+		cayo_refs.art_value_slider.value = CayoConfig.val_art
 	end
-	if cayoWomansBagToggle then
-		cayoWomansBagToggle.state = cayo_womans_bag_enabled
+	if cayo_refs.womans_bag_toggle then
+		cayo_refs.womans_bag_toggle.state = cayo_flags.womans_bag_enabled
 	end
-	if cayoRemoveCrewCutsToggle then
-		cayoRemoveCrewCutsToggle.state = cayo_remove_crew_cuts_enabled
+	if cayo_refs.remove_crew_cuts_toggle then
+		cayo_refs.remove_crew_cuts_toggle.state = cayo_flags.remove_crew_cuts_enabled
 	end
-	if cayoHostSliderRef then
-		cayoHostSliderRef.value = CayoCutsValues.host
+	if cayo_refs.host_slider then
+		cayo_refs.host_slider.value = CayoCutsValues.host
 	end
-	if cayoP2SliderRef then
-		cayoP2SliderRef.value = CayoCutsValues.player2
+	if cayo_refs.p2_slider then
+		cayo_refs.p2_slider.value = CayoCutsValues.player2
 	end
-	if cayoP3SliderRef then
-		cayoP3SliderRef.value = CayoCutsValues.player3
+	if cayo_refs.p3_slider then
+		cayo_refs.p3_slider.value = CayoCutsValues.player3
 	end
-	if cayoP4SliderRef then
-		cayoP4SliderRef.value = CayoCutsValues.player4
+	if cayo_refs.p4_slider then
+		cayo_refs.p4_slider.value = CayoCutsValues.player4
 	end
 
 	return true
 end
 
-function hp_collect_casino_preset_data()
+local function hp_collect_casino_preset_data()
 	local preps = {
 		schema = PRESET_SCHEMA_VERSION,
 		heist = "diamond_casino",
@@ -764,8 +812,8 @@ function hp_collect_casino_preset_data()
 		vehicles = CasinoManualPreps.vehicle_slot - 1,
 		unlock_all_poi = CasinoManualPreps.unlock_all_poi and true or false,
 		solo_launch = state.solo_launch.casino and true or false,
-		remove_crew_cuts = casino_remove_crew_cuts_enabled and true or false,
-		autograbber = casino_autograbber_enabled and true or false,
+		remove_crew_cuts = casino_flags.remove_crew_cuts_enabled and true or false,
+		autograbber = casino_flags.autograbber_enabled and true or false,
 		player1 = { enabled = true, cut = CutsValues.host },
 		player2 = { enabled = (CutsValues.player2 > 0), cut = CutsValues.player2 },
 		player3 = { enabled = (CutsValues.player3 > 0), cut = CutsValues.player3 },
@@ -774,7 +822,7 @@ function hp_collect_casino_preset_data()
 	return preps
 end
 
-function hp_apply_casino_preset_data(preps)
+local function hp_apply_casino_preset_data(preps)
 	if type(preps) ~= "table" then
 		return false
 	end
@@ -813,10 +861,18 @@ function hp_apply_casino_preset_data(preps)
 		state.solo_launch.casino = preps.solo_launch
 	end
 	if type(preps.remove_crew_cuts) == "boolean" then
-		casino_set_remove_crew_cuts(preps.remove_crew_cuts, true)
+		if type(casino_callbacks.set_remove_crew_cuts) == "function" then
+			casino_callbacks.set_remove_crew_cuts(preps.remove_crew_cuts, true)
+		else
+			casino_flags.remove_crew_cuts_enabled = preps.remove_crew_cuts
+		end
 	end
 	if type(preps.autograbber) == "boolean" then
-		casino_set_autograbber(preps.autograbber, true)
+		if type(casino_callbacks.set_autograbber) == "function" then
+			casino_callbacks.set_autograbber(preps.autograbber, true)
+		else
+			casino_flags.autograbber_enabled = preps.autograbber
+		end
 	end
 
 	CutsValues.host = hp_read_player_cut(preps, "player1", "host_cut", CutsValues.host, hp_clamp_cut_percent)
@@ -824,90 +880,102 @@ function hp_apply_casino_preset_data(preps)
 	CutsValues.player3 = hp_read_player_cut(preps, "player3", "player3_cut", CutsValues.player3, hp_clamp_cut_percent)
 	CutsValues.player4 = hp_read_player_cut(preps, "player4", "player4_cut", CutsValues.player4, hp_clamp_cut_percent)
 
-	if manualDifficultyDropdown then
-		manualDifficultyDropdown.value =
+	if casino_refs.manual_difficulty_dropdown then
+		casino_refs.manual_difficulty_dropdown.value =
 			hp_option_index_by_value(CasinoPrepOptions.difficulties, CasinoManualPreps.difficulty, 1)
 	end
-	if manualApproachDropdown then
-		manualApproachDropdown.value =
+	if casino_refs.manual_approach_dropdown then
+		casino_refs.manual_approach_dropdown.value =
 			hp_option_index_by_value(CasinoPrepOptions.approaches, CasinoManualPreps.approach, 1)
 	end
-	if manualGunmanDropdown then
-		manualGunmanDropdown.value =
+	if casino_refs.manual_gunman_dropdown then
+		casino_refs.manual_gunman_dropdown.value =
 			hp_option_index_by_value(CasinoPrepOptions.gunmen, CasinoManualPreps.crew_weapon, 1)
 	end
-	if manualDriverDropdown then
-		manualDriverDropdown.value =
+	if casino_refs.manual_driver_dropdown then
+		casino_refs.manual_driver_dropdown.value =
 			hp_option_index_by_value(CasinoPrepOptions.drivers, CasinoManualPreps.crew_driver, 1)
 	end
-	if manualHackerDropdown then
-		manualHackerDropdown.value =
+	if casino_refs.manual_hacker_dropdown then
+		casino_refs.manual_hacker_dropdown.value =
 			hp_option_index_by_value(CasinoPrepOptions.hackers, CasinoManualPreps.crew_hacker, 1)
 	end
-	if manualMasksDropdown then
-		manualMasksDropdown.value = hp_option_index_by_value(CasinoPrepOptions.masks, CasinoManualPreps.masks, 1)
+	if casino_refs.manual_masks_dropdown then
+		casino_refs.manual_masks_dropdown.value =
+			hp_option_index_by_value(CasinoPrepOptions.masks, CasinoManualPreps.masks, 1)
 	end
-	if manualGuardsDropdown then
-		manualGuardsDropdown.value =
+	if casino_refs.manual_guards_dropdown then
+		casino_refs.manual_guards_dropdown.value =
 			hp_option_index_by_value(CasinoPrepOptions.guards, CasinoManualPreps.disrupt_shipments, 1)
 	end
-	if manualKeycardsDropdown then
-		manualKeycardsDropdown.value =
+	if casino_refs.manual_keycards_dropdown then
+		casino_refs.manual_keycards_dropdown.value =
 			hp_option_index_by_value(CasinoPrepOptions.keycards, CasinoManualPreps.key_levels, 1)
 	end
-	if manualTargetDropdown then
-		manualTargetDropdown.value = hp_option_index_by_value(CasinoPrepOptions.targets, CasinoManualPreps.target, 1)
+	if casino_refs.manual_target_dropdown then
+		casino_refs.manual_target_dropdown.value =
+			hp_option_index_by_value(CasinoPrepOptions.targets, CasinoManualPreps.target, 1)
 	end
-	if manualUnlockPoiToggle then
-		manualUnlockPoiToggle.state = CasinoManualPreps.unlock_all_poi
+	if casino_refs.manual_unlock_poi_toggle then
+		casino_refs.manual_unlock_poi_toggle.state = CasinoManualPreps.unlock_all_poi
 	end
-	if casinoSoloLaunchToggle then
-		casinoSoloLaunchToggle.state = state.solo_launch.casino
+	if casino_refs.solo_launch_toggle then
+		casino_refs.solo_launch_toggle.state = state.solo_launch.casino
 	end
-	if casinoRemoveCrewCutsToggle then
-		casinoRemoveCrewCutsToggle.state = casino_remove_crew_cuts_enabled
+	if casino_refs.remove_crew_cuts_toggle then
+		casino_refs.remove_crew_cuts_toggle.state = casino_flags.remove_crew_cuts_enabled
 	end
-	if casinoAutograbberToggle then
-		casinoAutograbberToggle.state = casino_autograbber_enabled
-	end
-
-	if manualLoadoutDropdown and manualVehiclesDropdown then
-		hp_update_casino_loadout_dropdown(false)
-		hp_update_casino_vehicle_dropdown(false)
-		CasinoManualPreps.loadout_slot =
-			hp_clamp_number(CasinoManualPreps.loadout_slot, 1, math.max(1, #manualLoadoutDropdown.options))
-		CasinoManualPreps.vehicle_slot =
-			hp_clamp_number(CasinoManualPreps.vehicle_slot, 1, math.max(1, #manualVehiclesDropdown.options))
-		manualLoadoutDropdown.value = CasinoManualPreps.loadout_slot
-		manualVehiclesDropdown.value = CasinoManualPreps.vehicle_slot
+	if casino_refs.autograbber_toggle then
+		casino_refs.autograbber_toggle.state = casino_flags.autograbber_enabled
 	end
 
-	if casinoHostSliderRef then
-		casinoHostSliderRef.value = CutsValues.host
+	if casino_refs.manual_loadout_dropdown and casino_refs.manual_vehicles_dropdown then
+		if type(casino_callbacks.update_loadout_dropdown) == "function" then
+			casino_callbacks.update_loadout_dropdown(false)
+		end
+		if type(casino_callbacks.update_vehicle_dropdown) == "function" then
+			casino_callbacks.update_vehicle_dropdown(false)
+		end
+		CasinoManualPreps.loadout_slot = hp_clamp_number(
+			CasinoManualPreps.loadout_slot,
+			1,
+			math.max(1, #casino_refs.manual_loadout_dropdown.options)
+		)
+		CasinoManualPreps.vehicle_slot = hp_clamp_number(
+			CasinoManualPreps.vehicle_slot,
+			1,
+			math.max(1, #casino_refs.manual_vehicles_dropdown.options)
+		)
+		casino_refs.manual_loadout_dropdown.value = CasinoManualPreps.loadout_slot
+		casino_refs.manual_vehicles_dropdown.value = CasinoManualPreps.vehicle_slot
 	end
-	if casinoP2SliderRef then
-		casinoP2SliderRef.value = CutsValues.player2
+
+	if casino_refs.host_slider then
+		casino_refs.host_slider.value = CutsValues.host
 	end
-	if casinoP3SliderRef then
-		casinoP3SliderRef.value = CutsValues.player3
+	if casino_refs.p2_slider then
+		casino_refs.p2_slider.value = CutsValues.player2
 	end
-	if casinoP4SliderRef then
-		casinoP4SliderRef.value = CutsValues.player4
+	if casino_refs.p3_slider then
+		casino_refs.p3_slider.value = CutsValues.player3
+	end
+	if casino_refs.p4_slider then
+		casino_refs.p4_slider.value = CutsValues.player4
 	end
 
 	return true
 end
 
-function hp_collect_apartment_preset_data()
+local function hp_collect_apartment_preset_data()
 	local cuts = ApartmentCutsValues or {}
 	local preps = {
 		schema = PRESET_SCHEMA_VERSION,
 		heist = "apartment",
 		solo_launch = state.solo_launch.apartment and true or false,
-		bonus_12mil = apartment_bonus_enabled and true or false,
-		double_rewards_week = apartment_double_rewards_week and true or false,
-		max_payout = apartment_max_payout_enabled and true or false,
-		preset = math.max(0, (apartment_cut_preset_index or 1) - 1),
+		bonus_12mil = apartment_flags.bonus_enabled and true or false,
+		double_rewards_week = apartment_flags.double_rewards_week and true or false,
+		max_payout = apartment_flags.max_payout_enabled and true or false,
+		preset = math.max(0, (apartment_flags.cut_preset_index or 1) - 1),
 		player1 = { enabled = true, cut = cuts.player1 or 0 },
 		player2 = { enabled = ((cuts.player2 or 0) > 0), cut = cuts.player2 or 0 },
 		player3 = { enabled = ((cuts.player3 or 0) > 0), cut = cuts.player3 or 0 },
@@ -916,7 +984,7 @@ function hp_collect_apartment_preset_data()
 	return preps
 end
 
-function hp_apply_apartment_preset_data(preps)
+local function hp_apply_apartment_preset_data(preps)
 	if type(preps) ~= "table" then
 		return false
 	end
@@ -930,18 +998,18 @@ function hp_apply_apartment_preset_data(preps)
 		bonus = preps.bonus
 	end
 	if type(bonus) == "boolean" then
-		if type(apartment_12mil_bonus) == "function" then
-			apartment_12mil_bonus(bonus, true)
+		if type(apartment_callbacks.set_bonus) == "function" then
+			apartment_callbacks.set_bonus(bonus, true)
 		else
-			apartment_bonus_enabled = bonus
+			apartment_flags.bonus_enabled = bonus
 		end
 	end
 
 	if type(preps.double_rewards_week) == "boolean" then
-		apartment_double_rewards_week = preps.double_rewards_week
+		apartment_flags.double_rewards_week = preps.double_rewards_week
 	end
 	if type(preps.max_payout) == "boolean" then
-		apartment_max_payout_enabled = preps.max_payout
+		apartment_flags.max_payout_enabled = preps.max_payout
 	end
 
 	local preset = tonumber(preps.preset)
@@ -949,7 +1017,7 @@ function hp_apply_apartment_preset_data(preps)
 		preset = tonumber(preps.presets)
 	end
 	if preset then
-		apartment_cut_preset_index = math.floor(hp_clamp_number(preset + 1, 1, #APARTMENT_CUT_PRESET_OPTIONS))
+		apartment_flags.cut_preset_index = math.floor(hp_clamp_number(preset + 1, 1, #APARTMENT_CUT_PRESET_OPTIONS))
 	end
 
 	ApartmentCutsValues.player1 =
@@ -961,36 +1029,36 @@ function hp_apply_apartment_preset_data(preps)
 	ApartmentCutsValues.player4 =
 		hp_read_player_cut(preps, "player4", "player4_cut", ApartmentCutsValues.player4, hp_clamp_cut_percent)
 
-	if apartmentSoloLaunchToggle then
-		apartmentSoloLaunchToggle.state = state.solo_launch.apartment
+	if apartment_refs.solo_launch_toggle then
+		apartment_refs.solo_launch_toggle.state = state.solo_launch.apartment
 	end
-	if apartmentBonusToggleRef then
-		apartmentBonusToggleRef.state = apartment_bonus_enabled
+	if apartment_refs.bonus_toggle then
+		apartment_refs.bonus_toggle.state = apartment_flags.bonus_enabled
 	end
-	if apartmentDoubleToggleRef then
-		apartmentDoubleToggleRef.state = apartment_double_rewards_week
+	if apartment_refs.double_toggle then
+		apartment_refs.double_toggle.state = apartment_flags.double_rewards_week
 	end
-	if apartmentMaxPayoutToggleRef then
-		apartmentMaxPayoutToggleRef.state = apartment_max_payout_enabled
+	if apartment_refs.max_payout_toggle then
+		apartment_refs.max_payout_toggle.state = apartment_flags.max_payout_enabled
 	end
-	if apartmentPresetDropdownRef then
-		apartmentPresetDropdownRef.value = apartment_cut_preset_index
-	end
-
-	if apartmentP1SliderRef then
-		apartmentP1SliderRef.value = ApartmentCutsValues.player1
-	end
-	if apartmentP2SliderRef then
-		apartmentP2SliderRef.value = ApartmentCutsValues.player2
-	end
-	if apartmentP3SliderRef then
-		apartmentP3SliderRef.value = ApartmentCutsValues.player3
-	end
-	if apartmentP4SliderRef then
-		apartmentP4SliderRef.value = ApartmentCutsValues.player4
+	if apartment_refs.preset_dropdown then
+		apartment_refs.preset_dropdown.value = apartment_flags.cut_preset_index
 	end
 
-	if apartment_max_payout_enabled then
+	if apartment_refs.p1_slider then
+		apartment_refs.p1_slider.value = ApartmentCutsValues.player1
+	end
+	if apartment_refs.p2_slider then
+		apartment_refs.p2_slider.value = ApartmentCutsValues.player2
+	end
+	if apartment_refs.p3_slider then
+		apartment_refs.p3_slider.value = ApartmentCutsValues.player3
+	end
+	if apartment_refs.p4_slider then
+		apartment_refs.p4_slider.value = ApartmentCutsValues.player4
+	end
+
+	if apartment_flags.max_payout_enabled then
 		hp_refresh_apartment_max_payout(true, false)
 	end
 
@@ -1012,7 +1080,7 @@ local HP_PRESET_MODE_HANDLERS = {
 	},
 }
 
-function hp_save_heist_preset(mode)
+hp_save_heist_preset = function(mode)
 	local state_tbl = hp_get_preset_state(mode)
 	if not state_tbl then
 		return
@@ -1045,7 +1113,7 @@ function hp_save_heist_preset(mode)
 	hp_notify_presets("Saved: " .. clean_name, 2200)
 end
 
-function hp_load_heist_preset(mode)
+hp_load_heist_preset = function(mode)
 	local selected = hp_get_selected_preset_name(mode)
 	if not selected then
 		hp_notify_presets("No preset selected", 2000)
@@ -1080,7 +1148,7 @@ function hp_load_heist_preset(mode)
 	end
 end
 
-function hp_remove_heist_preset(mode)
+hp_remove_heist_preset = function(mode)
 	local selected = hp_get_selected_preset_name(mode)
 	if not selected then
 		hp_notify_presets("No preset selected", 2000)
@@ -1103,7 +1171,7 @@ function hp_remove_heist_preset(mode)
 	end
 end
 
-function hp_copy_heist_preset_folder(mode)
+hp_copy_heist_preset_folder = function(mode)
 	local state_tbl = hp_get_preset_state(mode)
 	if not state_tbl then
 		return
@@ -1112,21 +1180,6 @@ function hp_copy_heist_preset_folder(mode)
 	input.set_clipboard_text(state_tbl.dir)
 	hp_notify_presets("Folder path copied", 2000)
 end
-
-apartment_bonus_enabled = false
-apartment_double_rewards_week = false
-apartment_max_payout_enabled = false
-apartment_cut_preset_index = 4
-
-apartmentP1SliderRef = nil
-apartmentP2SliderRef = nil
-apartmentP3SliderRef = nil
-apartmentP4SliderRef = nil
-apartmentBonusToggleRef = nil
-apartmentDoubleToggleRef = nil
-apartmentMaxPayoutToggleRef = nil
-apartmentPresetDropdownRef = nil
-apartmentSoloLaunchToggle = nil
 
 local apartment_max_payout_cache = {
 	heist = nil,
@@ -1155,7 +1208,7 @@ local function hp_get_apartment_heist_id()
 	return nil
 end
 
-function hp_is_apartment_fleeca()
+local function hp_is_apartment_fleeca()
 	return hp_get_apartment_heist_id() == APARTMENT_HEIST_IDS.fleeca
 end
 
@@ -1189,7 +1242,7 @@ local function hp_get_apartment_max_payout_cut(double_rewards)
 	return hp_clamp_cut_percent(cut), heist, difficulty
 end
 
-function hp_set_apartment_uniform_cuts(cut, apply_now)
+local function hp_set_apartment_uniform_cuts(cut, apply_now)
 	if type(ApartmentCutsValues) ~= "table" then
 		return hp_clamp_cut_percent(cut)
 	end
@@ -1197,21 +1250,21 @@ function hp_set_apartment_uniform_cuts(cut, apply_now)
 	return hp_set_uniform_cuts(
 		ApartmentCutsValues,
 		{ "player1", "player2", "player3", "player4" },
-		{ apartmentP1SliderRef, apartmentP2SliderRef, apartmentP3SliderRef, apartmentP4SliderRef },
+		{ apartment_refs.p1_slider, apartment_refs.p2_slider, apartment_refs.p3_slider, apartment_refs.p4_slider },
 		cut,
-		(apply_now and type(apply_apartment_cuts) == "function") and apply_apartment_cuts or nil
+		(apply_now and type(apartment_callbacks.apply_cuts) == "function") and apartment_callbacks.apply_cuts or nil
 	)
 end
 
-function hp_apply_selected_apartment_cut_preset(apply_now)
-	local selected = APARTMENT_CUT_PRESET_OPTIONS[apartment_cut_preset_index]
+local function hp_apply_selected_apartment_cut_preset(apply_now)
+	local selected = APARTMENT_CUT_PRESET_OPTIONS[apartment_flags.cut_preset_index]
 		or APARTMENT_CUT_PRESET_OPTIONS[#APARTMENT_CUT_PRESET_OPTIONS]
 	local value = selected and selected.value or 100
 	return hp_set_apartment_uniform_cuts(value, apply_now)
 end
 
-function hp_refresh_apartment_max_payout(force_update, apply_now)
-	if not apartment_max_payout_enabled then
+hp_refresh_apartment_max_payout = function(force_update, apply_now)
+	if not apartment_flags.max_payout_enabled then
 		apartment_max_payout_cache.heist = nil
 		apartment_max_payout_cache.difficulty = nil
 		apartment_max_payout_cache.double = nil
@@ -1219,7 +1272,7 @@ function hp_refresh_apartment_max_payout(force_update, apply_now)
 		return false
 	end
 
-	local cut, heist, difficulty = hp_get_apartment_max_payout_cut(apartment_double_rewards_week)
+	local cut, heist, difficulty = hp_get_apartment_max_payout_cut(apartment_flags.double_rewards_week)
 	if not cut then
 		return false
 	end
@@ -1227,18 +1280,40 @@ function hp_refresh_apartment_max_payout(force_update, apply_now)
 	local changed = force_update
 		or apartment_max_payout_cache.heist ~= heist
 		or apartment_max_payout_cache.difficulty ~= difficulty
-		or apartment_max_payout_cache.double ~= apartment_double_rewards_week
+		or apartment_max_payout_cache.double ~= apartment_flags.double_rewards_week
 		or apartment_max_payout_cache.cut ~= cut
 
 	if changed then
 		hp_set_apartment_uniform_cuts(cut, apply_now)
 		apartment_max_payout_cache.heist = heist
 		apartment_max_payout_cache.difficulty = difficulty
-		apartment_max_payout_cache.double = apartment_double_rewards_week
+		apartment_max_payout_cache.double = apartment_flags.double_rewards_week
 		apartment_max_payout_cache.cut = cut
 	end
 
 	return changed
 end
 
--- Apply cuts for Casino Heist
+local presets = {
+	CasinoGlobals = CasinoGlobals,
+	CutsValues = CutsValues,
+	SAFE_PAYOUT_TARGETS = SAFE_PAYOUT_TARGETS,
+	APARTMENT_CUT_PRESET_OPTIONS = APARTMENT_CUT_PRESET_OPTIONS,
+	GetMP = GetMP,
+	hp_options_to_names = hp_options_to_names,
+	hp_find_option_index = hp_find_option_index,
+	hp_option_index_by_value = hp_option_index_by_value,
+	hp_option_value_by_name = hp_option_value_by_name,
+	hp_option_names_range = hp_option_names_range,
+	hp_set_stat_for_all_characters = hp_set_stat_for_all_characters,
+	hp_build_heist_preset_group = hp_build_heist_preset_group,
+	hp_set_uniform_cuts = hp_set_uniform_cuts,
+	hp_set_apartment_uniform_cuts = hp_set_apartment_uniform_cuts,
+	hp_clamp_cut_percent = hp_clamp_cut_percent,
+	hp_get_apartment_max_payout_cut = hp_get_apartment_max_payout_cut,
+	hp_apply_selected_apartment_cut_preset = hp_apply_selected_apartment_cut_preset,
+	hp_refresh_apartment_max_payout = hp_refresh_apartment_max_payout,
+	hp_is_apartment_fleeca = hp_is_apartment_fleeca,
+}
+
+return presets

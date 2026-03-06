@@ -2,6 +2,13 @@
 -- 2. Core Rendering Helpers
 -- ---------------------------------------------------------
 
+local core = require_module("core/bootstrap")
+local ui = core.ui
+local state = core.state
+local config = core.config
+local ensure_core_dirs = core.ensure_core_dirs
+local load_tab_icon = core.load_tab_icon
+
 local function ensure_assets()
 	if state.font_load_attempted then
 		return
@@ -767,6 +774,17 @@ local function button_colors_for(btn, hovered)
 	end
 end
 
+local function safe_call_ui_handler(kind, id, fn, ...)
+	if type(fn) ~= "function" then
+		return true
+	end
+	local ok, err = pcall(fn, ...)
+	if not ok and notify then
+		notify.push("UI Callback Error", tostring(kind) .. " [" .. tostring(id) .. "]: " .. tostring(err), 4500)
+	end
+	return ok
+end
+
 -- ---------------------------------------------------------
 -- 4. Rendering Implementations
 -- ---------------------------------------------------------
@@ -779,7 +797,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
 	if hovered and state.mouse.clicked and not state.active_dropdown then
 		item.state = not item.state
 		if item.onChange then
-			item.onChange(item.state)
+			safe_call_ui_handler("toggle", item.id, item.onChange, item.state)
 		end
 		state.window.is_dragging = false
 	end
@@ -861,7 +879,7 @@ local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message
 				notify.push("Error", disabled_message, 3000)
 			end
 		elseif btn.onClick then
-			btn.onClick()
+			safe_call_ui_handler("button", btn.id, btn.onClick)
 		end
 		state.window.is_dragging = false
 	end
@@ -973,7 +991,7 @@ local function draw_slider_item(item, x, y, w, original_y)
 		end
 
 		if item.onChange then
-			item.onChange(item.value)
+			safe_call_ui_handler("slider", item.id, item.onChange, item.value)
 		end
 	end
 
@@ -1545,7 +1563,7 @@ ui.render = function()
 						state.active_dropdown = nil
 						state.window.is_dragging = false
 						if dd.item.onChange then
-							dd.item.onChange(opt)
+							safe_call_ui_handler("dropdown", dd.item.id, dd.item.onChange, opt)
 						end
 					end
 					optTextCol = config.colors.text_on_accent
@@ -1570,3 +1588,5 @@ ui.render = function()
 		state.dropdown_just_opened = false
 	end
 end
+
+return ui

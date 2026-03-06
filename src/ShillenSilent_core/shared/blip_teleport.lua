@@ -1,4 +1,7 @@
 -- Teleport constants and shared helper functions
+local core = require_module("core/bootstrap")
+local run_guarded_job = core.run_guarded_job
+
 local TELEPORT_COORDS_MAZEBANK = { x = -75.146, y = -818.687, z = 326.175 }
 local BLIP_SPRITES_FACILITY = 590
 local BLIP_SPRITES_APARTMENT = 40
@@ -43,7 +46,8 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 		return false
 	end
 
-	util.create_job(function()
+	local job_key = "blip_teleport_" .. tostring(blip_sprite)
+	return run_guarded_job(job_key, function()
 		local ped = me.ped
 		local veh = me.vehicle
 		local entity = (veh and veh ~= 0) and veh or ped
@@ -83,7 +87,18 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 		end
 
 		invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
+	end, function()
+		if notify then
+			notify.push(notify_title or "Teleport", "Teleport already running", 1200)
+		end
 	end)
-
-	return true
 end
+
+local blip_teleport = {
+	BLIP_SPRITES_FACILITY = BLIP_SPRITES_FACILITY,
+	BLIP_SPRITES_APARTMENT = BLIP_SPRITES_APARTMENT,
+	BLIP_SPRITES_HEIST = BLIP_SPRITES_HEIST,
+	teleport_to_blip_with_job = teleport_to_blip_with_job,
+}
+
+return blip_teleport

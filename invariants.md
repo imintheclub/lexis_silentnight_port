@@ -1,53 +1,91 @@
-Project context:
-- I maintain a GTA V heist-focused Lua script for Lexis mod menu.
-- Repo root: /Users/shiv/dev/projects/personal/lexis_silentnight_port
-- Main script: /Users/shiv/dev/projects/personal/lexis_silentnight_port/src/ShillenSilent.lua
+# ShillenSilent Invariants
 
-Terminology:
-- Cherax: GTA V mod menu with its own Lua API.
-- Lexis: GTA V mod menu with a different Lua API.
-- Silent Night: a heist script originally for Cherax (source is in this repo under resources).
-- My script is a Lexis-focused fork/port direction: heist editing + selected Silent Night features.
+## 1) Scope and intent
+- This repository is a heist-focused Lexis Lua script port (`ShillenSilent`), not a general mod menu project.
+- SilentNight under `resources/SilentNight` is behavior/reference input; implementation must follow Lexis APIs and this codebase patterns.
+- Default rule: preserve behavior unless explicitly asked to change behavior.
 
-Repo layout:
-- Silent Night source reference: /Users/shiv/dev/projects/personal/lexis_silentnight_port/resources/SilentNight
-- Cherax Lua API docs: /Users/shiv/dev/projects/personal/lexis_silentnight_port/resources/cherax_docs
-- Lexis Lua API docs: /Users/shiv/dev/projects/personal/lexis_silentnight_port/resources/lexis_docs
-- Core runtime dependency directory: /Users/shiv/dev/projects/personal/lexis_silentnight_port/src/ShillenSilent_core
+## 2) Canonical source and release policy
+- Canonical source is only `src/`.
+- Do not hand-edit any `release-v*` directories; they are generated artifacts.
+- Build releases from `src/` via `generate_release.sh`.
 
-Core/runtime file model:
-- Runtime source/modules live under `src/ShillenSilent_core`.
-- `ShillenSilent.lua` is now a loader/entrypoint that assembles module files from:
-- `src\ShillenSilent_core\core`
-- `src\ShillenSilent_core\shared`
-- `src\ShillenSilent_core\heists`
-- `src\ShillenSilent_core\runtime`
-- Font loading model in script:
-- Primary: `src\ShillenSilent_core\fonts\InterVariable.ttf`
-- Preset JSON storage is in external sibling folder:
-- `src\ShillenSilent_HeistPresets\Apartment`
-- `src\ShillenSilent_HeistPresets\CayoPerico`
-- `src\ShillenSilent_HeistPresets\DiamondCasino`
+## 3) Runtime architecture (current, authoritative)
+- Entrypoint: `src/ShillenSilent.lua`.
+- `ShillenSilent.lua` is a module loader with cache + circular-load protection and file-backed chunk loading.
+- Intentional globals exposed by loader:
+  - `_G.shillen_require`
+  - `_G.require_module`
+- `app/main` is the runtime boot target loaded by the loader.
+- Module roots are under `src/ShillenSilent_core/`:
+  - `core/`
+  - `shared/`
+  - `heists/`
+  - `runtime/`
+  - `app/`
 
-What I want from you:
-- Treat Silent Night as behavior/reference, then translate cleanly to Lexis API.
-- Before coding, inspect local code and docs in this repo.
-- Keep changes pragmatic and minimal-risk; preserve existing behavior unless asked.
-- When editing UI, keep the current light-style system consistent.
-- When you claim something is missing/present, verify in-file with exact function/line references.
-- Run syntax checks after edits (e.g., `luac -p "ShillenSilent.lua"`).
-- Give concise summaries: what changed, why, and file/line pointers.
+## 4) Module ownership boundaries
+- `core/bootstrap.lua`: runtime config, state container, path/directory helpers, guarded async job runner.
+- `core/ui.lua`: all custom UI rendering, components, layout, and interactions.
+- `core/native_api.lua`: small native helper wrappers and control-block list.
+- `shared/heist_state.lua`: central mutable per-heist state/config/refs/callback contracts.
+- `shared/presets_and_shared.lua`: preset IO/validation/apply flows + shared helpers (cuts, options, payout helpers).
+- `shared/danger_groups.lua`: reusable danger-warning UI group builders.
+- `shared/coords_teleport.lua`: coordinate teleport helper + cooldown + guarded job wrapper.
+- `shared/blip_teleport.lua`: blip-based teleport helper flows for apartment/doomsday.
+- `heists/*`: heist-specific logic + tab registration for Cayo, Casino, Apartment, Doomsday, Cluckin.
+- `runtime/solo_launch.lua`: all solo-launch setup/reset behavior (not owned by casino logic).
+- `runtime/main_loop.lua`: long-running loop, toggle enforcement cadence, input/render/control gating.
+- `app/main.lua`: tab discovery/creation, module registration, runtime start.
 
-Baseline invariants (generic):
-- Keep this as a heist-focused Lexis Lua script; do not broaden scope unless requested.
-- Preserve current behavior by default; changes should be additive, not destructive.
-- Reuse existing internal patterns/helpers instead of introducing parallel duplicate systems.
-- Keep UI structure coherent and consistent with the current menu framework (tabs/subtabs, groups, controls).
-- Preserve stable control semantics (buttons/toggles/sliders/dropdowns should continue to behave predictably).
-- Keep code changes localized and minimal-risk; avoid wide refactors unless asked.
-- Treat Silent Night as behavior/reference only; implement through Lexis APIs and conventions.
-- Keep runtime safety guards (clamping/validation) for user-entered or loaded values.
-- Do not change core offsets/stat write pathways without explicit approval.
-- Keep comments functional/explanatory only; avoid branding/narrative comments.
-- Do not manually edit `release-v*` files/directories; make code changes only in root `src/` and generate releases from that source.
-- After edits, always run a syntax check and report result.
+## 5) Module contract invariants
+- Every module under `src/ShillenSilent_core/**/*.lua` must return a table/module value.
+- Cross-module access must use `require_module("<module/path>")`.
+- Do not create new implicit globals for module state; keep state local or inside exported module tables/shared state.
+- If a new module file is added, it must be included in `module_files` in `src/ShillenSilent.lua`.
+
+## 6) State and callback invariants
+- `shared/heist_state.lua` is the single source of truth for:
+  - per-heist config values
+  - flags
+  - UI refs
+  - callback placeholders
+- Modules may populate callback slots (for example in cayo/casino/apartment), but should not duplicate state containers.
+- Preset load/apply flows must be nil-safe and validation-gated before mutating game state.
+
+## 7) UI and behavior invariants
+- Keep current heist-only tab model and existing subtab organization.
+- Preserve light-theme visual system in `core/bootstrap.lua`/`core/ui.lua` unless UI redesign is explicitly requested.
+- Preserve control semantics for existing toggles, sliders, dropdowns, and buttons.
+- Keep dangerous actions clearly labeled/warned (danger groups + notifications).
+
+## 8) Async and runtime safety invariants
+- Use `run_guarded_job` for potentially long or re-entrant actions (teleports, force-ready, instant-finish style actions).
+- Keep the main runtime loop non-blocking (`util.yield(0)` cadence preserved).
+- Preserve anti-spam guards where present (for example teleport cooldown and guarded job keys).
+- Keep clamping/validation around user inputs, preset values, and payout/cut calculations.
+
+## 9) Asset and data path invariants
+- Current font path used by config is `ShillenSilent_core\\fonts\\Inter-SemiBold.ttf`.
+- Presets live outside core under sibling directory:
+  - `ShillenSilent_HeistPresets\\Apartment`
+  - `ShillenSilent_HeistPresets\\CayoPerico`
+  - `ShillenSilent_HeistPresets\\DiamondCasino`
+- Do not relocate preset folders without explicit migration handling.
+
+## 10) Tooling and verification (mandatory workflow)
+- Always format Lua changes with Homebrew `stylua`, not cargo/path-preferred alternatives.
+- Canonical formatter command:
+  - `/opt/homebrew/bin/stylua src`
+- Verify the Homebrew binary is being used:
+  - `/opt/homebrew/bin/stylua --version`
+- Do not rely on plain `stylua` from `PATH` when multiple installs exist.
+- After edits, always run syntax checks across all Lua files:
+  - `rg --files src -g '*.lua' | while read -r f; do luac -p "$f"; done`
+- If available, run `luacheck` as an extra static pass; treat syntax-check pass as required minimum.
+
+## 11) Change management rules
+- Keep changes targeted and low-risk unless a broad refactor is explicitly requested.
+- Do not move heist behavior between files arbitrarily; keep logic where ownership says it belongs.
+- When extracting shared code, preserve behavior and keep call signatures stable at integration points.
+- Any claim about behavior/location must be verified against current files, not memory.

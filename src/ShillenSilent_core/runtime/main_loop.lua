@@ -2,7 +2,37 @@
 -- 8. Loop
 -- ---------------------------------------------------------
 
-if events.event.scroll then
+local core = require_module("core/bootstrap")
+local ui = require_module("core/ui")
+local native_api = require_module("core/native_api")
+local presets = require_module("shared/presets_and_shared")
+local solo_launch = require_module("runtime/solo_launch")
+local cayo_logic = require_module("heists/cayo/logic")
+local casino_logic = require_module("heists/casino/logic")
+
+local state = core.state
+local config = core.config
+local native = core.native
+local CONTROL_ACTION_BLOCK_LIST = native_api.CONTROL_ACTION_BLOCK_LIST
+local disable_control_action = native_api.disable_control_action
+local solo_launch_generic = solo_launch.solo_launch_generic
+local solo_launch_casino_setup = solo_launch.solo_launch_casino_setup
+local solo_launch_reset_casino = solo_launch.solo_launch_reset_casino
+local solo_launch_reset_doomsday = solo_launch.solo_launch_reset_doomsday
+local solo_launch_reset_apartment = solo_launch.solo_launch_reset_apartment
+local cayo_enforce_heist_toggles = cayo_logic.cayo_enforce_heist_toggles
+local casino_enforce_heist_toggles = casino_logic.casino_enforce_heist_toggles
+local hp_refresh_apartment_max_payout = presets.hp_refresh_apartment_max_payout
+
+local runtime_main_loop = {
+	started = false,
+}
+
+local function subscribe_scroll_handler()
+	if not events.event.scroll then
+		return
+	end
+
 	events.subscribe(events.event.scroll, function(e)
 		if not state.animation.open and state.animation.progress < 0.01 then
 			return
@@ -44,68 +74,99 @@ local SOLO_LAUNCH_HANDLERS = {
 	{ key = "doomsday", setup = nil, reset = solo_launch_reset_doomsday },
 }
 
-util.create_thread(function()
-	while true do
-		for i = 1, #SOLO_LAUNCH_HANDLERS do
-			local handler = SOLO_LAUNCH_HANDLERS[i]
-			local key = handler.key
-			local enabled = state.solo_launch[key]
-			local was_enabled = state.solo_launch_prev[key]
+local HEIST_ENFORCE_INTERVAL_MS = 150
+local next_heist_enforce_tick = 0
 
-			if enabled then
-				solo_launch_generic()
-				if handler.setup then
-					handler.setup()
-				end
-			elseif was_enabled and handler.reset then
-				-- Just turned off, reset to normal.
-				handler.reset()
-			end
-
-			state.solo_launch_prev[key] = enabled
-		end
-
-		hp_refresh_apartment_max_payout(false, false)
-		cayo_enforce_heist_toggles()
-		casino_enforce_heist_toggles()
-
-		if input.key(84).just_pressed then -- T
-			state.animation.open = not state.animation.open
-			state.animation.target = state.animation.open and 1.0 or 0.0
-			input.show_cursor(state.animation.open)
-			-- Center cursor on screen when menu opens (with safety check)
-			if state.animation.open then
-				if native and native.set_cursor_position then
-					pcall(native.set_cursor_position, 0.5, 0.5)
-				end
-			end
-		end
-
-		local custom_visible = state.animation.open or state.animation.progress > 0.01
-		if custom_visible then
-			ui.render()
-		end
-
-		if custom_visible then
-			-- Disable mouse controls (group 2)
-			invoker.call(0x5F4B6931816E599B, 2)
-
-			-- Disable player firing
-			if players and players.user then
-				local player_id = players.user()
-				invoker.call(0x5E6CC07646BBEAB8, player_id, true)
-			end
-
-			-- Disable shooting and other actions
-			disable_control_action(CONTROL_ACTION_BLOCK_LIST)
-		else
-			-- Enable player firing
-			if players and players.user then
-				local player_id = players.user()
-				invoker.call(0x5E6CC07646BBEAB8, player_id, false)
-			end
-		end
-
-		util.yield(0)
+local function maybe_enforce_heist_toggles()
+	local now_tick = (util and util.get_tick_count and util.get_tick_count()) or nil
+	if now_tick and now_tick < next_heist_enforce_tick then
+		return
 	end
-end)
+
+	hp_refresh_apartment_max_payout(false, false)
+	cayo_enforce_heist_toggles()
+	casino_enforce_heist_toggles()
+
+	if now_tick then
+		next_heist_enforce_tick = now_tick + HEIST_ENFORCE_INTERVAL_MS
+	end
+end
+
+local function start_runtime_loop()
+	util.create_thread(function()
+		while true do
+			for i = 1, #SOLO_LAUNCH_HANDLERS do
+				local handler = SOLO_LAUNCH_HANDLERS[i]
+				local key = handler.key
+				local enabled = state.solo_launch[key]
+				local was_enabled = state.solo_launch_prev[key]
+
+				if enabled then
+					solo_launch_generic()
+					if handler.setup then
+						handler.setup()
+					end
+				elseif was_enabled and handler.reset then
+					-- Just turned off, reset to normal.
+					handler.reset()
+				end
+
+				state.solo_launch_prev[key] = enabled
+			end
+
+			maybe_enforce_heist_toggles()
+
+			if input.key(84).just_pressed then -- T
+				state.animation.open = not state.animation.open
+				state.animation.target = state.animation.open and 1.0 or 0.0
+				input.show_cursor(state.animation.open)
+				-- Center cursor on screen when menu opens (with safety check)
+				if state.animation.open then
+					if native and native.set_cursor_position then
+						pcall(native.set_cursor_position, 0.5, 0.5)
+					end
+				end
+			end
+
+			local custom_visible = state.animation.open or state.animation.progress > 0.01
+			if custom_visible then
+				ui.render()
+			end
+
+			if custom_visible then
+				-- Disable mouse controls (group 2)
+				invoker.call(0x5F4B6931816E599B, 2)
+
+				-- Disable player firing
+				if players and players.user then
+					local player_id = players.user()
+					invoker.call(0x5E6CC07646BBEAB8, player_id, true)
+				end
+
+				-- Disable shooting and other actions
+				disable_control_action(CONTROL_ACTION_BLOCK_LIST)
+			else
+				-- Enable player firing
+				if players and players.user then
+					local player_id = players.user()
+					invoker.call(0x5E6CC07646BBEAB8, player_id, false)
+				end
+			end
+
+			util.yield(0)
+		end
+	end)
+end
+
+function runtime_main_loop.start()
+	if runtime_main_loop.started then
+		return false
+	end
+	runtime_main_loop.started = true
+
+	subscribe_scroll_handler()
+	start_runtime_loop()
+	return true
+end
+
+return runtime_main_loop

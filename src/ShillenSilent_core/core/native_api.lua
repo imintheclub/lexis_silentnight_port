@@ -66,3 +66,11 @@ local function heist_skip_cutscene(heist_name)
 		end
 	end
 end
+
+local native_api = {
+	CONTROL_ACTION_BLOCK_LIST = CONTROL_ACTION_BLOCK_LIST,
+	disable_control_action = disable_control_action,
+	heist_skip_cutscene = heist_skip_cutscene,
+}
+
+return native_api

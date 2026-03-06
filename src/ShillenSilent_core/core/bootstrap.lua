@@ -321,3 +321,55 @@ local state = {
 		doomsday = false,
 	},
 }
+
+local guarded_jobs = {}
+
+local function run_guarded_job(job_key, job_fn, on_busy)
+	if type(job_fn) ~= "function" then
+		return false
+	end
+
+	local key = tostring(job_key or "")
+	if key == "" then
+		return false
+	end
+
+	if guarded_jobs[key] then
+		if type(on_busy) == "function" then
+			pcall(on_busy)
+		end
+		return false
+	end
+
+	guarded_jobs[key] = true
+	local ok_spawn, spawn_err = pcall(util.create_job, function()
+		local ok_job, job_err = pcall(job_fn)
+		guarded_jobs[key] = nil
+		if not ok_job and notify then
+			notify.push("Async Job Error", key .. ": " .. tostring(job_err), 3000)
+		end
+	end)
+
+	if not ok_spawn then
+		guarded_jobs[key] = nil
+		if notify then
+			notify.push("Async Job Error", key .. ": " .. tostring(spawn_err), 3000)
+		end
+		return false
+	end
+
+	return true
+end
+
+local bootstrap = {
+	ui = ui,
+	native = native,
+	config = config,
+	state = state,
+	ensure_core_dirs = ensure_core_dirs,
+	load_tab_icon = load_tab_icon,
+	SHILLENSILENT_HEIST_PRESETS_DIR = SHILLENSILENT_HEIST_PRESETS_DIR,
+	run_guarded_job = run_guarded_job,
+}
+
+return bootstrap

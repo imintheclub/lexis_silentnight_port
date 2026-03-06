@@ -715,30 +715,7 @@ local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message
 end
 
 local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSize, textColor)
-    if state.animation.progress < 0.01 then return end
-
-    local value = tostring(label or "")
-    local ox, oy = get_win_offset()
-    local text = gui.text(value):scale(textSize or 1.0):color(to_gui_color(textColor, true))
-    if state.fonts.regular then
-        text:font(state.fonts.regular)
-    end
-
-    local size = text:get_size()
-    local textW = size and size.x or 0
-    local textH = size and size.y or ((textSize or 1.0) * 0.7)
-
-    local textX = btnX + math.floor((btnW - textW) / 2)
-    local textY = btnY + math.floor((btnH - textH) / 2)
-
-    if gui.push_clip and gui.pop_clip then
-        gui.push_clip(vec(btnX + ox, btnY + oy), vec(btnW, btnH))
-        text:position(vec(textX + ox, textY + oy)):draw()
-        gui.pop_clip()
-        return
-    end
-
-    text:position(vec(textX + ox, textY + oy)):draw()
+    render_text(tostring(label or ""), btnX + config.space.x3, btnY + config.space.x1, textSize, textColor)
 end
 
 local function draw_button_item(item, x, y, w)
@@ -904,23 +881,14 @@ local function draw_dropdown_item(item, x, y, w, original_y)
     render_rect(boxX, boxY, boxW, boxH, boxBg, config.radius.md)
     render_outline(boxX, boxY, boxW, boxH, boxBorder, 1, config.radius.md)
     local selected = item.options[item.value] or ""
-    local selectedTextH = config.font_scale_body * 0.7
-    local selectedTextY = boxY + (boxH / 2) - (selectedTextH / 2)
-    if is_preset_file then
-        render_text(selected, boxX + config.space.x3, selectedTextY, config.font_scale_body, boxText)
-    else
-        -- Center the selected option text in normal dropdown boxes
-        render_text(selected, boxX + boxW / 2, selectedTextY, config.font_scale_body, boxText, "center")
-    end
+    render_text(selected, boxX + config.space.x3, boxY + config.space.x1, config.font_scale_body, boxText)
     
     -- Dropdown Arrow (ASCII-safe frames to simulate rotation)
-    local arrowTextH = config.font_scale_small * 0.7
-    local arrowTextY = boxY + (boxH / 2) - (arrowTextH / 2)
     local arrowFrames = { "v", ">", "^" }
     local arrowIdx = 1 + math.floor((open_t or 0.0) * (#arrowFrames - 1) + 0.5)
     if arrowIdx < 1 then arrowIdx = 1 end
     if arrowIdx > #arrowFrames then arrowIdx = #arrowFrames end
-    render_text(arrowFrames[arrowIdx], boxX + boxW - config.space.x4, arrowTextY, config.font_scale_small, boxArrow)
+    render_text(arrowFrames[arrowIdx], boxX + boxW - config.space.x4, boxY + config.space.x1, config.font_scale_small, boxArrow)
 
     if open_t > 0.01 then
         return {
@@ -928,7 +896,6 @@ local function draw_dropdown_item(item, x, y, w, original_y)
             x = boxX,
             y = boxY + boxH + config.space.x1,
             w = boxW,
-            align = is_preset_file and "left" or "center",
             open_t = open_t,
             interactive = (target_open > 0.5) and (open_t > 0.95)
         }
@@ -1144,7 +1111,7 @@ ui.render = function()
 
             render_rect(subtab_x, subtab_y, subtab_w, subtab_h, subtab_bg_col, config.radius.md)
             render_outline(subtab_x, subtab_y, subtab_w, subtab_h, subtab_border_col, 1, config.radius.md)
-            render_text(name, subtab_x + subtab_w / 2, subtab_y + subtab_h / 2 - config.space.x2, config.font_scale_body, subtab_text_col, "center")
+            render_text(name, subtab_x + config.space.x3, subtab_y + config.space.x1, config.font_scale_body, subtab_text_col)
         end
         
         subtab_bar_height = subtab_h + config.space.x2
@@ -1307,13 +1274,7 @@ ui.render = function()
                     end
                     optTextCol = config.colors.text_on_accent
                 end
-                local optTextH = config.font_scale_body * 0.7
-                local optTextY = optY + (itemHeight / 2) - (optTextH / 2)
-                if dd.align == "left" then
-                    render_text(opt, dd.x + config.space.x3, optTextY, config.font_scale_body, optTextCol)
-                else
-                    render_text(opt, dd.x + dd.w / 2, optTextY, config.font_scale_body, optTextCol, "center")
-                end
+                render_text(opt, dd.x + config.space.x3, optY + config.space.x1, config.font_scale_body, optTextCol)
             end
 
             gui.pop_clip()

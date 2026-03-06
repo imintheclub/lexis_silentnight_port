@@ -16,7 +16,7 @@ Repo layout:
 - Core runtime dependency directory: /Users/shiv/dev/projects/personal/lexis_silentnight_port/src/ShillenSilent_core
 
 Core/runtime file model:
-- External dependencies for this script should live under `src/ShillenSilent_core` going forward.
+- Runtime source/modules live under `src/ShillenSilent_core`.
 - `ShillenSilent.lua` is now a loader/entrypoint that assembles module files from:
 - `src\ShillenSilent_core\core`
 - `src\ShillenSilent_core\shared`
@@ -24,10 +24,10 @@ Core/runtime file model:
 - `src\ShillenSilent_core\runtime`
 - Font loading model in script:
 - Primary: `src\ShillenSilent_core\fonts\InterVariable.ttf`
-- Preset JSON storage is under:
-- `src\ShillenSilent_core\HeistPresets\Apartment`
-- `src\ShillenSilent_core\HeistPresets\CayoPerico`
-- `src\ShillenSilent_core\HeistPresets\DiamondCasino`
+- Preset JSON storage is in external sibling folder:
+- `src\ShillenSilent_HeistPresets\Apartment`
+- `src\ShillenSilent_HeistPresets\CayoPerico`
+- `src\ShillenSilent_HeistPresets\DiamondCasino`
 
 What I want from you:
 - Treat Silent Night as behavior/reference, then translate cleanly to Lexis API.

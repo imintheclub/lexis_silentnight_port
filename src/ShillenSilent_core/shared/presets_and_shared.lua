@@ -70,7 +70,7 @@ end
 hp_keyboard_guard = nil
 
 hp_heist_presets = {
-    root = SHILLENSILENT_CORE_PRESETS_DIR,
+    root = SHILLENSILENT_HEIST_PRESETS_DIR,
     apartment = {
         dir = "",
         name = "QuickPreset",
@@ -590,7 +590,6 @@ function hp_collect_cayo_preset_data()
         arts_amount = hp_get_zero_based_option_index(CayoPrepOptions.arts_amounts, CayoConfig.paint, 1),
         island_target = hp_get_zero_based_option_index(CayoPrepOptions.secondary_targets, CayoConfig.sec_isl, 1),
         island_amount = hp_get_zero_based_option_index(CayoPrepOptions.island_amounts, CayoConfig.amt_isl, 1),
-        advanced = CayoConfig.advanced and true or false,
         cash_value = CayoConfig.val_cash,
         weed_value = CayoConfig.val_weed,
         coke_value = CayoConfig.val_coke,
@@ -622,9 +621,6 @@ function hp_apply_cayo_preset_data(preps)
     CayoConfig.sec_isl = hp_resolve_option_value(CayoPrepOptions.secondary_targets, preps.island_target, CayoConfig.sec_isl)
     CayoConfig.amt_isl = hp_resolve_option_value(CayoPrepOptions.island_amounts, preps.island_amount, CayoConfig.amt_isl)
 
-    if type(preps.advanced) == "boolean" then
-        CayoConfig.advanced = preps.advanced
-    end
     if type(preps.unlock_all_poi) == "boolean" then
         CayoConfig.unlock_all_poi = preps.unlock_all_poi
     end
@@ -656,7 +652,6 @@ function hp_apply_cayo_preset_data(preps)
     if cayoArtsAmountDropdown then cayoArtsAmountDropdown.value = hp_option_index_by_value(CayoPrepOptions.arts_amounts, CayoConfig.paint, 1) end
     if cayoIslandTargetDropdown then cayoIslandTargetDropdown.value = hp_option_index_by_value(CayoPrepOptions.secondary_targets, CayoConfig.sec_isl, 1) end
     if cayoIslandAmountDropdown then cayoIslandAmountDropdown.value = hp_option_index_by_value(CayoPrepOptions.island_amounts, CayoConfig.amt_isl, 1) end
-    if cayoAdvancedToggle then cayoAdvancedToggle.state = CayoConfig.advanced end
     if cayoCashValueSlider then cayoCashValueSlider.value = CayoConfig.val_cash end
     if cayoWeedValueSlider then cayoWeedValueSlider.value = CayoConfig.val_weed end
     if cayoCokeValueSlider then cayoCokeValueSlider.value = CayoConfig.val_coke end

@@ -134,7 +134,6 @@ CayoConfig = {
     val_coke = CayoPrepOptions.default_values.coke,
     val_gold = CayoPrepOptions.default_values.gold,
     val_art = CayoPrepOptions.default_values.art,
-    advanced = false,
     unlock_all_poi = true
 }
 

@@ -58,7 +58,7 @@ end
 
 local SHILLENSILENT_CORE_DIR = get_path("\\ShillenSilent_core")
 local SHILLENSILENT_CORE_FONTS_DIR = SHILLENSILENT_CORE_DIR .. "\\fonts"
-local SHILLENSILENT_CORE_PRESETS_DIR = SHILLENSILENT_CORE_DIR .. "\\HeistPresets"
+local SHILLENSILENT_HEIST_PRESETS_DIR = get_path("\\ShillenSilent_HeistPresets")
 
 local function ensure_core_dirs()
     if not dirs.exists(SHILLENSILENT_CORE_DIR) then
@@ -66,6 +66,9 @@ local function ensure_core_dirs()
     end
     if not dirs.exists(SHILLENSILENT_CORE_FONTS_DIR) then
         dirs.create(SHILLENSILENT_CORE_FONTS_DIR)
+    end
+    if not dirs.exists(SHILLENSILENT_HEIST_PRESETS_DIR) then
+        dirs.create(SHILLENSILENT_HEIST_PRESETS_DIR)
     end
 end
 

@@ -84,11 +84,11 @@ local function register(heistTab)
 			if script.running("fm_mission_controller") then
 				script.locals("fm_mission_controller", 12223 + 24).int32 = 7
 				if notify then
-					notify.push("Apartment Tools", "Fleeca Hack Completed", 2000)
+					notify.push("Apartment Tools", "Fleeca hack completed", 2000)
 				end
 			else
 				if notify then
-					notify.push("Apartment Tools", "Hack Not Active", 2000)
+					notify.push("Apartment Tools", "Hack not active", 2000)
 				end
 			end
 		end
@@ -97,11 +97,11 @@ local function register(heistTab)
 			if script.running("fm_mission_controller") then
 				script.locals("fm_mission_controller", 10511 + 11).float = 100.0
 				if notify then
-					notify.push("Apartment Tools", "Fleeca Drill Completed", 2000)
+					notify.push("Apartment Tools", "Fleeca drill completed", 2000)
 				end
 			else
 				if notify then
-					notify.push("Apartment Tools", "Drill Not Active", 2000)
+					notify.push("Apartment Tools", "Drill not active", 2000)
 				end
 			end
 		end
@@ -110,11 +110,11 @@ local function register(heistTab)
 			if script.running("fm_mission_controller") then
 				script.locals("fm_mission_controller", 10217).int32 = 9
 				if notify then
-					notify.push("Apartment Tools", "Pacific Hack Completed", 2000)
+					notify.push("Apartment Tools", "Pacific hack completed", 2000)
 				end
 			else
 				if notify then
-					notify.push("Apartment Tools", "Hack Not Active", 2000)
+					notify.push("Apartment Tools", "Hack not active", 2000)
 				end
 			end
 		end
@@ -130,16 +130,16 @@ local function register(heistTab)
 					script.locals("fm_mission_controller", 29017).int32 = 99999
 					script.locals("fm_mission_controller", 32541).int32 = 99999
 					if notify then
-						notify.push("Apartment", "Instant Finish (Pacific Standard)", 2000)
+						notify.push("Apartment", "Instant finish triggered (Pacific Standard)", 2000)
 					end
 				else
 					if notify then
-						notify.push("Apartment", "Failed to force host", 2000)
+						notify.push("Apartment", "Could not force host", 2000)
 					end
 				end
 			end, function()
 				if notify then
-					notify.push("Apartment", "Instant Finish already running", 1500)
+					notify.push("Apartment", "Instant finish already running", 1500)
 				end
 			end)
 		end
@@ -154,16 +154,16 @@ local function register(heistTab)
 					script.locals("fm_mission_controller", 29017).int32 = 99999
 					script.locals("fm_mission_controller", 32541).int32 = 99999
 					if notify then
-						notify.push("Apartment", "Instant Finish (Other Classics)", 2000)
+						notify.push("Apartment", "Instant finish triggered (Other Classics)", 2000)
 					end
 				else
 					if notify then
-						notify.push("Apartment", "Failed to force host", 2000)
+						notify.push("Apartment", "Could not force host", 2000)
 					end
 				end
 			end, function()
 				if notify then
-					notify.push("Apartment", "Instant Finish already running", 1500)
+					notify.push("Apartment", "Instant finish already running", 1500)
 				end
 			end)
 		end
@@ -173,7 +173,7 @@ local function register(heistTab)
 			local cooldown_global = 1877303 + 1 + (player_id * 77) + 76
 			script.globals(cooldown_global).int32 = -1
 			if notify then
-				notify.push("Apartment Tools", "Unavailable Jobs Now Playable", 2000)
+				notify.push("Apartment Tools", "Unavailable jobs unlocked", 2000)
 			end
 		end
 
@@ -190,11 +190,11 @@ local function register(heistTab)
 
 			if started then
 				if notify then
-					notify.push("Apartment Tools", "Started invite-only session", 2000)
+					notify.push("Apartment Tools", "Invite-only session started", 2000)
 				end
 			else
 				if notify then
-					notify.push("Apartment Tools", "Could not change session. Please change manually.", 2800)
+					notify.push("Apartment Tools", "Could not change session. Change it manually.", 2800)
 				end
 			end
 
@@ -226,7 +226,7 @@ local function register(heistTab)
 
 			script.globals(ApartmentGlobals.Board).int32 = 22
 			if notify then
-				notify.push("Apartment Tools", "All Jobs Unlocked. Change session to apply.", 2600)
+				notify.push("Apartment Tools", "All jobs unlocked. Change session to apply.", 2600)
 			end
 		end
 
@@ -345,7 +345,7 @@ local function register(heistTab)
 			script.globals(base_local + 3008 + 4).int32 = ApartmentCutsValues.player4
 
 			if notify then
-				notify.push("Apartment Cuts", "Cuts Applied!", 2000)
+				notify.push("Apartment Cuts", "Cuts applied", 2000)
 			end
 		end
 
@@ -428,7 +428,11 @@ local function register(heistTab)
 						if notify then
 							notify.push("Apartment Cuts", "Unknown heist. Load an Apartment finale first.", 2400)
 						end
+					elseif notify then
+						notify.push("Apartment Cuts", "3M payout mode enabled", 2000)
 					end
+				elseif notify then
+					notify.push("Apartment Cuts", "3M payout mode disabled", 2000)
 				end
 			end
 		)
@@ -442,6 +446,9 @@ local function register(heistTab)
 				apartment_flags.double_rewards_week = val
 				if apartment_flags.max_payout_enabled then
 					hp_refresh_apartment_max_payout(true, false)
+				end
+				if notify then
+					notify.push("Apartment Cuts", val and "Double rewards enabled" or "Double rewards disabled", 2000)
 				end
 			end
 		)
@@ -482,7 +489,7 @@ local function register(heistTab)
 				account.stats("MPPLY_HEISTNODEATHPROGREITSET").int32 = 268435455
 				account.stats("MPPLY_AWD_HST_ULT_CHAL").bool = false
 				if not silent and notify then
-					notify.push("Apartment Bonuses", "12M Bonus Enabled", 2000)
+					notify.push("Apartment Bonuses", "12M bonus enabled", 2000)
 				end
 			else
 				account.stats("MPPLY_HEISTFLOWORDERPROGRESS").int32 = 134217727
@@ -494,7 +501,7 @@ local function register(heistTab)
 				account.stats("MPPLY_HEISTNODEATHPROGREITSET").int32 = 134217727
 				account.stats("MPPLY_AWD_HST_ULT_CHAL").bool = true
 				if not silent and notify then
-					notify.push("Apartment Bonuses", "12M Bonus Disabled", 2000)
+					notify.push("Apartment Bonuses", "12M bonus disabled", 2000)
 				end
 			end
 			apartment_flags.bonus_enabled = enable

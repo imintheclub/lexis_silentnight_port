@@ -17,17 +17,23 @@ local function cluckin_skip_to_finale()
 	for _, stat in ipairs(other_stats) do
 		hp_set_stat_for_all_characters(stat, -1)
 	end
+	if notify then
+		notify.push("Cluckin Bell", "Skipped to finale", 2000)
+	end
 end
 
 local function cluckin_remove_cooldown()
 	hp_set_stat_for_all_characters("SALV23_CFR_COOLDOWN", -1)
 	if notify then
-		notify.push("Cluckin Bell", "Cooldown Removed", 2000)
+		notify.push("Cluckin Bell", "Cooldown removed", 2000)
 	end
 end
 
 local function cluckin_reset_progress()
 	hp_set_stat_for_all_characters("SALV23_INST_PROG", 0)
+	if notify then
+		notify.push("Cluckin Bell", "Progress reset", 2000)
+	end
 end
 
 local function cluckin_instant_finish()
@@ -56,6 +62,15 @@ local function cluckin_instant_finish()
 			"fm_mission_controller_2020",
 			base + 1
 		).int32 | win_flags
+		action_taken = true
+	end
+
+	if notify then
+		if action_taken then
+			notify.push("Cluckin Bell", "Instant finish triggered", 2000)
+		else
+			notify.push("Cluckin Bell", "Mission not running", 2000)
+		end
 	end
 end
 

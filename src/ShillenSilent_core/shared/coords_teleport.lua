@@ -146,6 +146,9 @@ end
 
 local function run_coords_teleport(title, success_message, x, y, z, include_error_details, on_success)
 	if not try_begin_teleport_cooldown() then
+		if notify then
+			notify.push(title or "Teleport", "Teleport on cooldown", 1000)
+		end
 		return false
 	end
 
@@ -161,7 +164,7 @@ local function run_coords_teleport(title, success_message, x, y, z, include_erro
 			return
 		end
 
-		local msg = "Failed to teleport"
+		local msg = "Teleport failed"
 		if include_error_details and error_msg then
 			msg = msg .. ": " .. error_msg
 		end
@@ -170,7 +173,7 @@ local function run_coords_teleport(title, success_message, x, y, z, include_erro
 		end
 	end, function()
 		if notify then
-			notify.push(title or "Cayo Teleport", "Teleport already running", 1200)
+			notify.push(title or "Teleport", "Teleport already running", 1200)
 		end
 	end)
 end

@@ -30,11 +30,11 @@ local function apartment_force_ready()
 		script.globals(ApartmentGlobals.Ready.PLAYER4).int32 = 6
 
 		if notify then
-			notify.push("Apartment Launch", "All Players Ready", 2000)
+			notify.push("Apartment Launch", "All players ready", 2000)
 		end
 	end, function()
 		if notify then
-			notify.push("Apartment Launch", "Force Ready already running", 1500)
+			notify.push("Apartment Launch", "Force ready already running", 1500)
 		end
 	end)
 end
@@ -42,14 +42,14 @@ end
 local function apartment_redraw_board()
 	script.globals(ApartmentGlobals.Board).int32 = 22
 	if notify then
-		notify.push("Apartment Launch", "Board Redrawn", 2000)
+		notify.push("Apartment Launch", "Board refreshed", 2000)
 	end
 end
 
 local function apartment_complete_preps()
 	account.stats("HEIST_PLANNING_STAGE").int32 = -1
 	if notify then
-		notify.push("Apartment Preps", "Preps Completed", 2000)
+		notify.push("Apartment Preps", "Preps applied", 2000)
 	end
 end
 
@@ -58,7 +58,7 @@ local function apartment_kill_cooldown()
 	local cooldown_global = 1877303 + 1 + (player_id * 77) + 76
 	script.globals(cooldown_global).int32 = -1
 	if notify then
-		notify.push("Apartment Preps", "Cooldown Reset", 2000)
+		notify.push("Apartment Preps", "Cooldown removed", 2000)
 	end
 end
 

@@ -211,13 +211,13 @@ local function hp_set_heist_preset_name_from_clipboard(mode)
 	local clip = input.get_clipboard_text()
 	local clean = hp_sanitize_preset_name(clip)
 	if clean == "" then
-		hp_notify_presets("Clipboard is empty/invalid", 2000)
+		hp_notify_presets("Clipboard is empty or invalid", 2000)
 		return false
 	end
 
 	state_tbl.name = clean
 	hp_update_preset_name_label(mode)
-	hp_notify_presets("Name set: " .. clean, 2000)
+	hp_notify_presets("Preset name set: " .. clean, 2000)
 	return true
 end
 
@@ -506,7 +506,7 @@ util.create_thread(function()
 					if clean_name ~= "" then
 						state_tbl.name = clean_name
 						hp_update_preset_name_label(mode)
-						hp_notify_presets("Name set: " .. clean_name, 2000)
+						hp_notify_presets("Preset name set: " .. clean_name, 2000)
 					else
 						hp_notify_presets("Preset name cannot be empty", 2000)
 					end
@@ -519,7 +519,7 @@ util.create_thread(function()
 				hp_heist_presets.keyboard.waiting = false
 				hp_heist_presets.keyboard.mode = nil
 				hp_keyboard_guard = nil
-				hp_notify_presets("Name entry canceled", 1500)
+				hp_notify_presets("Preset name entry canceled", 1500)
 			end
 		end
 	end
@@ -1088,7 +1088,7 @@ hp_save_heist_preset = function(mode)
 
 	local clean_name = hp_sanitize_preset_name(state_tbl.name)
 	if clean_name == "" then
-		hp_notify_presets("Failed to save. Name is empty.", 2200)
+		hp_notify_presets("Enter a preset name before saving", 2200)
 		return
 	end
 
@@ -1096,7 +1096,7 @@ hp_save_heist_preset = function(mode)
 	local path = hp_get_heist_preset_path(mode, clean_name)
 	local handlers = HP_PRESET_MODE_HANDLERS[mode]
 	if not handlers or type(handlers.collect) ~= "function" then
-		hp_notify_presets("Unsupported preset mode", 2000)
+		hp_notify_presets("Preset mode not supported", 2000)
 		return
 	end
 	local content = handlers.collect()
@@ -1110,19 +1110,19 @@ hp_save_heist_preset = function(mode)
 	state_tbl.name = ""
 	hp_update_preset_name_label(mode)
 	hp_refresh_heist_preset_files(mode, clean_name)
-	hp_notify_presets("Saved: " .. clean_name, 2200)
+	hp_notify_presets("Saved preset: " .. clean_name, 2200)
 end
 
 hp_load_heist_preset = function(mode)
 	local selected = hp_get_selected_preset_name(mode)
 	if not selected then
-		hp_notify_presets("No preset selected", 2000)
+		hp_notify_presets("Select a preset first", 2000)
 		return
 	end
 
 	local path = hp_get_heist_preset_path(mode, selected)
 	if not file.exists(path) then
-		hp_notify_presets("Preset does not exist", 2000)
+		hp_notify_presets("Preset file not found", 2000)
 		hp_refresh_heist_preset_files(mode)
 		return
 	end
@@ -1136,13 +1136,13 @@ hp_load_heist_preset = function(mode)
 
 	local handlers = HP_PRESET_MODE_HANDLERS[mode]
 	if not handlers or type(handlers.apply) ~= "function" then
-		hp_notify_presets("Unsupported preset mode", 2000)
+		hp_notify_presets("Preset mode not supported", 2000)
 		return
 	end
 	local applied = handlers.apply(preps)
 
 	if applied then
-		hp_notify_presets("Loaded: " .. selected, 2200)
+		hp_notify_presets("Loaded preset: " .. selected, 2200)
 	else
 		hp_notify_presets("Failed to apply preset", 2200)
 	end
@@ -1151,13 +1151,13 @@ end
 hp_remove_heist_preset = function(mode)
 	local selected = hp_get_selected_preset_name(mode)
 	if not selected then
-		hp_notify_presets("No preset selected", 2000)
+		hp_notify_presets("Select a preset first", 2000)
 		return
 	end
 
 	local path = hp_get_heist_preset_path(mode, selected)
 	if not file.exists(path) then
-		hp_notify_presets("Preset does not exist", 2000)
+		hp_notify_presets("Preset file not found", 2000)
 		hp_refresh_heist_preset_files(mode)
 		return
 	end
@@ -1165,7 +1165,7 @@ hp_remove_heist_preset = function(mode)
 	local removed = file.remove(path)
 	hp_refresh_heist_preset_files(mode)
 	if removed then
-		hp_notify_presets("Removed: " .. selected, 2000)
+		hp_notify_presets("Removed preset: " .. selected, 2000)
 	else
 		hp_notify_presets("Failed to remove preset", 2200)
 	end
@@ -1178,7 +1178,7 @@ hp_copy_heist_preset_folder = function(mode)
 	end
 	hp_ensure_heist_preset_dirs()
 	input.set_clipboard_text(state_tbl.dir)
-	hp_notify_presets("Folder path copied", 2000)
+	hp_notify_presets("Preset folder path copied", 2000)
 end
 
 local apartment_max_payout_cache = {

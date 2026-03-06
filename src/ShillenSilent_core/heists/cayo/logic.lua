@@ -86,7 +86,7 @@ local function cayo_set_womans_bag(enable, silent)
 		cayo_refs.womans_bag_toggle.state = enabled
 	end
 	if changed and not silent and notify then
-		notify.push("Cayo Perico", enabled and "Woman's Bag Enabled" or "Woman's Bag Disabled", 2000)
+		notify.push("Cayo Perico", enabled and "Woman's bag enabled" or "Woman's bag disabled", 2000)
 	end
 end
 
@@ -123,7 +123,7 @@ local function cayo_set_remove_crew_cuts(enable, silent)
 		cayo_refs.remove_crew_cuts_toggle.state = enabled
 	end
 	if changed and not silent and notify then
-		notify.push("Cayo Perico", enabled and "Crew Cuts Removed" or "Crew Cuts Restored", 2000)
+		notify.push("Cayo Perico", enabled and "Crew cuts removed" or "Crew cuts restored", 2000)
 	end
 end
 
@@ -186,7 +186,7 @@ local function cayo_apply_preps()
 	account.stats(p .. "H4CNF_HEL_DISRP").int32 = 3
 	script.locals("heist_island_planning", 1570).int32 = 2
 	if notify then
-		notify.push("Cayo Perico", "Preps Applied (Granular)", 2000)
+		notify.push("Cayo Perico", "Preps applied", 2000)
 	end
 end
 
@@ -244,7 +244,7 @@ local function cayo_apply_cuts()
 	script.globals(CayoGlobals.P3).int32 = CayoCutsValues.player3
 	script.globals(CayoGlobals.P4).int32 = CayoCutsValues.player4
 	if notify then
-		notify.push("Cayo Perico", "Cuts Applied", 2000)
+		notify.push("Cayo Perico", "Cuts applied", 2000)
 	end
 end
 
@@ -265,7 +265,7 @@ local function cayo_force_ready()
 		end
 	end, function()
 		if notify then
-			notify.push("Cayo Perico", "Force Ready already running", 1500)
+			notify.push("Cayo Perico", "Force ready already running", 1500)
 		end
 	end)
 end
@@ -286,7 +286,7 @@ local function cayo_unlock_all_poi()
 		script.locals("heist_island_planning", 1570).int32 = 2
 	end
 	if notify then
-		notify.push("Cayo Tools", "All POI Unlocked", 2000)
+		notify.push("Cayo Tools", "All POI unlocked", 2000)
 	end
 end
 
@@ -302,48 +302,48 @@ local function cayo_reset_preps()
 	account.stats(p .. "H4_PLAYTHROUGH_STATUS").int32 = 0
 	script.locals("heist_island_planning", 1570).int32 = 2
 	if notify then
-		notify.push("Cayo Tools", "Preps Reset (Full)", 2000)
+		notify.push("Cayo Tools", "Preps reset", 2000)
 	end
 end
 
 local function cayo_instant_voltlab_hack()
 	if not script.running("fm_content_island_heist") then
 		if notify then
-			notify.push("Cayo Tools", "Mission Not Running", 2000)
+			notify.push("Cayo Tools", "Mission not running", 2000)
 		end
 		return
 	end
 	script.locals("fm_content_island_heist", 10166 + 24).int32 = 5
 	if notify then
-		notify.push("Cayo Tools", "Voltlab Hack Completed", 2000)
+		notify.push("Cayo Tools", "Voltlab hack completed", 2000)
 	end
 end
 
 local function cayo_instant_password_hack()
 	script.locals("fm_mission_controller_2020", 26486).int32 = 5
 	if notify then
-		notify.push("Cayo Tools", "Password Hack Completed", 2000)
+		notify.push("Cayo Tools", "Password hack completed", 2000)
 	end
 end
 
 local function cayo_bypass_plasma_cutter()
 	script.locals("fm_mission_controller_2020", 32589 + 3).float = 100.0
 	if notify then
-		notify.push("Cayo Tools", "Plasma Cutter Bypassed", 2000)
+		notify.push("Cayo Tools", "Plasma cutter bypassed", 2000)
 	end
 end
 
 local function cayo_bypass_drainage_pipe()
 	script.locals("fm_mission_controller_2020", 31349).int32 = 6
 	if notify then
-		notify.push("Cayo Tools", "Drainage Pipe Bypassed", 2000)
+		notify.push("Cayo Tools", "Drainage pipe bypassed", 2000)
 	end
 end
 
 local function cayo_reload_planning_screen()
 	script.locals("heist_island_planning", 1570).int32 = 2
 	if notify then
-		notify.push("Cayo Tools", "Planning Screen Reloaded", 2000)
+		notify.push("Cayo Tools", "Planning screen reloaded", 2000)
 	end
 end
 
@@ -353,7 +353,7 @@ local function cayo_remove_cooldown()
 	account.stats(p .. "H4_COOLDOWN").int32 = 0
 	account.stats(p .. "H4_COOLDOWN_HARD").int32 = 0
 	if notify then
-		notify.push("Cayo Tools", "Cooldown Removed (Solo)", 2000)
+		notify.push("Cayo Tools", "Solo cooldown removed", 2000)
 	end
 end
 
@@ -363,7 +363,7 @@ local function cayo_remove_cooldown_team()
 	account.stats(p .. "H4_COOLDOWN").int32 = 0
 	account.stats(p .. "H4_COOLDOWN_HARD").int32 = 0
 	if notify then
-		notify.push("Cayo Tools", "Cooldown Removed (Team)", 2000)
+		notify.push("Cayo Tools", "Team cooldown removed", 2000)
 	end
 end
 
@@ -374,16 +374,16 @@ local function cayo_instant_finish()
 			script.locals("fm_mission_controller_2020", 56223).int32 = 9
 			script.locals("fm_mission_controller_2020", 58000).int32 = 50
 			if notify then
-				notify.push("Cayo Tools", "Cayo Perico instant finish", 2000)
+				notify.push("Cayo Tools", "Instant finish triggered", 2000)
 			end
 		else
 			if notify then
-				notify.push("Cayo Tools", "Failed to force host", 2000)
+				notify.push("Cayo Tools", "Could not force host", 2000)
 			end
 		end
 	end, function()
 		if notify then
-			notify.push("Cayo Tools", "Instant Finish already running", 1500)
+			notify.push("Cayo Tools", "Instant finish already running", 1500)
 		end
 	end)
 end
@@ -452,9 +452,15 @@ end
 
 local function cayo_teleport_kosatka()
 	if teleport_in_progress then
+		if notify then
+			notify.push("Cayo Teleport", "Teleport already running", 1200)
+		end
 		return false
 	end
 	if not try_begin_teleport_cooldown() then
+		if notify then
+			notify.push("Cayo Teleport", "Teleport on cooldown", 1000)
+		end
 		return false
 	end
 
@@ -511,7 +517,7 @@ local function cayo_teleport_kosatka()
 
 	if not player_owns_kosatka() then
 		if notify then
-			notify.push("Cayo Teleport", "You do not own a Kosatka", 2200)
+			notify.push("Cayo Teleport", "You don't own a Kosatka", 2200)
 		end
 		return false
 	end
@@ -587,7 +593,7 @@ local function cayo_teleport_kosatka()
 
 		if interior_loaded then
 			if notify then
-				notify.push("Cayo Teleport", "Teleported to Kosatka (Interior)", 2000)
+				notify.push("Cayo Teleport", "Teleported to Kosatka interior", 2000)
 			end
 		else
 			move_to_maze_bank()

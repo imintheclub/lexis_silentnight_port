@@ -55,7 +55,7 @@ local function register(heistTab)
 				notifications = 1557
 			else
 				if notify then
-					notify.push("Doomsday", "Invalid Act", 2000)
+					notify.push("Doomsday", "Invalid act selected", 2000)
 				end
 				return false
 			end
@@ -68,7 +68,7 @@ local function register(heistTab)
 			script.locals("gb_gang_ops_planning", 211).int32 = 6
 
 			if notify then
-				notify.push("Doomsday", "Preps Completed", 2000)
+				notify.push("Doomsday", "Preps applied", 2000)
 			end
 			return true
 		end
@@ -82,7 +82,7 @@ local function register(heistTab)
 			script.locals("gb_gang_ops_planning", 211).int32 = 6
 
 			if notify then
-				notify.push("Doomsday", "Progress Reset", 2000)
+				notify.push("Doomsday", "Progress reset", 2000)
 			end
 		end
 
@@ -102,7 +102,7 @@ local function register(heistTab)
 				end
 			end, function()
 				if notify then
-					notify.push("Doomsday Launch", "Force Ready already running", 1500)
+					notify.push("Doomsday Launch", "Force ready already running", 1500)
 				end
 			end)
 		end
@@ -187,7 +187,7 @@ local function register(heistTab)
 			script.globals(1969409).int32 = cuts[4] or 100
 
 			if notify then
-				notify.push("Doomsday Cuts", "Cuts Applied", 2000)
+				notify.push("Doomsday Cuts", "Cuts applied", 2000)
 			end
 			return true
 		end
@@ -293,6 +293,9 @@ local function register(heistTab)
 					{ doomsdayP1Slider, doomsdayP2Slider, doomsdayP3Slider, doomsdayP4Slider },
 					100
 				)
+				if notify then
+					notify.push("Doomsday Cuts", "100% cut preset loaded", 2000)
+				end
 			end,
 			"doomsday_preset_max_instant",
 			"Apply Preset (Max Payout)",
@@ -303,6 +306,9 @@ local function register(heistTab)
 					{ doomsdayP1Slider, doomsdayP2Slider, doomsdayP3Slider, doomsdayP4Slider },
 					hp_get_doomsday_max_payout_cut()
 				)
+				if notify then
+					notify.push("Doomsday Cuts", "Max payout cut preset loaded", 2000)
+				end
 			end
 		)
 
@@ -355,10 +361,15 @@ local function register(heistTab)
 					script.locals("fm_mission_controller", 29017).int32 = 99999
 					script.locals("fm_mission_controller", 32541).int32 = 99999
 					script.locals("fm_mission_controller", 32569).int32 = 80
+					if notify then
+						notify.push("Doomsday Tools", "Instant finish triggered", 2000)
+					end
+				elseif notify then
+					notify.push("Doomsday Tools", "Could not force host", 2000)
 				end
 			end, function()
 				if notify then
-					notify.push("Doomsday Tools", "Instant Finish already running", 1500)
+					notify.push("Doomsday Tools", "Instant finish already running", 1500)
 				end
 			end)
 		end

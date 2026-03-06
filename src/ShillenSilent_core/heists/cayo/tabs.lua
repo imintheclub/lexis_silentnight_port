@@ -263,6 +263,9 @@ local function register(heistTab)
 		cayo_refs.coke_value_slider.value = CayoConfig.val_coke
 		cayo_refs.gold_value_slider.value = CayoConfig.val_gold
 		cayo_refs.art_value_slider.value = CayoConfig.val_art
+		if notify then
+			notify.push("Cayo Preps", "Loot values reset", 2000)
+		end
 	end)
 	ui.button_pair(
 		gCayoPreps,

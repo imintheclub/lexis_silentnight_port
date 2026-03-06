@@ -128,7 +128,7 @@ local function apply_casino_manual_preps()
 
 	hp_reload_casino_planning_board()
 	if notify then
-		notify.push("Casino Manual Preps", "Applied Granular Configuration", 2000)
+		notify.push("Casino Manual Preps", "Preps applied", 2000)
 	end
 end
 

@@ -60,9 +60,9 @@ local function heist_skip_cutscene(heist_name)
 	if notify then
 		local title = (heist_name and heist_name ~= "") and (heist_name .. " Tools") or "Heist Tools"
 		if ok then
-			notify.push(title, "Cutscene skip requested", 2000)
+			notify.push(title, "Skip cutscene requested", 2000)
 		else
-			notify.push(title, "Failed to skip cutscene", 2000)
+			notify.push(title, "Could not skip cutscene", 2000)
 		end
 	end
 end

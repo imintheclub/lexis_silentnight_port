@@ -2,9 +2,9 @@
 -- 6.5. Heist Functions (Casino)
 -- ---------------------------------------------------------
 
-local core = require_module("core/bootstrap")
-local ui = require_module("core/ui")
-local heist_state = require_module("shared/heist_state")
+local core = require("ShillenSilent_core.core.bootstrap")
+local ui = require("ShillenSilent_core.core.ui")
+local heist_state = require("ShillenSilent_core.shared.heist_state")
 local native = core.native
 local config = core.config
 local state = core.state

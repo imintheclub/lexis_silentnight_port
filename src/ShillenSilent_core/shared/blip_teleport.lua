@@ -1,5 +1,5 @@
 -- Teleport constants and shared helper functions
-local core = require_module("core/bootstrap")
+local core = require("ShillenSilent_core.core.bootstrap")
 local run_guarded_job = core.run_guarded_job
 
 local TELEPORT_COORDS_MAZEBANK = { x = -75.146, y = -818.687, z = 326.175 }

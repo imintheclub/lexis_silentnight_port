@@ -1,4 +1,4 @@
-local presets = require_module("shared/presets_and_shared")
+local presets = require("ShillenSilent_core.shared.presets_and_shared")
 
 local GetMP = presets.GetMP
 local hp_is_apartment_fleeca = presets.hp_is_apartment_fleeca

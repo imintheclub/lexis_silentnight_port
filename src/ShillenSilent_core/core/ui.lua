@@ -2,7 +2,7 @@
 -- 2. Core Rendering Helpers
 -- ---------------------------------------------------------
 
-local core = require_module("core/bootstrap")
+local core = require("ShillenSilent_core.core.bootstrap")
 local ui = core.ui
 local state = core.state
 local config = core.config

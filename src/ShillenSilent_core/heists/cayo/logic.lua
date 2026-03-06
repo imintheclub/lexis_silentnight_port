@@ -1,9 +1,9 @@
 -- ---------------------------------------------------------
 
-local core = require_module("core/bootstrap")
-local presets = require_module("shared/presets_and_shared")
-local heist_state = require_module("shared/heist_state")
-local coords_teleport = require_module("shared/coords_teleport")
+local core = require("ShillenSilent_core.core.bootstrap")
+local presets = require("ShillenSilent_core.shared.presets_and_shared")
+local heist_state = require("ShillenSilent_core.shared.heist_state")
+local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local run_guarded_job = core.run_guarded_job
 local run_coords_teleport = coords_teleport.run_coords_teleport
 local try_begin_teleport_cooldown = coords_teleport.try_begin_teleport_cooldown

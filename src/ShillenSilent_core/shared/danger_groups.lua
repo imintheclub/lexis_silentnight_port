@@ -1,5 +1,5 @@
-local core = require_module("core/bootstrap")
-local ui = require_module("core/ui")
+local core = require("ShillenSilent_core.core.bootstrap")
+local ui = require("ShillenSilent_core.core.ui")
 
 local config = core.config
 

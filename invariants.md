@@ -12,11 +12,8 @@
 
 ## 3) Runtime architecture (current, authoritative)
 - Entrypoint: `src/ShillenSilent.lua`.
-- `ShillenSilent.lua` is a module loader with cache + circular-load protection and file-backed chunk loading.
-- Intentional globals exposed by loader:
-  - `_G.shillen_require`
-  - `_G.require_module`
-- `app/main` is the runtime boot target loaded by the loader.
+- `ShillenSilent.lua` is a bootstrap that configures `package.path` and boots via native `require`.
+- `app/main` is the runtime boot target loaded via native `require`.
 - Module roots are under `src/ShillenSilent_core/`:
   - `core/`
   - `shared/`
@@ -40,9 +37,9 @@
 
 ## 5) Module contract invariants
 - Every module under `src/ShillenSilent_core/**/*.lua` must return a table/module value.
-- Cross-module access must use `require_module("<module/path>")`.
+- Cross-module access must use native dotted module names (example: `require("ShillenSilent_core.core.bootstrap")`).
 - Do not create new implicit globals for module state; keep state local or inside exported module tables/shared state.
-- If a new module file is added, it must be included in `module_files` in `src/ShillenSilent.lua`.
+- New modules under `src/ShillenSilent_core/` must resolve through the configured `package.path` patterns.
 
 ## 6) State and callback invariants
 - `shared/heist_state.lua` is the single source of truth for:

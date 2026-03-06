@@ -2,9 +2,9 @@
 -- [Cluckin Bell Farm Raid] - 1:1 from HeistTool.lua
 -- -------------------------------------------------------------------------
 
-local core = require_module("core/bootstrap")
-local ui = require_module("core/ui")
-local presets = require_module("shared/presets_and_shared")
+local core = require("ShillenSilent_core.core.bootstrap")
+local ui = require("ShillenSilent_core.core.ui")
+local presets = require("ShillenSilent_core.shared.presets_and_shared")
 
 local config = core.config
 local hp_set_stat_for_all_characters = presets.hp_set_stat_for_all_characters

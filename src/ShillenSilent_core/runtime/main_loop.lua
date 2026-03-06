@@ -2,13 +2,13 @@
 -- 8. Loop
 -- ---------------------------------------------------------
 
-local core = require_module("core/bootstrap")
-local ui = require_module("core/ui")
-local native_api = require_module("core/native_api")
-local presets = require_module("shared/presets_and_shared")
-local solo_launch = require_module("runtime/solo_launch")
-local cayo_logic = require_module("heists/cayo/logic")
-local casino_logic = require_module("heists/casino/logic")
+local core = require("ShillenSilent_core.core.bootstrap")
+local ui = require("ShillenSilent_core.core.ui")
+local native_api = require("ShillenSilent_core.core.native_api")
+local presets = require("ShillenSilent_core.shared.presets_and_shared")
+local solo_launch = require("ShillenSilent_core.runtime.solo_launch")
+local cayo_logic = require("ShillenSilent_core.heists.cayo.logic")
+local casino_logic = require("ShillenSilent_core.heists.casino.logic")
 
 local state = core.state
 local config = core.config

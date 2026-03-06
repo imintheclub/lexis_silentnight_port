@@ -1,10 +1,10 @@
-local core = require_module("core/bootstrap")
-local ui = require_module("core/ui")
-local native_api = require_module("core/native_api")
-local presets = require_module("shared/presets_and_shared")
-local heist_state = require_module("shared/heist_state")
-local danger_groups = require_module("shared/danger_groups")
-local cayo_logic = require_module("heists/cayo/logic")
+local core = require("ShillenSilent_core.core.bootstrap")
+local ui = require("ShillenSilent_core.core.ui")
+local native_api = require("ShillenSilent_core.core.native_api")
+local presets = require("ShillenSilent_core.shared.presets_and_shared")
+local heist_state = require("ShillenSilent_core.shared.heist_state")
+local danger_groups = require("ShillenSilent_core.shared.danger_groups")
+local cayo_logic = require("ShillenSilent_core.heists.cayo.logic")
 
 local config = core.config
 local state = core.state

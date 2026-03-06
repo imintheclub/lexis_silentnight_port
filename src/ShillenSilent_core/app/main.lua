@@ -1,10 +1,10 @@
-local ui = require_module("core/ui")
-local casino_tabs = require_module("heists/casino/tabs")
-local cayo_tabs = require_module("heists/cayo/tabs")
-local apartment_tabs = require_module("heists/apartment/tabs")
-local doomsday_module = require_module("heists/doomsday/all")
-local cluckin_module = require_module("heists/cluckin/all")
-local runtime_main_loop = require_module("runtime/main_loop")
+local ui = require("ShillenSilent_core.core.ui")
+local casino_tabs = require("ShillenSilent_core.heists.casino.tabs")
+local cayo_tabs = require("ShillenSilent_core.heists.cayo.tabs")
+local apartment_tabs = require("ShillenSilent_core.heists.apartment.tabs")
+local doomsday_module = require("ShillenSilent_core.heists.doomsday.all")
+local cluckin_module = require("ShillenSilent_core.heists.cluckin.all")
+local runtime_main_loop = require("ShillenSilent_core.runtime.main_loop")
 
 local app_main = {
 	started = false,

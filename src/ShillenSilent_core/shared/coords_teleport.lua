@@ -1,4 +1,4 @@
-local core = require_module("core/bootstrap")
+local core = require("ShillenSilent_core.core.bootstrap")
 
 local run_guarded_job = core.run_guarded_job
 

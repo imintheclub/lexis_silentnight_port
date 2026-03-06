@@ -1,45 +1,4 @@
--- ============================================================================
--- "ShillenSilent"
--- based off of ShillenLua - Modern UI Menu for GTA V (Version: 1.7.1)
--- ============================================================================
--- Attribution (SilentNight upstream)
--- Portions of heist logic/data are adapted from SilentNight by SilentSalo:
---   Source: https://github.com/SilentSalo/SilentNight
---   License: Creative Commons Attribution-NonCommercial 4.0 (CC BY-NC 4.0)
---   License file: https://raw.githubusercontent.com/SilentSalo/SilentNight/refs/heads/main/LICENSE.md
--- This file is modified from upstream content (Lexis port + additional changes).
--- Keep attribution and license notice with redistributions; non-commercial use only.
---[[
-High-level
-- This fork is now heist-focused, removed original top-level non-heist tabs
-    - (INFO, SPAWNER, VEHICLE, OBJECTS)
-- UI architecture is simplified
-    - no sidebar tab stack
-    - full-width heist layout
-    - 3-column card placement. 
-    - Various button widths and font sizes and such have been changed.
-- Cayo/Casino prep control depth expanded to level of SilentNight.
-
-Apartment + Cayo + Casino JSON Preset System
-- Added full JSON preset subsystem for all three heists:
-  - Name input from keyboard/clipboard.
-  - Save, load, remove, refresh, copy preset folder path.
-  - Directory model under script path with heist-specific folders.
-
-Preset IO / Validation Changes
-- JSON reader made tolerant of both handle.json and raw handle.text decode paths.
-- Added preset validation guard before apply:
-  - Enforces expected heist id per mode.
-  - Enforces supported schema.
-
-Payout Preset Changes
-- Added Apply Preset (Max Payout) flows for Casino/Cayo/Doomsday.
-- Kept standard 100% preset + Max Payout preset + manual Apply Cuts behavior.
-]]
-
--- INSTRUCTIONS:
--- 1. Press 'T' key to open/close the menu
--- ============================================================================
+-- Core bootstrap: shared config, paths, runtime state, and guarded jobs.
 
 local ui = {}
 local native = require("natives")

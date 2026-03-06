@@ -1,9 +1,37 @@
+# About
+ShillenSilent is a heist-focused Lexis Lua script, based on ShillenLua and adapted with SilentNight heist logic/data.
+
+- Press `T` to open/close the menu.
+
+This project currently:
+- focuses on heist workflows and removes non-heist top-level tabs (INFO, SPAWNER, VEHICLE, OBJECTS) originally present in ShillenLua
+- has a resizable custom Click UI with animations
+- includes 1-click, loot-aware max payout preset buttons for Casino/Cayo/Doomsday
+- expands Cayo/Casino prep controls to SilentNight-level depth
+- includes JSON presets for Apartment, Cayo, and Casino (save/load/remove/refresh/copy path, keyboard/clipboard naming)
+
+
+# Attribution
+## SilentNight
+Portions of heist logic/data are adapted from SilentNight by SilentSalo.
+- Source: [SilentNight](https://github.com/SilentSalo/SilentNight)
+- License: [CC BY-NC 4.0](https://raw.githubusercontent.com/SilentSalo/SilentNight/refs/heads/main/LICENSE.md)
+
+This repository contains modified upstream content (Lexis port + additional changes). Keep attribution and license notice with redistributions; non-commercial use only.
+
+## ShillenLua
+Made by Shillen#0000 on the Lexis discord. Originally found [here](https://discord.com/channels/1181574376727003166/1453814961838231715).
+
 # Install Instructions
 1. press windows + R to open the run dialog and paste in `%USERPROFILE%/Lexis/Grand Theft Auto V/Scripts` (without the enclosing backticks)
 2. Copy everything from the src folder into the folder you opened in step 1)
 3. Load the script in Lexis
 
 # Changelog
+## v0.0.7
+- changed from the dogshit custom ai slop bullshit loader code to real modules with proper scoping and requires
+- made notifications more consistent + present for every action which commits a state change of any kind + all missing error cases
+
 ## v0.0.6
 - I didn't even realize this, but the custom font was not working, so made that work
 - Made it easier to "update" the script by moving the heist preset directory outside. So from now on, you'll be able to just directly delete the core folder and the main script and just copy in the new one. 

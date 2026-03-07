@@ -33,6 +33,10 @@ local CASINO_CREW_CUT_TUNABLES = {
 	{ name = "HEIST3_HACKERS_PAIGE_CUT", default = 9 },
 }
 
+-- Enhanced Edition local offsets.
+local CASINO_AUTOGRABBER_GRAB_LOCAL = 10697
+local CASINO_AUTOGRABBER_SPEED_LOCAL = CASINO_AUTOGRABBER_GRAB_LOCAL + 14
+
 local casino_crew_cut_backup = {}
 
 local function hp_tunable_int(name)
@@ -170,12 +174,12 @@ local function casino_autograbber_tick()
 		return
 	end
 
-	local grab_local = script.locals("fm_mission_controller", 10295)
+	local grab_local = script.locals("fm_mission_controller", CASINO_AUTOGRABBER_GRAB_LOCAL)
 	local grab = grab_local.int32
 	if grab == 3 then
 		grab_local.int32 = 4
 	elseif grab == 4 then
-		script.locals("fm_mission_controller", 10295 + 14).float = 2.0
+		script.locals("fm_mission_controller", CASINO_AUTOGRABBER_SPEED_LOCAL).float = 2.0
 	end
 end
 

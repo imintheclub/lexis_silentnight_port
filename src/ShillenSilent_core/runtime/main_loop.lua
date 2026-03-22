@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- 8. Loop
+-- 8. Loop (Safe Control Lock Edition)
 -- ---------------------------------------------------------
 
 local core = require("ShillenSilent_core.core.bootstrap")
@@ -15,28 +15,24 @@ local config = core.config
 local native = core.native
 local CONTROL_ACTION_BLOCK_LIST = native_api.CONTROL_ACTION_BLOCK_LIST
 local disable_control_action = native_api.disable_control_action
+
 local solo_launch_generic = solo_launch.solo_launch_generic
 local solo_launch_casino_setup = solo_launch.solo_launch_casino_setup
 local solo_launch_reset_casino = solo_launch.solo_launch_reset_casino
 local solo_launch_reset_doomsday = solo_launch.solo_launch_reset_doomsday
 local solo_launch_reset_apartment = solo_launch.solo_launch_reset_apartment
-local cayo_enforce_heist_toggles = cayo_logic.cayo_enforce_heist_toggles
-local casino_enforce_heist_toggles = casino_logic.casino_enforce_heist_toggles
-local hp_refresh_apartment_max_payout = presets.hp_refresh_apartment_max_payout
 
 local runtime_main_loop = {
 	started = false,
 }
 
 local function subscribe_scroll_handler()
-	if not events.event.scroll then
-		return
-	end
+	if not events.event.scroll then return end
 
 	events.subscribe(events.event.scroll, function(e)
-		if not state.animation.open and state.animation.progress < 0.01 then
-			return
-		end
+		if _G.ShillenSilent_ForceStop then return end
+		if not state.animation.open and state.animation.progress < 0.01 then return end
+
 		local scroll_speed = 30
 		local delta = e.offset * scroll_speed
 
@@ -50,9 +46,7 @@ local function subscribe_scroll_handler()
 		local bodyY_local = config.sidebar_gap
 		local bodyY_abs = win_y + bodyY_local
 
-		if my < bodyY_abs then
-			return
-		end -- Above menu
+		if my < bodyY_abs then return end
 
 		if mx >= win_x and mx <= win_x + menu_w then
 			if state.scroll.max_y > 0 then
@@ -79,13 +73,11 @@ local next_heist_enforce_tick = 0
 
 local function maybe_enforce_heist_toggles()
 	local now_tick = (util and util.get_tick_count and util.get_tick_count()) or nil
-	if now_tick and now_tick < next_heist_enforce_tick then
-		return
-	end
+	if now_tick and now_tick < next_heist_enforce_tick then return end
 
-	hp_refresh_apartment_max_payout(false, false)
-	cayo_enforce_heist_toggles()
-	casino_enforce_heist_toggles()
+	pcall(presets.hp_refresh_apartment_max_payout, false, false)
+	pcall(cayo_logic.cayo_enforce_heist_toggles)
+	pcall(casino_logic.casino_enforce_heist_toggles)
 
 	if now_tick then
 		next_heist_enforce_tick = now_tick + HEIST_ENFORCE_INTERVAL_MS
@@ -95,32 +87,39 @@ end
 local function start_runtime_loop()
 	util.create_thread(function()
 		while true do
+			if _G.ShillenSilent_ForceStop then return end
+
 			for i = 1, #SOLO_LAUNCH_HANDLERS do
 				local handler = SOLO_LAUNCH_HANDLERS[i]
 				local key = handler.key
+
 				local enabled = state.solo_launch[key]
 				local was_enabled = state.solo_launch_prev[key]
 
 				if enabled then
-					solo_launch_generic()
-					if handler.setup then
-						handler.setup()
-					end
+					pcall(solo_launch_generic)
+					if handler.setup then pcall(handler.setup) end
 				elseif was_enabled and handler.reset then
-					-- Just turned off, reset to normal.
-					handler.reset()
+					pcall(handler.reset)
 				end
 
 				state.solo_launch_prev[key] = enabled
 			end
 
-			maybe_enforce_heist_toggles()
+			pcall(maybe_enforce_heist_toggles)
 
-			if input.key(84).just_pressed then -- T
+			local t_pressed = false
+			pcall(function()
+				if input and input.key and input.key(84) then
+					t_pressed = input.key(84).just_pressed
+				end
+			end)
+
+			if t_pressed then
 				state.animation.open = not state.animation.open
 				state.animation.target = state.animation.open and 1.0 or 0.0
-				input.show_cursor(state.animation.open)
-				-- Center cursor on screen when menu opens (with safety check)
+				pcall(function() input.show_cursor(state.animation.open) end)
+
 				if state.animation.open then
 					if native and native.set_cursor_position then
 						pcall(native.set_cursor_position, 0.5, 0.5)
@@ -130,27 +129,25 @@ local function start_runtime_loop()
 
 			local custom_visible = state.animation.open or state.animation.progress > 0.01
 			if custom_visible then
-				ui.render()
-			end
+				pcall(ui.render)
 
-			if custom_visible then
-				-- Disable mouse controls (group 2)
-				invoker.call(0x5F4B6931816E599B, 2)
+				pcall(function()
+					-- Disable clicking and scrolling specific actions
+					disable_control_action(CONTROL_ACTION_BLOCK_LIST)
 
-				-- Disable player firing
-				if players and players.user then
-					local player_id = players.user()
-					invoker.call(0x5E6CC07646BBEAB8, player_id, true)
-				end
-
-				-- Disable shooting and other actions
-				disable_control_action(CONTROL_ACTION_BLOCK_LIST)
+					-- Disable player firing
+					if players and players.user then
+						local player_id = players.user()
+						invoker.call(0x5E6CC07646BBEAB8, player_id, true)
+					end
+				end)
 			else
-				-- Enable player firing
-				if players and players.user then
-					local player_id = players.user()
-					invoker.call(0x5E6CC07646BBEAB8, player_id, false)
-				end
+				pcall(function()
+					if players and players.user then
+						local player_id = players.user()
+						invoker.call(0x5E6CC07646BBEAB8, player_id, false)
+					end
+				end)
 			end
 
 			util.yield(0)
@@ -159,12 +156,10 @@ local function start_runtime_loop()
 end
 
 function runtime_main_loop.start()
-	if runtime_main_loop.started then
-		return false
-	end
+	if runtime_main_loop.started then return false end
 	runtime_main_loop.started = true
 
-	subscribe_scroll_handler()
+	pcall(subscribe_scroll_handler)
 	start_runtime_loop()
 	return true
 end

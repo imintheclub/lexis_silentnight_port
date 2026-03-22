@@ -305,6 +305,10 @@ local function hp_clamp_cut_percent(value)
 	return math.floor(hp_clamp_number(value, 0, 300))
 end
 
+local function hp_clamp_apartment_cut_percent(value)
+	return math.floor(hp_clamp_number(value, 0, 3000))
+end
+
 local function hp_set_uniform_cuts(state_tbl, keys, sliders, cut, apply_fn)
 	local value = hp_clamp_cut_percent(cut)
 
@@ -345,7 +349,7 @@ local function hp_read_player_cut(preps, player_key, legacy_key, fallback, clamp
 end
 
 local SAFE_PAYOUT_TARGETS = {
-	apartment = 3000000,
+	apartment = 2995999,
 	cayo = 2500000,
 	casino = 3550000,
 	doomsday = 2500000,
@@ -1021,13 +1025,13 @@ local function hp_apply_apartment_preset_data(preps)
 	end
 
 	ApartmentCutsValues.player1 =
-		hp_read_player_cut(preps, "player1", "player1_cut", ApartmentCutsValues.player1, hp_clamp_cut_percent)
+		hp_read_player_cut(preps, "player1", "player1_cut", ApartmentCutsValues.player1, hp_clamp_apartment_cut_percent)
 	ApartmentCutsValues.player2 =
-		hp_read_player_cut(preps, "player2", "player2_cut", ApartmentCutsValues.player2, hp_clamp_cut_percent)
+		hp_read_player_cut(preps, "player2", "player2_cut", ApartmentCutsValues.player2, hp_clamp_apartment_cut_percent)
 	ApartmentCutsValues.player3 =
-		hp_read_player_cut(preps, "player3", "player3_cut", ApartmentCutsValues.player3, hp_clamp_cut_percent)
+		hp_read_player_cut(preps, "player3", "player3_cut", ApartmentCutsValues.player3, hp_clamp_apartment_cut_percent)
 	ApartmentCutsValues.player4 =
-		hp_read_player_cut(preps, "player4", "player4_cut", ApartmentCutsValues.player4, hp_clamp_cut_percent)
+		hp_read_player_cut(preps, "player4", "player4_cut", ApartmentCutsValues.player4, hp_clamp_apartment_cut_percent)
 
 	if apartment_refs.solo_launch_toggle then
 		apartment_refs.solo_launch_toggle.state = state.solo_launch.apartment
@@ -1232,28 +1236,45 @@ local function hp_get_apartment_max_payout_cut(double_rewards)
 	end
 
 	local difficulty = hp_get_apartment_difficulty_index()
-	local payout = payout_by_heist[difficulty] or payout_by_heist[#payout_by_heist]
-	if not payout or payout <= 0 then
+	local payout = payout_by_heist[difficulty]
+	if not payout then
 		return nil, heist, difficulty
 	end
 
 	local divisor = (double_rewards and true or false) and 2 or 1
-	local cut = math.floor(SAFE_PAYOUT_TARGETS.apartment / (payout / 100) / divisor)
-	return hp_clamp_cut_percent(cut), heist, difficulty
+	local cut = math.floor((SAFE_PAYOUT_TARGETS.apartment * 100) / (payout * divisor))
+	return hp_clamp_apartment_cut_percent(cut), heist, difficulty
 end
 
 local function hp_set_apartment_uniform_cuts(cut, apply_now)
 	if type(ApartmentCutsValues) ~= "table" then
-		return hp_clamp_cut_percent(cut)
+		return hp_clamp_apartment_cut_percent(cut)
 	end
 
-	return hp_set_uniform_cuts(
-		ApartmentCutsValues,
-		{ "player1", "player2", "player3", "player4" },
-		{ apartment_refs.p1_slider, apartment_refs.p2_slider, apartment_refs.p3_slider, apartment_refs.p4_slider },
-		cut,
-		(apply_now and type(apartment_callbacks.apply_cuts) == "function") and apartment_callbacks.apply_cuts or nil
-	)
+	local value = hp_clamp_apartment_cut_percent(cut)
+	ApartmentCutsValues.player1 = value
+	ApartmentCutsValues.player2 = value
+	ApartmentCutsValues.player3 = value
+	ApartmentCutsValues.player4 = value
+
+	if apartment_refs.p1_slider then
+		apartment_refs.p1_slider.value = value
+	end
+	if apartment_refs.p2_slider then
+		apartment_refs.p2_slider.value = value
+	end
+	if apartment_refs.p3_slider then
+		apartment_refs.p3_slider.value = value
+	end
+	if apartment_refs.p4_slider then
+		apartment_refs.p4_slider.value = value
+	end
+
+	if apply_now and type(apartment_callbacks.apply_cuts) == "function" then
+		apartment_callbacks.apply_cuts()
+	end
+
+	return value
 end
 
 local function hp_apply_selected_apartment_cut_preset(apply_now)
@@ -1310,6 +1331,7 @@ local presets = {
 	hp_set_uniform_cuts = hp_set_uniform_cuts,
 	hp_set_apartment_uniform_cuts = hp_set_apartment_uniform_cuts,
 	hp_clamp_cut_percent = hp_clamp_cut_percent,
+	hp_clamp_apartment_cut_percent = hp_clamp_apartment_cut_percent,
 	hp_get_apartment_max_payout_cut = hp_get_apartment_max_payout_cut,
 	hp_apply_selected_apartment_cut_preset = hp_apply_selected_apartment_cut_preset,
 	hp_refresh_apartment_max_payout = hp_refresh_apartment_max_payout,

@@ -366,6 +366,48 @@ local heist_state = {
 			update_vehicle_dropdown = nil,
 		},
 	},
+	doomsday = {
+		config = {
+			act = 1,
+		},
+		cuts = {
+			player1 = 100,
+			player2 = 0,
+			player3 = 0,
+			player4 = 0,
+		},
+		cut_enabled = {
+			player1 = true,
+			player2 = false,
+			player3 = false,
+			player4 = false,
+		},
+		flags = {
+			max_payout_enabled = false,
+			cut_preset_index = 4,
+		},
+		refs = {
+			act_dropdown = nil,
+			solo_launch_toggle = nil,
+			max_payout_toggle = nil,
+			cut_preset_dropdown = nil,
+			p1_toggle = nil,
+			p2_toggle = nil,
+			p3_toggle = nil,
+			p4_toggle = nil,
+			p1_slider = nil,
+			p2_slider = nil,
+			p3_slider = nil,
+			p4_slider = nil,
+			presets_group = nil,
+		},
+		callbacks = {
+			apply_cuts = nil,
+			set_max_payout = nil,
+			apply_cut_preset = nil,
+			set_selected_act = nil,
+		},
+	},
 }
 
 return heist_state

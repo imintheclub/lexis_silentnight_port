@@ -50,6 +50,14 @@ local apartment_flags = apartment_state.flags
 local apartment_refs = apartment_state.refs
 local apartment_callbacks = apartment_state.callbacks
 
+local doomsday_state = heist_state.doomsday
+local doomsday_config = doomsday_state.config
+local doomsday_cuts = doomsday_state.cuts
+local doomsday_cut_enabled = doomsday_state.cut_enabled
+local doomsday_flags = doomsday_state.flags
+local doomsday_refs = doomsday_state.refs
+local doomsday_callbacks = doomsday_state.callbacks
+
 -- GetMP function
 local function GetMP()
 	local mp_idx = script.globals(MPGlobal).int32
@@ -125,12 +133,21 @@ local hp_heist_presets = {
 		dropdown = nil,
 		name_label = nil,
 	},
+	doomsday = {
+		dir = "",
+		name = "QuickPreset",
+		options = { "(empty)" },
+		selected = 1,
+		dropdown = nil,
+		name_label = nil,
+	},
 	keyboard = { waiting = false, mode = nil },
 }
 
 hp_heist_presets.apartment.dir = hp_heist_presets.root .. "\\Apartment"
 hp_heist_presets.cayo.dir = hp_heist_presets.root .. "\\CayoPerico"
 hp_heist_presets.casino.dir = hp_heist_presets.root .. "\\DiamondCasino"
+hp_heist_presets.doomsday.dir = hp_heist_presets.root .. "\\Doomsday"
 
 -- Forward declarations for functions referenced before their definitions.
 local hp_save_heist_preset
@@ -163,6 +180,9 @@ local function hp_get_preset_state(mode)
 	end
 	if mode == "casino" then
 		return hp_heist_presets.casino
+	end
+	if mode == "doomsday" then
+		return hp_heist_presets.doomsday
 	end
 	return nil
 end
@@ -262,6 +282,7 @@ local PRESET_HEIST_MODE_TO_ID = {
 	apartment = "apartment",
 	cayo = "cayo_perico",
 	casino = "diamond_casino",
+	doomsday = "doomsday",
 }
 
 local function hp_validate_heist_preset(mode, preps)
@@ -270,12 +291,13 @@ local function hp_validate_heist_preset(mode, preps)
 	end
 
 	local expected_heist = PRESET_HEIST_MODE_TO_ID[mode]
-	if expected_heist and preps.heist ~= expected_heist then
+	local is_legacy_doomsday = mode == "doomsday" and preps.heist == nil and preps.schema == nil and preps.act ~= nil
+	if expected_heist and not is_legacy_doomsday and preps.heist ~= expected_heist then
 		return false, "Preset/heist mismatch"
 	end
 
 	local schema = tonumber(preps.schema)
-	if schema ~= PRESET_SCHEMA_VERSION then
+	if schema ~= PRESET_SCHEMA_VERSION and not is_legacy_doomsday then
 		return false, "Unsupported preset schema"
 	end
 
@@ -303,6 +325,10 @@ end
 
 local function hp_clamp_cut_percent(value)
 	return math.floor(hp_clamp_number(value, 0, 300))
+end
+
+local function hp_clamp_doomsday_cut_percent(value)
+	return math.floor(hp_clamp_number(value, 0, 999))
 end
 
 local function hp_clamp_apartment_cut_percent(value)
@@ -346,6 +372,23 @@ local function hp_read_player_cut(preps, player_key, legacy_key, fallback, clamp
 	end
 
 	return math.floor(tonumber(value) or 0)
+end
+
+local function hp_read_player_enabled(preps, player_key, legacy_key, fallback)
+	local player_tbl = preps[player_key]
+	if type(player_tbl) == "table" and type(player_tbl.enabled) == "boolean" then
+		return player_tbl.enabled
+	end
+
+	local legacy = preps[legacy_key]
+	if type(legacy) == "boolean" then
+		return legacy
+	end
+	if tonumber(legacy) then
+		return tonumber(legacy) ~= 0
+	end
+
+	return fallback and true or false
 end
 
 local SAFE_PAYOUT_TARGETS = {
@@ -407,6 +450,9 @@ local function hp_ensure_heist_preset_dirs()
 	end
 	if not dirs.exists(hp_heist_presets.casino.dir) then
 		dirs.create(hp_heist_presets.casino.dir)
+	end
+	if not dirs.exists(hp_heist_presets.doomsday.dir) then
+		dirs.create(hp_heist_presets.doomsday.dir)
 	end
 end
 
@@ -1069,6 +1115,120 @@ local function hp_apply_apartment_preset_data(preps)
 	return true
 end
 
+local function hp_collect_doomsday_preset_data()
+	local cuts = doomsday_cuts or {}
+	local enabled = doomsday_cut_enabled or {}
+
+	local preps = {
+		schema = PRESET_SCHEMA_VERSION,
+		heist = "doomsday",
+		act = math.max(0, (doomsday_config.act or 1) - 1),
+		solo_launch = state.solo_launch.doomsday and true or false,
+		max_payout = doomsday_flags.max_payout_enabled and true or false,
+		presets = math.max(0, (doomsday_flags.cut_preset_index or 1) - 1),
+		player1 = { enabled = enabled.player1 and true or false, cut = cuts.player1 or 0 },
+		player2 = { enabled = enabled.player2 and true or false, cut = cuts.player2 or 0 },
+		player3 = { enabled = enabled.player3 and true or false, cut = cuts.player3 or 0 },
+		player4 = { enabled = enabled.player4 and true or false, cut = cuts.player4 or 0 },
+	}
+
+	return preps
+end
+
+local function hp_apply_doomsday_preset_data(preps)
+	if type(preps) ~= "table" then
+		return false
+	end
+
+	if type(preps.solo_launch) == "boolean" then
+		state.solo_launch.doomsday = preps.solo_launch
+	end
+
+	local act = tonumber(preps.act)
+	if act then
+		local selected_act = math.floor(hp_clamp_number(act + 1, 1, 3))
+		if type(doomsday_callbacks.set_selected_act) == "function" then
+			doomsday_callbacks.set_selected_act(selected_act, true)
+		else
+			doomsday_config.act = selected_act
+		end
+	end
+
+	local preset = tonumber(preps.preset)
+	if not preset then
+		preset = tonumber(preps.presets)
+	end
+	if preset then
+		doomsday_flags.cut_preset_index = math.floor(hp_clamp_number(preset + 1, 1, #APARTMENT_CUT_PRESET_OPTIONS))
+	end
+
+	doomsday_cut_enabled.player1 =
+		hp_read_player_enabled(preps, "player1", "player1_enabled", doomsday_cut_enabled.player1)
+	doomsday_cut_enabled.player2 =
+		hp_read_player_enabled(preps, "player2", "player2_enabled", doomsday_cut_enabled.player2)
+	doomsday_cut_enabled.player3 =
+		hp_read_player_enabled(preps, "player3", "player3_enabled", doomsday_cut_enabled.player3)
+	doomsday_cut_enabled.player4 =
+		hp_read_player_enabled(preps, "player4", "player4_enabled", doomsday_cut_enabled.player4)
+
+	doomsday_cuts.player1 =
+		hp_read_player_cut(preps, "player1", "player1_cut", doomsday_cuts.player1, hp_clamp_doomsday_cut_percent)
+	doomsday_cuts.player2 =
+		hp_read_player_cut(preps, "player2", "player2_cut", doomsday_cuts.player2, hp_clamp_doomsday_cut_percent)
+	doomsday_cuts.player3 =
+		hp_read_player_cut(preps, "player3", "player3_cut", doomsday_cuts.player3, hp_clamp_doomsday_cut_percent)
+	doomsday_cuts.player4 =
+		hp_read_player_cut(preps, "player4", "player4_cut", doomsday_cuts.player4, hp_clamp_doomsday_cut_percent)
+
+	if doomsday_refs.act_dropdown then
+		doomsday_refs.act_dropdown.value = doomsday_config.act
+	end
+	if doomsday_refs.solo_launch_toggle then
+		doomsday_refs.solo_launch_toggle.state = state.solo_launch.doomsday
+	end
+	if doomsday_refs.cut_preset_dropdown then
+		doomsday_refs.cut_preset_dropdown.value = doomsday_flags.cut_preset_index
+	end
+	if doomsday_refs.p1_toggle then
+		doomsday_refs.p1_toggle.state = doomsday_cut_enabled.player1
+	end
+	if doomsday_refs.p2_toggle then
+		doomsday_refs.p2_toggle.state = doomsday_cut_enabled.player2
+	end
+	if doomsday_refs.p3_toggle then
+		doomsday_refs.p3_toggle.state = doomsday_cut_enabled.player3
+	end
+	if doomsday_refs.p4_toggle then
+		doomsday_refs.p4_toggle.state = doomsday_cut_enabled.player4
+	end
+	if doomsday_refs.p1_slider then
+		doomsday_refs.p1_slider.value = doomsday_cuts.player1
+	end
+	if doomsday_refs.p2_slider then
+		doomsday_refs.p2_slider.value = doomsday_cuts.player2
+	end
+	if doomsday_refs.p3_slider then
+		doomsday_refs.p3_slider.value = doomsday_cuts.player3
+	end
+	if doomsday_refs.p4_slider then
+		doomsday_refs.p4_slider.value = doomsday_cuts.player4
+	end
+
+	if type(preps.max_payout) == "boolean" then
+		if type(doomsday_callbacks.set_max_payout) == "function" then
+			doomsday_callbacks.set_max_payout(preps.max_payout, true)
+		else
+			doomsday_flags.max_payout_enabled = preps.max_payout
+		end
+	end
+
+	if doomsday_refs.max_payout_toggle then
+		doomsday_refs.max_payout_toggle.state = doomsday_flags.max_payout_enabled
+	end
+
+	return true
+end
+
 local HP_PRESET_MODE_HANDLERS = {
 	apartment = {
 		collect = hp_collect_apartment_preset_data,
@@ -1081,6 +1241,10 @@ local HP_PRESET_MODE_HANDLERS = {
 	casino = {
 		collect = hp_collect_casino_preset_data,
 		apply = hp_apply_casino_preset_data,
+	},
+	doomsday = {
+		collect = hp_collect_doomsday_preset_data,
+		apply = hp_apply_doomsday_preset_data,
 	},
 }
 
@@ -1331,6 +1495,7 @@ local presets = {
 	hp_set_uniform_cuts = hp_set_uniform_cuts,
 	hp_set_apartment_uniform_cuts = hp_set_apartment_uniform_cuts,
 	hp_clamp_cut_percent = hp_clamp_cut_percent,
+	hp_clamp_doomsday_cut_percent = hp_clamp_doomsday_cut_percent,
 	hp_clamp_apartment_cut_percent = hp_clamp_apartment_cut_percent,
 	hp_get_apartment_max_payout_cut = hp_get_apartment_max_payout_cut,
 	hp_apply_selected_apartment_cut_preset = hp_apply_selected_apartment_cut_preset,

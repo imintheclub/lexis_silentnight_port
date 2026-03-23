@@ -4,6 +4,7 @@
 
 local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
+local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 
 local config = core.config
@@ -39,29 +40,27 @@ end
 local function cluckin_instant_finish()
 	local action_taken = false
 
-	if script.running("circuitblockhack") then
-		script.locals("circuitblockhack", 62).int32 = 2
+	if safe_access.is_script_running("circuitblockhack") then
+		safe_access.set_local_int("circuitblockhack", 62, 2)
 		action_taken = true
 	end
 
-	if script.running("word_hack") then
-		script.locals("word_hack", 106).int32 = 5
+	if safe_access.is_script_running("word_hack") then
+		safe_access.set_local_int("word_hack", 106, 5)
 		action_taken = true
 	end
 
-	if not action_taken and script.running("fm_mission_controller_2020") then
+	if not action_taken and safe_access.is_script_running("fm_mission_controller_2020") then
 		local base = 56223
 		local cash_take_offset = 55173
-		script.locals("fm_mission_controller_2020", cash_take_offset).int32 = 4000000
-		script.locals("fm_mission_controller_2020", base + 1777).int32 = 999999
-		script.locals("fm_mission_controller_2020", base + 1062).int32 = 5
-		script.locals("fm_mission_controller_2020", 48794).int32 = script.locals("fm_mission_controller_2020", 48794).int32
-			| (1 << 7)
+		safe_access.set_local_int("fm_mission_controller_2020", cash_take_offset, 4000000)
+		safe_access.set_local_int("fm_mission_controller_2020", base + 1777, 999999)
+		safe_access.set_local_int("fm_mission_controller_2020", base + 1062, 5)
+		local flags = safe_access.get_local_int("fm_mission_controller_2020", 48794, 0) | (1 << 7)
+		safe_access.set_local_int("fm_mission_controller_2020", 48794, flags)
 		local win_flags = (1 << 9) | (1 << 10) | (1 << 11) | (1 << 12) | (1 << 16)
-		script.locals("fm_mission_controller_2020", base + 1).int32 = script.locals(
-			"fm_mission_controller_2020",
-			base + 1
-		).int32 | win_flags
+		local current = safe_access.get_local_int("fm_mission_controller_2020", base + 1, 0)
+		safe_access.set_local_int("fm_mission_controller_2020", base + 1, current | win_flags)
 		action_taken = true
 	end
 

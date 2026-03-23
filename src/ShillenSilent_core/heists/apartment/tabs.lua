@@ -1,6 +1,7 @@
 local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local native_api = require("ShillenSilent_core.core.native_api")
+local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local danger_groups = require("ShillenSilent_core.shared.danger_groups")
@@ -81,8 +82,8 @@ local function register(heistTab)
 		local apartmentPresetsGroup = hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
 
 		local function apartment_fleeca_hack()
-			if script.running("fm_mission_controller") then
-				script.locals("fm_mission_controller", 12223 + 24).int32 = 7
+			if safe_access.is_script_running("fm_mission_controller") then
+				safe_access.set_local_int("fm_mission_controller", 12223 + 24, 7)
 				if notify then
 					notify.push("Apartment Tools", "Fleeca hack completed", 2000)
 				end
@@ -94,8 +95,8 @@ local function register(heistTab)
 		end
 
 		local function apartment_fleeca_drill()
-			if script.running("fm_mission_controller") then
-				script.locals("fm_mission_controller", 10511 + 11).float = 100.0
+			if safe_access.is_script_running("fm_mission_controller") then
+				safe_access.set_local_float("fm_mission_controller", 10511 + 11, 100.0)
 				if notify then
 					notify.push("Apartment Tools", "Fleeca drill completed", 2000)
 				end
@@ -107,8 +108,8 @@ local function register(heistTab)
 		end
 
 		local function apartment_pacific_hack()
-			if script.running("fm_mission_controller") then
-				script.locals("fm_mission_controller", 10217).int32 = 9
+			if safe_access.is_script_running("fm_mission_controller") then
+				safe_access.set_local_int("fm_mission_controller", 10217, 9)
 				if notify then
 					notify.push("Apartment Tools", "Pacific hack completed", 2000)
 				end
@@ -122,13 +123,13 @@ local function register(heistTab)
 		-- Instant Finish (Pacific Standard)
 		local function apartment_instant_finish_pacific()
 			run_guarded_job("apartment_instant_finish_pacific", function()
-				if script.force_host("fm_mission_controller") then
+				if safe_access.force_host("fm_mission_controller") then
 					util.yield(1000)
-					script.locals("fm_mission_controller", 21457).int32 = 5
-					script.locals("fm_mission_controller", 22136).int32 = 80
-					script.locals("fm_mission_controller", 23081).int32 = 10000000
-					script.locals("fm_mission_controller", 29017).int32 = 99999
-					script.locals("fm_mission_controller", 32541).int32 = 99999
+					safe_access.set_local_int("fm_mission_controller", 21457, 5)
+					safe_access.set_local_int("fm_mission_controller", 22136, 80)
+					safe_access.set_local_int("fm_mission_controller", 23081, 10000000)
+					safe_access.set_local_int("fm_mission_controller", 29017, 99999)
+					safe_access.set_local_int("fm_mission_controller", 32541, 99999)
 					if notify then
 						notify.push("Apartment", "Instant finish triggered (Pacific Standard)", 2000)
 					end
@@ -147,12 +148,12 @@ local function register(heistTab)
 		-- Instant Finish (Other Classics)
 		local function apartment_instant_finish_other()
 			run_guarded_job("apartment_instant_finish_other", function()
-				if script.force_host("fm_mission_controller") then
+				if safe_access.force_host("fm_mission_controller") then
 					util.yield(1000)
-					script.locals("fm_mission_controller", 20395).int32 = 12
-					script.locals("fm_mission_controller", 23081).int32 = 99999
-					script.locals("fm_mission_controller", 29017).int32 = 99999
-					script.locals("fm_mission_controller", 32541).int32 = 99999
+					safe_access.set_local_int("fm_mission_controller", 20395, 12)
+					safe_access.set_local_int("fm_mission_controller", 23081, 99999)
+					safe_access.set_local_int("fm_mission_controller", 29017, 99999)
+					safe_access.set_local_int("fm_mission_controller", 32541, 99999)
 					if notify then
 						notify.push("Apartment", "Instant finish triggered (Other Classics)", 2000)
 					end
@@ -171,7 +172,7 @@ local function register(heistTab)
 		local function apartment_play_unavailable()
 			local player_id = (players and players.user and players.user()) or 0
 			local cooldown_global = 1877303 + 1 + (player_id * 77) + 76
-			script.globals(cooldown_global).int32 = -1
+			safe_access.set_global_int(cooldown_global, -1)
 			if notify then
 				notify.push("Apartment Tools", "Unavailable jobs unlocked", 2000)
 			end
@@ -220,11 +221,11 @@ local function register(heistTab)
 			}
 
 			for i = 0, 4 do
-				account.stats(p .. "HEIST_SAVED_STRAND_" .. i).int32 = root_hashes[i + 1]
-				account.stats(p .. "HEIST_SAVED_STRAND_" .. i .. "_L").int32 = 5
+				safe_access.set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i, root_hashes[i + 1])
+				safe_access.set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i .. "_L", 5)
 			end
 
-			script.globals(ApartmentGlobals.Board).int32 = 22
+			safe_access.set_global_int(ApartmentGlobals.Board, 22)
 			if notify then
 				notify.push("Apartment Tools", "All jobs unlocked. Change session to apply.", 2600)
 			end
@@ -328,21 +329,21 @@ local function register(heistTab)
 			-- Calculate over_cap - if total > 100, we need to compensate
 			local over_cap = total_cut - 100
 			if over_cap > 0 then
-				script.globals(base_global + 1 + 1).int32 = -over_cap
+				safe_access.set_global_int(base_global + 1 + 1, -over_cap)
 			else
-				script.globals(base_global + 1 + 1).int32 = 0
+				safe_access.set_global_int(base_global + 1 + 1, 0)
 			end
 
 			-- Set globals for players 2, 3, 4
-			script.globals(base_global + 1 + 2).int32 = ApartmentCutsValues.player2
-			script.globals(base_global + 1 + 3).int32 = ApartmentCutsValues.player3
-			script.globals(base_global + 1 + 4).int32 = ApartmentCutsValues.player4
+			safe_access.set_global_int(base_global + 1 + 2, ApartmentCutsValues.player2)
+			safe_access.set_global_int(base_global + 1 + 3, ApartmentCutsValues.player3)
+			safe_access.set_global_int(base_global + 1 + 4, ApartmentCutsValues.player4)
 
 			-- Set locals for ALL players (critical fix!)
-			script.globals(base_local + 3008 + 1).int32 = ApartmentCutsValues.player1
-			script.globals(base_local + 3008 + 2).int32 = ApartmentCutsValues.player2
-			script.globals(base_local + 3008 + 3).int32 = ApartmentCutsValues.player3
-			script.globals(base_local + 3008 + 4).int32 = ApartmentCutsValues.player4
+			safe_access.set_global_int(base_local + 3008 + 1, ApartmentCutsValues.player1)
+			safe_access.set_global_int(base_local + 3008 + 2, ApartmentCutsValues.player2)
+			safe_access.set_global_int(base_local + 3008 + 3, ApartmentCutsValues.player3)
+			safe_access.set_global_int(base_local + 3008 + 4, ApartmentCutsValues.player4)
 
 			if notify then
 				notify.push("Apartment Cuts", "Cuts applied", 2000)
@@ -480,26 +481,26 @@ local function register(heistTab)
 		-- 12M Bonus Function
 		local function apartment_12mil_bonus(enable, silent)
 			if enable then
-				account.stats("MPPLY_HEISTFLOWORDERPROGRESS").int32 = 268435455
-				account.stats("MPPLY_AWD_HST_ORDER").bool = false
+				safe_access.set_stat_int("MPPLY_HEISTFLOWORDERPROGRESS", 268435455)
+				safe_access.set_stat_bool("MPPLY_AWD_HST_ORDER", false)
 
-				account.stats("MPPLY_HEISTTEAMPROGRESSBITSET").int32 = 268435455
-				account.stats("MPPLY_AWD_HST_SAME_TEAM").bool = false
+				safe_access.set_stat_int("MPPLY_HEISTTEAMPROGRESSBITSET", 268435455)
+				safe_access.set_stat_bool("MPPLY_AWD_HST_SAME_TEAM", false)
 
-				account.stats("MPPLY_HEISTNODEATHPROGREITSET").int32 = 268435455
-				account.stats("MPPLY_AWD_HST_ULT_CHAL").bool = false
+				safe_access.set_stat_int("MPPLY_HEISTNODEATHPROGREITSET", 268435455)
+				safe_access.set_stat_bool("MPPLY_AWD_HST_ULT_CHAL", false)
 				if not silent and notify then
 					notify.push("Apartment Bonuses", "12M bonus enabled", 2000)
 				end
 			else
-				account.stats("MPPLY_HEISTFLOWORDERPROGRESS").int32 = 134217727
-				account.stats("MPPLY_AWD_HST_ORDER").bool = true
+				safe_access.set_stat_int("MPPLY_HEISTFLOWORDERPROGRESS", 134217727)
+				safe_access.set_stat_bool("MPPLY_AWD_HST_ORDER", true)
 
-				account.stats("MPPLY_HEISTTEAMPROGRESSBITSET").int32 = 134217727
-				account.stats("MPPLY_AWD_HST_SAME_TEAM").bool = true
+				safe_access.set_stat_int("MPPLY_HEISTTEAMPROGRESSBITSET", 134217727)
+				safe_access.set_stat_bool("MPPLY_AWD_HST_SAME_TEAM", true)
 
-				account.stats("MPPLY_HEISTNODEATHPROGREITSET").int32 = 134217727
-				account.stats("MPPLY_AWD_HST_ULT_CHAL").bool = true
+				safe_access.set_stat_int("MPPLY_HEISTNODEATHPROGREITSET", 134217727)
+				safe_access.set_stat_bool("MPPLY_AWD_HST_ULT_CHAL", true)
 				if not silent and notify then
 					notify.push("Apartment Bonuses", "12M bonus disabled", 2000)
 				end

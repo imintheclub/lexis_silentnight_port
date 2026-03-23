@@ -1,4 +1,5 @@
 local core = require("ShillenSilent_core.core.bootstrap")
+local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local run_guarded_job = core.run_guarded_job
@@ -49,10 +50,10 @@ end
 
 local function hp_get_casino_max_payout_cut()
 	local p = GetMP()
-	local approach = account.stats(p .. "H3OPT_APPROACH").int32 or 1
-	local hard_approach = account.stats(p .. "H3_HARD_APPROACH").int32 or 0
+	local approach = safe_access.get_stat_int(p .. "H3OPT_APPROACH", 1)
+	local hard_approach = safe_access.get_stat_int(p .. "H3_HARD_APPROACH", 0)
 	local difficulty = (approach ~= 0 and approach == hard_approach) and 2 or 1
-	local target = account.stats(p .. "H3OPT_TARGET").int32 or 0
+	local target = safe_access.get_stat_int(p .. "H3OPT_TARGET", 0)
 
 	local payouts = {
 		[0] = { 2115000, 2326500 }, -- Cash
@@ -70,10 +71,10 @@ local function hp_get_casino_max_payout_cut()
 	local payout = (payout_by_target[difficulty] or payout_by_target[1]) + 819000
 	local cut = math.floor(max_payout / (payout / 100))
 
-	local buyer = script.globals(1975747).int32 or 0 -- DiamondCasino.Board.Buyer
-	local gunman = account.stats(p .. "H3OPT_CREWWEAP").int32 or 1
-	local driver = account.stats(p .. "H3OPT_CREWDRIVER").int32 or 1
-	local hacker = account.stats(p .. "H3OPT_CREWHACKER").int32 or 1
+	local buyer = safe_access.get_global_int(1975747, 0) -- DiamondCasino.Board.Buyer
+	local gunman = safe_access.get_stat_int(p .. "H3OPT_CREWWEAP", 1)
+	local driver = safe_access.get_stat_int(p .. "H3OPT_CREWDRIVER", 1)
+	local hacker = safe_access.get_stat_int(p .. "H3OPT_CREWHACKER", 1)
 
 	local buyer_fees = {
 		[0] = 0.10,
@@ -115,10 +116,10 @@ local function hp_get_casino_max_payout_cut()
 end
 
 local function apply_casino_cuts()
-	script.globals(CasinoGlobals.Host).int32 = CutsValues.host
-	script.globals(CasinoGlobals.P2).int32 = CutsValues.player2
-	script.globals(CasinoGlobals.P3).int32 = CutsValues.player3
-	script.globals(CasinoGlobals.P4).int32 = CutsValues.player4
+	safe_access.set_global_int(CasinoGlobals.Host, CutsValues.host)
+	safe_access.set_global_int(CasinoGlobals.P2, CutsValues.player2)
+	safe_access.set_global_int(CasinoGlobals.P3, CutsValues.player3)
+	safe_access.set_global_int(CasinoGlobals.P4, CutsValues.player4)
 	if notify then
 		notify.push("Casino Heist", "Cuts applied", 2000)
 	end
@@ -170,16 +171,15 @@ local function casino_autograbber_tick()
 	if not casino_flags.autograbber_enabled then
 		return
 	end
-	if not script.running("fm_mission_controller") then
+	if not safe_access.is_script_running("fm_mission_controller") then
 		return
 	end
 
-	local grab_local = script.locals("fm_mission_controller", CASINO_AUTOGRABBER_GRAB_LOCAL)
-	local grab = grab_local.int32
+	local grab = safe_access.get_local_int("fm_mission_controller", CASINO_AUTOGRABBER_GRAB_LOCAL, 0)
 	if grab == 3 then
-		grab_local.int32 = 4
+		safe_access.set_local_int("fm_mission_controller", CASINO_AUTOGRABBER_GRAB_LOCAL, 4)
 	elseif grab == 4 then
-		script.locals("fm_mission_controller", CASINO_AUTOGRABBER_SPEED_LOCAL).float = 2.0
+		safe_access.set_local_float("fm_mission_controller", CASINO_AUTOGRABBER_SPEED_LOCAL, 2.0)
 	end
 end
 
@@ -228,9 +228,8 @@ local function reset_heist_preps()
 	for i = 1, #reset_pairs do
 		hp_set_stat_for_all_characters(reset_pairs[i][1], reset_pairs[i][2])
 	end
-	account.stats("MPPLY_H3_COOLDOWN").int32 = 0
-
-	script.locals("gb_casino_heist_planning", 212).int32 = 2
+	safe_access.set_stat_int("MPPLY_H3_COOLDOWN", 0)
+	safe_access.set_local_int("gb_casino_heist_planning", 212, 2)
 	if notify then
 		notify.push("Casino Preps", "Preps reset", 2000)
 	end
@@ -239,12 +238,7 @@ end
 -- Tools functions
 local function casino_skip_arcade_setup()
 	local success, result = pcall(function()
-		local stat = account.stats(27227, 1)
-		if stat and stat.bool ~= nil then
-			stat.bool = true
-			return true
-		end
-		return false
+		return safe_access.set_stat_bool(27227, true, 1)
 	end)
 
 	if success and result then
@@ -259,38 +253,38 @@ local function casino_skip_arcade_setup()
 end
 
 local function casino_fix_stuck_keycards()
-	script.locals("fm_mission_controller", 63638).int32 = 5
+	safe_access.set_local_int("fm_mission_controller", 63638, 5)
 	if notify then
 		notify.push("Casino Tools", "Keycards fixed", 2000)
 	end
 end
 
 local function casino_skip_objective()
-	local v = script.locals("fm_mission_controller", 20397).int32
-	script.locals("fm_mission_controller", 20397).int32 = v | (1 << 17)
+	local v = safe_access.get_local_int("fm_mission_controller", 20397, 0)
+	safe_access.set_local_int("fm_mission_controller", 20397, v | (1 << 17))
 	if notify then
 		notify.push("Casino Tools", "Objective skipped", 2000)
 	end
 end
 
 local function casino_fingerprint_hack()
-	script.locals("fm_mission_controller", 54042).int32 = 5
+	safe_access.set_local_int("fm_mission_controller", 54042, 5)
 	if notify then
 		notify.push("Casino Tools", "Fingerprint hack completed", 2000)
 	end
 end
 
 local function casino_instant_keypad_hack()
-	script.locals("fm_mission_controller", 55108).int32 = 5
+	safe_access.set_local_int("fm_mission_controller", 55108, 5)
 	if notify then
 		notify.push("Casino Tools", "Keypad hack completed", 2000)
 	end
 end
 
 local function casino_instant_vault_drill()
-	script.locals("fm_mission_controller", 10551 + 2).int32 = 7
-	script.locals("fm_mission_controller", 10551).int32 = script.locals("fm_mission_controller", 10551).int32
-		| (1 << 12)
+	safe_access.set_local_int("fm_mission_controller", 10551 + 2, 7)
+	local current = safe_access.get_local_int("fm_mission_controller", 10551, 0)
+	safe_access.set_local_int("fm_mission_controller", 10551, current | (1 << 12))
 	if notify then
 		notify.push("Casino Tools", "Vault drill completed", 2000)
 	end
@@ -298,16 +292,16 @@ end
 
 local function casino_remove_cooldown()
 	local p = GetMP()
-	account.stats(p .. "H3_COMPLETEDPOSIX").int32 = -1
-	account.stats("MPPLY_H3_COOLDOWN").int32 = -1
+	safe_access.set_stat_int(p .. "H3_COMPLETEDPOSIX", -1)
+	safe_access.set_stat_int("MPPLY_H3_COOLDOWN", -1)
 	if notify then
 		notify.push("Casino Tools", "Cooldown removed", 2000)
 	end
 end
 
 local function casino_set_team_lives()
-	if script.running("fm_mission_controller") then
-		script.locals("fm_mission_controller", 22126).int32 = -100
+	if safe_access.is_script_running("fm_mission_controller") then
+		safe_access.set_local_int("fm_mission_controller", 22126, -100)
 		if notify then
 			notify.push("Casino Tools", "Team lives set to 100", 2000)
 		end
@@ -319,7 +313,7 @@ local function casino_set_team_lives()
 end
 
 local function casino_instant_finish()
-	if not script.running("fm_mission_controller") then
+	if not safe_access.is_script_running("fm_mission_controller") then
 		if notify then
 			notify.push("Casino Tools", "Casino mission not running", 2000)
 		end
@@ -327,13 +321,11 @@ local function casino_instant_finish()
 	end
 
 	return run_guarded_job("casino_instant_finish", function()
-		if script and script.force_host then
-			script.force_host("fm_mission_controller")
-		end
+		safe_access.force_host("fm_mission_controller")
 		util.yield(1000)
 
 		local p = GetMP()
-		local approach = account.stats(p .. "H3OPT_APPROACH").int32 or 1
+		local approach = safe_access.get_stat_int(p .. "H3OPT_APPROACH", 1)
 		-- CASINO_STEP4_MONEY = 10000000
 		-- APARTMENT_STEP4_MONEY = 10000000
 		-- APARTMENT_STEP5 = 99999
@@ -341,18 +333,18 @@ local function casino_instant_finish()
 
 		if approach == 3 then
 			-- Aggressive approach
-			script.locals("fm_mission_controller", 20395).int32 = 12 -- APARTMENT_FINISH_STEP1 = CASINO_AGGRESSIVE_STEP1
-			script.locals("fm_mission_controller", 20395 + 1740 + 1).int32 = 80 -- APARTMENT_FINISH_STEP3 = APARTMENT_STEP3
-			script.locals("fm_mission_controller", 20395 + 2686).int32 = 10000000 -- APARTMENT_FINISH_STEP4 = CASINO_STEP4_MONEY
-			script.locals("fm_mission_controller", 29016 + 1).int32 = 99999 -- APARTMENT_FINISH_STEP5 = APARTMENT_STEP5
-			script.locals("fm_mission_controller", 32472 + 1 + 68).int32 = 99999 -- APARTMENT_FINISH_STEP6 = APARTMENT_STEP6
+			safe_access.set_local_int("fm_mission_controller", 20395, 12) -- APARTMENT_FINISH_STEP1 = CASINO_AGGRESSIVE_STEP1
+			safe_access.set_local_int("fm_mission_controller", 20395 + 1740 + 1, 80) -- APARTMENT_FINISH_STEP3 = APARTMENT_STEP3
+			safe_access.set_local_int("fm_mission_controller", 20395 + 2686, 10000000) -- APARTMENT_FINISH_STEP4 = CASINO_STEP4_MONEY
+			safe_access.set_local_int("fm_mission_controller", 29016 + 1, 99999) -- APARTMENT_FINISH_STEP5 = APARTMENT_STEP5
+			safe_access.set_local_int("fm_mission_controller", 32472 + 1 + 68, 99999) -- APARTMENT_FINISH_STEP6 = APARTMENT_STEP6
 		else
 			-- Silent & Sneaky or Big Con
-			script.locals("fm_mission_controller", 20395 + 1062).int32 = 5 -- APARTMENT_FINISH_STEP2 = APARTMENT_STEP2
-			script.locals("fm_mission_controller", 20395 + 1740 + 1).int32 = 80 -- APARTMENT_FINISH_STEP3 = APARTMENT_STEP3
-			script.locals("fm_mission_controller", 20395 + 2686).int32 = 10000000 -- APARTMENT_FINISH_STEP4 = APARTMENT_STEP4_MONEY
-			script.locals("fm_mission_controller", 29016 + 1).int32 = 99999 -- APARTMENT_FINISH_STEP5 = APARTMENT_STEP5
-			script.locals("fm_mission_controller", 32472 + 1 + 68).int32 = 99999 -- APARTMENT_FINISH_STEP6 = APARTMENT_STEP6
+			safe_access.set_local_int("fm_mission_controller", 20395 + 1062, 5) -- APARTMENT_FINISH_STEP2 = APARTMENT_STEP2
+			safe_access.set_local_int("fm_mission_controller", 20395 + 1740 + 1, 80) -- APARTMENT_FINISH_STEP3 = APARTMENT_STEP3
+			safe_access.set_local_int("fm_mission_controller", 20395 + 2686, 10000000) -- APARTMENT_FINISH_STEP4 = APARTMENT_STEP4_MONEY
+			safe_access.set_local_int("fm_mission_controller", 29016 + 1, 99999) -- APARTMENT_FINISH_STEP5 = APARTMENT_STEP5
+			safe_access.set_local_int("fm_mission_controller", 32472 + 1 + 68, 99999) -- APARTMENT_FINISH_STEP6 = APARTMENT_STEP6
 		end
 
 		if notify then
@@ -368,15 +360,13 @@ end
 -- Casino Force Ready
 local function casino_force_ready()
 	return run_guarded_job("casino_force_ready", function()
-		if script and script.force_host then
-			script.force_host("fm_mission_controller")
-		end
+		safe_access.force_host("fm_mission_controller")
 		util.yield(1000)
 
 		-- Set ready states for players 2, 3, 4
-		script.globals(1977672).int32 = 1 -- CASINO_READY.PLAYER2 = READY_STATE_HEIST (1)
-		script.globals(1977740).int32 = 1 -- CASINO_READY.PLAYER3 = READY_STATE_HEIST (1)
-		script.globals(1977808).int32 = 1 -- CASINO_READY.PLAYER4 = READY_STATE_HEIST (1)
+		safe_access.set_global_int(1977672, 1) -- CASINO_READY.PLAYER2 = READY_STATE_HEIST (1)
+		safe_access.set_global_int(1977740, 1) -- CASINO_READY.PLAYER3 = READY_STATE_HEIST (1)
+		safe_access.set_global_int(1977808, 1) -- CASINO_READY.PLAYER4 = READY_STATE_HEIST (1)
 
 		if notify then
 			notify.push("Casino Launch", "All players ready", 2000)

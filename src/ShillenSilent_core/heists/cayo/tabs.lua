@@ -7,7 +7,6 @@ local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 local cayo_logic = require("ShillenSilent_core.heists.cayo.logic")
 
 local config = core.config
-local state = core.state
 local cooldown_danger_warning_lines = danger_groups.cooldown_danger_warning_lines
 local heist_skip_cutscene = native_api.heist_skip_cutscene
 local hp_set_uniform_cuts = presets.hp_set_uniform_cuts
@@ -15,7 +14,6 @@ local hp_build_heist_preset_group = presets.hp_build_heist_preset_group
 local hp_options_to_names = presets.hp_options_to_names
 local hp_option_index_by_value = presets.hp_option_index_by_value
 local hp_option_value_by_name = presets.hp_option_value_by_name
-local hp_option_names_range = presets.hp_option_names_range
 
 local CayoConfig = cayo_logic.CayoConfig
 local CayoPrepOptions = cayo_logic.CayoPrepOptions

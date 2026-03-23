@@ -1415,7 +1415,6 @@ ui.render = function()
 	-- Render subtabs for Heist tab (BEFORE clip, so they stay fixed at top)
 	local subtab_bar_height = 0
 	local groups_start_y = contentY
-	local content_intro_t = 1.0
 	if state.content_transition.subtab ~= state.heist_subtab then
 		state.content_transition.subtab = state.heist_subtab
 		state.content_transition.progress = 0.0
@@ -1426,7 +1425,7 @@ ui.render = function()
 		1.0,
 		animator.motion_speed(config.motion.subtab_switch_speed, config.motion.speed_base or 0.16)
 	)
-	content_intro_t = state.content_transition.progress
+	local content_intro_t = state.content_transition.progress
 
 	if ui.currentTab and ui.currentTab.id == "heist" then
 		local subtab_bg_col = render_cache.subtab_bg_col
@@ -1592,7 +1591,7 @@ ui.render = function()
 
 					local itemY = drawY + config.item_height.header_padding + config.space.x3
 					for _, item in ipairs(group.items) do
-						local dd = nil
+						local dd
 						itemY, dd = render_group_item(item, drawX, itemY, col_w, pad_x)
 						if dd then
 							pendingDropdowns[#pendingDropdowns + 1] = dd

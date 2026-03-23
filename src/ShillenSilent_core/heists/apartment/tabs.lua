@@ -23,7 +23,6 @@ local BLIP_SPRITES_HEIST = blip_teleport.BLIP_SPRITES_HEIST
 local heist_skip_cutscene = native_api.heist_skip_cutscene
 local GetMP = presets.GetMP
 local hp_build_heist_preset_group = presets.hp_build_heist_preset_group
-local hp_set_uniform_cuts = presets.hp_set_uniform_cuts
 local hp_options_to_names = presets.hp_options_to_names
 local hp_find_option_index = presets.hp_find_option_index
 local hp_set_apartment_uniform_cuts = presets.hp_set_apartment_uniform_cuts
@@ -79,7 +78,7 @@ local function register(heistTab)
 			apartment_change_session()
 		end)
 
-		local apartmentPresetsGroup = hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
+		hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
 
 		local function apartment_fleeca_hack()
 			if safe_access.is_script_running("fm_mission_controller") then

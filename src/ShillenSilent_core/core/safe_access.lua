@@ -113,19 +113,6 @@ function safe_access.set_local_float(script_name, offset, value)
 	return ok
 end
 
-function safe_access.get_local_float(script_name, offset, fallback)
-	if not has_script_fn("locals") then
-		return fallback
-	end
-	local ok, result = pcall(function()
-		return script.locals(script_name, offset).float
-	end)
-	if not ok or result == nil then
-		return fallback
-	end
-	return result
-end
-
 function safe_access.get_tunable_int(name, fallback)
 	if not has_tunable_fn() then
 		return fallback
@@ -232,36 +219,6 @@ function safe_access.set_stat_bool(stat_name, value, profile)
 		stat.bool = value and true or false
 	end)
 	return ok
-end
-
-function safe_access.set_many_int(writes)
-	if type(writes) ~= "table" then
-		return false
-	end
-
-	local ok_all = true
-	for i = 1, #writes do
-		local write = writes[i]
-		local ok = false
-		if type(write) == "table" then
-			local kind = write.kind
-			local target = write.offset_or_name
-			local value = write.value
-			if kind == "global" then
-				ok = safe_access.set_global_int(target, value)
-			elseif kind == "local" then
-				ok = safe_access.set_local_int(write.script_name, target, value)
-			elseif kind == "stat" then
-				ok = safe_access.set_stat_int(target, value)
-			end
-		end
-
-		if not ok then
-			ok_all = false
-		end
-	end
-
-	return ok_all
 end
 
 return safe_access

@@ -34,7 +34,7 @@ local CASINO_CREW_CUT_TUNABLES = {
 }
 
 -- Enhanced Edition local offsets.
-local CASINO_AUTOGRABBER_GRAB_LOCAL = 10697
+local CASINO_AUTOGRABBER_GRAB_LOCAL = 10295
 local CASINO_AUTOGRABBER_SPEED_LOCAL = CASINO_AUTOGRABBER_GRAB_LOCAL + 14
 
 local casino_crew_cut_backup = {}

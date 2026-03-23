@@ -1,47 +1,26 @@
 -- ---------------------------------------------------------
--- 6. native api
+-- 6. native api (Safe Input Filtering)
 -- ---------------------------------------------------------
 local CONTROL_ACTION_BLOCK_LIST = {
-	0,
-	1,
-	2,
-	3,
-	4,
-	5,
-	6, -- Movement
-	24,
-	25, -- Attack (Left/Right Mouse)
-	30,
-	31,
-	32,
-	33,
-	34,
-	35, -- Move
-	37, -- Weapon Wheel
-	44,
-	45,
-	47,
-	58, -- Cover
-	59,
-	60, -- Veh Move
-	71,
-	72, -- Veh Accel/Brake
-	75, -- Veh Exit
-	140,
-	141,
-	142,
-	143, -- Melee
-	257,
-	258,
-	261,
-	262,
-	263,
-	264,
-	265, -- Attack variants
-	266,
-	267,
-	268, -- More attack
-	27, -- ESC
+	-- ONLY block weapon/attack/scroll inputs.
+	-- DO NOT block movement (0-6, 30-35) or vehicle inputs (59, 60, 71, 72, 75)
+
+	14, -- WEAPON_WHEEL_NEXT (Scroll Down)
+	15, -- WEAPON_WHEEL_PREV (Scroll Up)
+	16, -- SELECT_NEXT_WEAPON
+	17, -- SELECT_PREV_WEAPON
+	24, -- ATTACK (Left Click)
+	25, -- AIM (Right Click)
+	37, -- WEAPON_WHEEL (Tab)
+	140, -- MELEE_ATTACK_LIGHT (R)
+	141, -- MELEE_ATTACK_HEAVY (Q)
+	142, -- MELEE_ATTACK_ALTERNATE (Left Mouse in melee)
+	143, -- MELEE_BLOCK (Space)
+	257, -- ATTACK2
+	258, -- MELEE_ATTACK2
+	261, -- PREV_WEAPON
+	262, -- NEXT_WEAPON
+	338, -- VEH_FLY_ATTACK
 }
 
 local function disable_control_action(keys)

@@ -355,7 +355,7 @@ local function register(heistTab)
 			"apartment_cut_p1",
 			"Host Cut %",
 			0,
-			300,
+			3000,
 			ApartmentCutsValues.player1,
 			function(val)
 				ApartmentCutsValues.player1 = math.floor(val)
@@ -368,7 +368,7 @@ local function register(heistTab)
 			"apartment_cut_p2",
 			"Player 2 Cut %",
 			0,
-			300,
+			3000,
 			ApartmentCutsValues.player2,
 			function(val)
 				ApartmentCutsValues.player2 = math.floor(val)
@@ -381,7 +381,7 @@ local function register(heistTab)
 			"apartment_cut_p3",
 			"Player 3 Cut %",
 			0,
-			300,
+			3000,
 			ApartmentCutsValues.player3,
 			function(val)
 				ApartmentCutsValues.player3 = math.floor(val)
@@ -394,7 +394,7 @@ local function register(heistTab)
 			"apartment_cut_p4",
 			"Player 4 Cut %",
 			0,
-			300,
+			3000,
 			ApartmentCutsValues.player4,
 			function(val)
 				ApartmentCutsValues.player4 = math.floor(val)

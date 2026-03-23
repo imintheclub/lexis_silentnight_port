@@ -1,0 +1,47 @@
+name: Lua CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  format-and-syntax:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed Lua files
+        id: changed
+        uses: tj-actions/changed-files@v46
+        with:
+          files: |
+            src/**/*.lua
+
+      - name: Setup StyLua
+        if: steps.changed.outputs.any_changed == 'true'
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: false
+
+      - name: Check formatting (changed files only)
+        if: steps.changed.outputs.any_changed == 'true'
+        run: stylua --check ${{ steps.changed.outputs.all_changed_files }}
+
+      - name: Install Lua compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+
+      - name: Syntax check all src Lua files
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            luac5.4 -p "$file"
+          done < <(find src -type f -name '*.lua' -print0)

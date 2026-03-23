@@ -9,7 +9,7 @@ local config = core.config
 local ensure_core_dirs = core.ensure_core_dirs
 local load_tab_icon = core.load_tab_icon
 
-local function ensure_assets()
+function ui.ensure_assets()
 	if state.font_load_attempted then
 		return
 	end
@@ -30,7 +30,7 @@ local function ensure_assets()
 	end
 
 	for i = 1, #font_candidates do
-		local status, font = pcall(gui.load_font, font_candidates[i], 50.0)
+		local status, font = pcall(gui.load_font, font_candidates[i], 64.0)
 		if status and font then
 			state.fonts.regular = font
 			break
@@ -40,6 +40,14 @@ end
 
 local function vec(x, y)
 	return vec2(x, y)
+end
+
+local function snap(v)
+	return math.floor((v or 0) + 0.5)
+end
+
+local function snap_rect(x, y, w, h)
+	return snap(x), snap(y), math.max(1, snap(w)), math.max(1, snap(h))
 end
 
 local function get_win_offset()
@@ -103,7 +111,8 @@ local function render_rect(x, y, w, h, col, rounding)
 		return
 	end
 	local ox, oy = get_win_offset()
-	local r = gui.rect(vec(x + ox, y + oy), vec(w, h))
+	local sx, sy, sw, sh = snap_rect(x + ox, y + oy, w, h)
+	local r = gui.rect(vec(sx, sy), vec(sw, sh))
 	r:color(to_gui_color(col, true))
 	r:filled()
 	if rounding then
@@ -117,7 +126,8 @@ local function render_outline(x, y, w, h, col, thickness, rounding)
 		return
 	end
 	local ox, oy = get_win_offset()
-	local r = gui.rect(vec(x + ox, y + oy), vec(w, h))
+	local sx, sy, sw, sh = snap_rect(x + ox, y + oy, w, h)
+	local r = gui.rect(vec(sx, sy), vec(sw, sh))
 	r:color(to_gui_color(col, true))
 	r:outline(thickness or 1, to_gui_color(col, true))
 	if rounding then
@@ -131,7 +141,10 @@ local function render_text(str, x, y, size, col, align)
 		return
 	end
 	local ox, oy = get_win_offset()
-	local t = gui.text(tostring(str)):position(vec(x + ox, y + oy)):color(to_gui_color(col, true)):scale(size or 1.0)
+	local t = gui.text(tostring(str))
+		:position(vec(snap(x + ox), snap(y + oy)))
+		:color(to_gui_color(col, true))
+		:scale(size or 1.0)
 
 	if state.fonts.regular then
 		t:font(state.fonts.regular)
@@ -414,9 +427,11 @@ end
 local function render_card(x, y, w, h, bg_col, border_col, rounding)
 	local r = rounding or config.radius.md
 	local shadow_y = config.space.x1
+	render_rect(x, y + (shadow_y * 2), w, h, { r = 0, g = 0, b = 0, a = 8 }, r)
 	render_rect(x, y + shadow_y, w, h, config.colors.card_shadow, r)
 	render_rect(x, y, w, h, bg_col or config.colors.bg_panel, r)
 	render_outline(x, y, w, h, border_col or config.colors.border, 1, r)
+	render_rect(x + 1, y + 1, math.max(1, w - 2), 1, { r = 255, g = 255, b = 255, a = 10 }, config.radius.full)
 end
 
 local function button_variant_for(btn)
@@ -872,6 +887,8 @@ end
 
 local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message)
 	local hovered = is_button_hovered(btnX, btnY, btnW, btnH)
+	local shadow_alpha = hovered and 20 or 10
+	render_rect(btnX, btnY + config.space.x1, btnW, btnH, { r = 0, g = 0, b = 0, a = shadow_alpha }, config.radius.md)
 
 	if hovered and state.mouse.clicked and not state.active_dropdown then
 		if btn.disabled then
@@ -889,11 +906,19 @@ local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message
 	if style.border.a and style.border.a > 0 then
 		render_outline(btnX, btnY, btnW, btnH, style.border, 1, config.radius.md)
 	end
+	render_rect(
+		btnX + 1,
+		btnY + 1,
+		math.max(1, btnW - 2),
+		1,
+		{ r = 255, g = 255, b = 255, a = hovered and 16 or 8 },
+		config.radius.full
+	)
 
 	return style
 end
 
-local BUTTON_TEXT_Y_BIAS = 1
+local BUTTON_TEXT_Y_BIAS = 0
 
 local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSize, textColor)
 	if state.animation.progress < 0.01 then
@@ -919,10 +944,10 @@ local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSiz
 
 	if gui.push_clip and gui.pop_clip then
 		gui.push_clip(vec(btnX + ox, btnY + oy), vec(btnW, btnH))
-		text:position(vec(textX + ox, textY + oy)):draw()
+		text:position(vec(snap(textX + ox), snap(textY + oy))):draw()
 		gui.pop_clip()
 	else
-		text:position(vec(textX + ox, textY + oy)):draw()
+		text:position(vec(snap(textX + ox), snap(textY + oy))):draw()
 	end
 end
 
@@ -965,7 +990,7 @@ end
 local function draw_slider_item(item, x, y, w, original_y)
 	local pad_x = config.space.x5
 	local barW = w - (pad_x * 2)
-	local barH = config.space.x1
+	local barH = math.max(3, config.space.x1 + 1)
 	local barX = x + pad_x
 	local barY = y + config.space.x8
 
@@ -1040,6 +1065,7 @@ local function draw_slider_item(item, x, y, w, original_y)
 
 	-- Main circle
 	render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.text_on_accent, config.radius.full)
+	render_outline(thumbX, thumbY, thumbSize, thumbSize, config.colors.accent, 1, config.radius.full)
 end
 
 local function draw_dropdown_item(item, x, y, w, original_y)
@@ -1085,6 +1111,7 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	local boxBorder = box_active and config.colors.accent_hover or config.colors.border
 	local boxText = box_active and config.colors.text_on_accent or config.colors.text_sec
 	local boxArrow = box_active and config.colors.text_on_accent or config.colors.text_dim
+	render_rect(boxX, boxY + config.space.x1, boxW, boxH, { r = 0, g = 0, b = 0, a = 8 }, config.radius.md)
 	render_rect(boxX, boxY, boxW, boxH, boxBg, config.radius.md)
 	render_outline(boxX, boxY, boxW, boxH, boxBorder, 1, config.radius.md)
 	local selected = item.options[item.value] or ""
@@ -1157,7 +1184,7 @@ end
 -- ---------------------------------------------------------
 
 ui.render = function()
-	ensure_assets()
+	ui.ensure_assets()
 	update_input()
 	animator.frame = animator.frame + 1
 	if animator.frame % 240 == 0 then
@@ -1587,6 +1614,18 @@ ui.render = function()
 		end
 		state.dropdown_just_opened = false
 	end
+
+	-- [INJECTED] ShillenSilent Version Watermark (Top Left)
+	local wm_x = config.origin_x + config.space.x2
+	local wm_y = config.origin_y + config.space.x2
+	local wm_scale = config.font_scale_small or 1.0
+	local wm_col = { r = 0, g = 0, b = 0, a = 255 }
+	render_text("ShillenSilent v0.0.8", wm_x, wm_y, wm_scale, wm_col, "left")
+
+	-- [INJECTED] Credits Watermark (Bottom Left)
+	local credits_x = config.origin_x + config.space.x2
+	local credits_y = config.origin_y + dynamicBodyH - (config.space.x2 * 2)
+	render_text("Thank you dustyideas. shillen000, & SilentSalo", credits_x, credits_y, wm_scale, wm_col, "left")
 end
 
 return ui

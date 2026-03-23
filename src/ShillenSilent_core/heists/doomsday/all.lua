@@ -579,6 +579,8 @@ local function register(heistTab)
 	ui.label(gDoomsdayInfo, "2 transactions in 30 min possible", config.colors.text_sec)
 	ui.label(gDoomsdayInfo, "Heist cooldown: unknown", config.colors.text_sec)
 
+	doomsday_refs.presets_group = hp_build_heist_preset_group(heistTab, "doomsday", "doomsday", "doomsday")
+
 	local gDoomsdayPreps = ui.group(heistTab, "Prep Presets", nil, nil, nil, nil, "doomsday")
 	doomsday_refs.act_dropdown = ui.dropdown(
 		gDoomsdayPreps,
@@ -591,53 +593,27 @@ local function register(heistTab)
 			doomsday_set_selected_act(selected, true)
 		end
 	)
-
-	ui.button_pair(
-		gDoomsdayPreps,
-		"doomsday_preset_act1",
-		"Preset Act I",
-		function()
-			doomsday_complete_preps(1)
-		end,
-		"doomsday_preset_act2",
-		"Preset Act II",
-		function()
-			doomsday_complete_preps(2)
-		end
-	)
-	ui.button_pair(
-		gDoomsdayPreps,
-		"doomsday_preset_act3",
-		"Preset Act III",
-		function()
-			doomsday_complete_preps(3)
-		end,
-		"doomsday_apply_selected_act",
-		"Apply Selected Act",
-		function()
-			doomsday_complete_preps(DoomsdayConfig.act)
-		end
-	)
+	ui.button(gDoomsdayPreps, "doomsday_apply_selected_act", "Apply Selected Act", function()
+		doomsday_complete_preps(DoomsdayConfig.act)
+	end)
 	ui.button_pair(
 		gDoomsdayPreps,
 		"doomsday_reset",
-		"Reset Doomsday Heist",
+		"Reset to Act I Start",
 		function()
 			doomsday_reset_progress()
 		end,
 		"doomsday_reset_preps",
-		"Reset Preps",
+		"Clear All Prep Progress",
 		function()
 			doomsday_reset_preps()
 		end
 	)
-	ui.button(gDoomsdayPreps, "doomsday_reload_board", "Reload Board/Screen", function()
+	ui.button(gDoomsdayPreps, "doomsday_reload_board", "Reload Planning Board", function()
 		if doomsday_reload_board(true) and notify then
 			notify.push("Doomsday", "Planning board reloaded", 2000)
 		end
 	end)
-
-	doomsday_refs.presets_group = hp_build_heist_preset_group(heistTab, "doomsday", "doomsday", "doomsday")
 
 	local gDoomsdayLaunch = ui.group(heistTab, "Launch", nil, nil, nil, nil, "doomsday")
 	doomsday_refs.solo_launch_toggle = ui.toggle(
@@ -657,7 +633,7 @@ local function register(heistTab)
 			doomsday_force_ready()
 		end,
 		"doomsday_launch_reset_manual",
-		"Launch Reset",
+		"Reset Solo Launch Overrides",
 		function()
 			doomsday_manual_launch_reset()
 		end

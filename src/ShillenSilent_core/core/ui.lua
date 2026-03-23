@@ -163,6 +163,53 @@ local function render_text(str, x, y, size, col, align)
 	return t
 end
 
+local function measure_text_width(value, draw_size)
+	if not gui.text_size then
+		return nil
+	end
+
+	local size = gui.text_size(value, draw_size, { font = state.fonts.regular })
+	if not size then
+		return nil
+	end
+	return size.x
+end
+
+local function text_with_ellipsis(value, max_width, draw_size)
+	local text = tostring(value or "")
+	if text == "" then
+		return ""
+	end
+	if max_width <= 0 then
+		return ""
+	end
+
+	local width = measure_text_width(text, draw_size)
+	if width and width <= max_width then
+		return text
+	end
+
+	local ellipsis = "..."
+	local ellipsis_width = measure_text_width(ellipsis, draw_size) or (draw_size * 3.0)
+	if ellipsis_width >= max_width then
+		return ""
+	end
+
+	local low, high = 0, #text
+	while low < high do
+		local mid = math.floor((low + high + 1) / 2)
+		local candidate = text:sub(1, mid) .. ellipsis
+		local candidate_width = measure_text_width(candidate, draw_size)
+		if candidate_width and candidate_width <= max_width then
+			low = mid
+		else
+			high = mid - 1
+		end
+	end
+
+	return text:sub(1, low) .. ellipsis
+end
+
 local function lerp(a, b, t)
 	return a + (b - a) * t
 end
@@ -590,9 +637,10 @@ local HEIST_GROUP_LAYOUTS = {
 	},
 	[3] = { -- Doomsday
 		["Info"] = { col = 1, order = 1 },
-		["Prep Presets"] = { col = 1, order = 2 },
-		["Launch"] = { col = 2, order = 1 },
-		["Cuts"] = { col = 2, order = 2 },
+		["Presets (JSON)"] = { col = 1, order = 2 },
+		["Prep Presets"] = { col = 2, order = 1 },
+		["Launch"] = { col = 2, order = 2 },
+		["Cuts"] = { col = 2, order = 3 },
 		["Tools"] = { col = 3, order = 1 },
 		["Teleport"] = { col = 3, order = 2 },
 	},
@@ -1115,7 +1163,9 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	render_rect(boxX, boxY, boxW, boxH, boxBg, config.radius.md)
 	render_outline(boxX, boxY, boxW, boxH, boxBorder, 1, config.radius.md)
 	local selected = item.options[item.value] or ""
-	render_text(selected, boxX + config.space.x3, boxY + config.space.x1, config.font_scale_body, boxText)
+	local selected_max_w = boxW - config.space.x9
+	local selected_text = text_with_ellipsis(selected, selected_max_w, config.font_scale_body)
+	render_text(selected_text, boxX + config.space.x3, boxY + config.space.x1, config.font_scale_body, boxText)
 
 	-- Dropdown Arrow (ASCII-safe frames to simulate rotation)
 	local arrowFrames = { "v", ">", "^" }
@@ -1595,7 +1645,9 @@ ui.render = function()
 					end
 					optTextCol = config.colors.text_on_accent
 				end
-				render_text(opt, dd.x + config.space.x3, optY + config.space.x1, config.font_scale_body, optTextCol)
+				local option_max_w = dd.w - config.space.x6
+				local option_text = text_with_ellipsis(opt, option_max_w, config.font_scale_body)
+				render_text(option_text, dd.x + config.space.x3, optY + config.space.x1, config.font_scale_body, optTextCol)
 			end
 
 			gui.pop_clip()

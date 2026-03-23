@@ -2,12 +2,14 @@ local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
+local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 local agency_logic = require("ShillenSilent_core.heists.agency.logic")
 
 local config = core.config
 local hp_options_to_names = presets.hp_options_to_names
 local hp_option_index_by_value = presets.hp_option_index_by_value
 local hp_option_value_by_name = presets.hp_option_value_by_name
+local build_skip_cooldown_danger_group = danger_groups.build_skip_cooldown_danger_group
 
 local agency_state = heist_state.agency
 local AgencyConfig = agency_state.config
@@ -46,19 +48,9 @@ local function register(heistTab)
 			AgencyConfig.contract = hp_option_value_by_name(AgencyPrepOptions.contracts, opt, AgencyConfig.contract)
 		end
 	)
-	ui.button_pair(
-		gAgencyPreps,
-		"agency_apply_preps",
-		"Apply & Complete Preps",
-		function()
-			agency_apply_and_complete_preps()
-		end,
-		"agency_kill_cooldowns",
-		"Kill Cooldowns",
-		function()
-			agency_kill_cooldowns()
-		end
-	)
+	ui.button(gAgencyPreps, "agency_apply_preps", "Apply & Complete Preps", function()
+		agency_apply_and_complete_preps()
+	end)
 
 	local gAgencyMisc = ui.group(heistTab, "Misc", nil, nil, nil, nil, "agency")
 	ui.button_pair(
@@ -102,6 +94,10 @@ local function register(heistTab)
 			agency_instant_finish_new()
 		end
 	)
+
+	build_skip_cooldown_danger_group(heistTab, "agency", "agency_kill_cooldowns", function()
+		agency_kill_cooldowns()
+	end)
 
 	local gAgencyPayout = ui.group(heistTab, "Payout", nil, nil, nil, nil, "agency")
 	agency_refs.payout_slider = ui.slider(

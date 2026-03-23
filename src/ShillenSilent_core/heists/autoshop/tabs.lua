@@ -2,12 +2,14 @@ local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
+local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 local autoshop_logic = require("ShillenSilent_core.heists.autoshop.logic")
 
 local config = core.config
 local hp_options_to_names = presets.hp_options_to_names
 local hp_option_index_by_value = presets.hp_option_index_by_value
 local hp_option_value_by_name = presets.hp_option_value_by_name
+local build_skip_cooldown_danger_group = danger_groups.build_skip_cooldown_danger_group
 
 local autoshop_state = heist_state.autoshop
 local AutoshopPrepOptions = autoshop_state.prep_options
@@ -95,7 +97,8 @@ local function register(heistTab)
 			autoshop_instant_finish_new()
 		end
 	)
-	ui.button(gAutoshopMisc, "autoshop_kill_cooldown", "Kill Cooldown", function()
+
+	build_skip_cooldown_danger_group(heistTab, "autoshop", "autoshop_kill_cooldown", function()
 		autoshop_kill_cooldowns()
 	end)
 

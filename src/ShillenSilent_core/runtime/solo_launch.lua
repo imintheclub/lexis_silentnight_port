@@ -99,6 +99,10 @@ local function solo_launch_reset_doomsday()
 	return true
 end
 
+local function manual_reset_doomsday_launch()
+	return solo_launch_reset_doomsday()
+end
+
 local function solo_launch_reset_apartment()
 	local value = hp_get_launcher_value()
 	if not value then
@@ -126,6 +130,7 @@ local solo_launch = {
 	solo_launch_casino_setup = solo_launch_casino_setup,
 	solo_launch_reset_casino = solo_launch_reset_casino,
 	solo_launch_reset_doomsday = solo_launch_reset_doomsday,
+	manual_reset_doomsday_launch = manual_reset_doomsday_launch,
 	solo_launch_reset_apartment = solo_launch_reset_apartment,
 }
 

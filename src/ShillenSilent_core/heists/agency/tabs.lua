@@ -1,0 +1,152 @@
+local core = require("ShillenSilent_core.core.bootstrap")
+local ui = require("ShillenSilent_core.core.ui")
+local presets = require("ShillenSilent_core.shared.presets_and_shared")
+local heist_state = require("ShillenSilent_core.shared.heist_state")
+local agency_logic = require("ShillenSilent_core.heists.agency.logic")
+
+local config = core.config
+local hp_options_to_names = presets.hp_options_to_names
+local hp_option_index_by_value = presets.hp_option_index_by_value
+local hp_option_value_by_name = presets.hp_option_value_by_name
+
+local agency_state = heist_state.agency
+local AgencyConfig = agency_state.config
+local AgencyPrepOptions = agency_state.prep_options
+local agency_flags = agency_state.flags
+local agency_refs = agency_state.refs
+local agency_apply_and_complete_preps = agency_logic.agency_apply_and_complete_preps
+local agency_kill_cooldowns = agency_logic.agency_kill_cooldowns
+local agency_apply_payout = agency_logic.agency_apply_payout
+local agency_teleport_entrance = agency_logic.agency_teleport_entrance
+local agency_teleport_computer = agency_logic.agency_teleport_computer
+local agency_teleport_mission = agency_logic.agency_teleport_mission
+local agency_collect_safe = agency_logic.agency_collect_safe
+local agency_instant_finish_old = agency_logic.agency_instant_finish_old
+local agency_instant_finish_new = agency_logic.agency_instant_finish_new
+local agency_refresh_collect_safe_state = agency_logic.agency_refresh_collect_safe_state
+
+local function register(heistTab)
+	if type(heistTab) ~= "table" then
+		return nil
+	end
+
+	local gAgencyInfo = ui.group(heistTab, "Info", nil, nil, nil, 140, "agency")
+	ui.label(gAgencyInfo, "Agency", config.colors.accent)
+	ui.label(gAgencyInfo, "Max transaction: $2,500,000", config.colors.text_main)
+	ui.label(gAgencyInfo, "Transaction cooldown: 20 min", config.colors.text_sec)
+
+	local gAgencyPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "agency")
+	agency_refs.contract_dropdown = ui.dropdown(
+		gAgencyPreps,
+		"agency_contract",
+		"Contract",
+		hp_options_to_names(AgencyPrepOptions.contracts),
+		hp_option_index_by_value(AgencyPrepOptions.contracts, AgencyConfig.contract, 1),
+		function(opt)
+			AgencyConfig.contract = hp_option_value_by_name(AgencyPrepOptions.contracts, opt, AgencyConfig.contract)
+		end
+	)
+	ui.button_pair(
+		gAgencyPreps,
+		"agency_apply_preps",
+		"Apply & Complete Preps",
+		function()
+			agency_apply_and_complete_preps()
+		end,
+		"agency_kill_cooldowns",
+		"Kill Cooldowns",
+		function()
+			agency_kill_cooldowns()
+		end
+	)
+
+	local gAgencyMisc = ui.group(heistTab, "Misc", nil, nil, nil, nil, "agency")
+	ui.button_pair(
+		gAgencyMisc,
+		"agency_tp_entrance",
+		"Teleport to Entrance",
+		function()
+			agency_teleport_entrance()
+		end,
+		"agency_tp_computer",
+		"Teleport to Computer",
+		function()
+			agency_teleport_computer()
+		end
+	)
+	ui.button_pair(
+		gAgencyMisc,
+		"agency_tp_mission",
+		"Teleport to Mission",
+		function()
+			agency_teleport_mission()
+		end,
+		"agency_collect_safe",
+		"Collect Safe",
+		function()
+			agency_collect_safe()
+		end
+	)
+	agency_refs.collect_safe_button = gAgencyMisc.items[#gAgencyMisc.items].right
+
+	ui.button_pair(
+		gAgencyMisc,
+		"agency_instant_finish_old",
+		"Instant Finish (Old)",
+		function()
+			agency_instant_finish_old()
+		end,
+		"agency_instant_finish_new",
+		"Instant Finish (New)",
+		function()
+			agency_instant_finish_new()
+		end
+	)
+
+	local gAgencyPayout = ui.group(heistTab, "Payout", nil, nil, nil, nil, "agency")
+	agency_refs.payout_slider = ui.slider(
+		gAgencyPayout,
+		"agency_payout",
+		"Payout",
+		0,
+		2500000,
+		AgencyConfig.payout,
+		function(val)
+			AgencyConfig.payout = math.floor(val)
+		end,
+		nil,
+		50000
+	)
+	ui.button_pair(
+		gAgencyPayout,
+		"agency_payout_max",
+		"Max",
+		function()
+			AgencyConfig.payout = 2500000
+			if agency_refs.payout_slider then
+				agency_refs.payout_slider.value = AgencyConfig.payout
+			end
+			if notify then
+				notify.push("Agency", "Payout set to max", 2000)
+			end
+		end,
+		"agency_payout_apply",
+		"Apply Payout",
+		function()
+			agency_apply_payout()
+		end
+	)
+
+	agency_refresh_collect_safe_state()
+	if not agency_flags.collect_safe_ee_only and notify then
+		notify.push("Agency", "Collect Safe disabled (EE only)", 2200)
+	end
+
+	return heistTab
+end
+
+local agency_tabs = {
+	register = register,
+}
+
+return agency_tabs

@@ -210,6 +210,23 @@ local casino_prep_options = {
 	},
 }
 
+local agency_prep_options = {
+	contracts = {
+		{ name = "None", value = 3 },
+		{ name = "Nightclub", value = 4 },
+		{ name = "Marina", value = 12 },
+		{ name = "Nightlife Leak", value = 28 },
+		{ name = "Country Club", value = 60 },
+		{ name = "Guest List", value = 123 },
+		{ name = "High Soc. Leak", value = 254 },
+		{ name = "Davis", value = 508 },
+		{ name = "Ballas", value = 1020 },
+		{ name = "Sou. Cen. Leak", value = 2044 },
+		{ name = "Studio Time", value = 2045 },
+		{ name = "Don't # W. Dre", value = 4095 },
+	},
+}
+
 local heist_state = {
 	apartment = {
 		cuts = {
@@ -406,6 +423,27 @@ local heist_state = {
 			set_max_payout = nil,
 			apply_cut_preset = nil,
 			set_selected_act = nil,
+		},
+	},
+	agency = {
+		prep_options = agency_prep_options,
+		config = {
+			contract = 3,
+			payout = 1000000,
+		},
+		flags = {
+			collect_safe_ee_only = true,
+		},
+		refs = {
+			contract_dropdown = nil,
+			payout_slider = nil,
+			collect_safe_button = nil,
+		},
+		callbacks = {
+			apply_preps = nil,
+			kill_cooldowns = nil,
+			apply_payout = nil,
+			instant_finish = nil,
 		},
 	},
 }

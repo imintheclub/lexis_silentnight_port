@@ -609,8 +609,8 @@ local BUTTON_COLOR_STYLES = {
 	},
 }
 
-local HEIST_SUBTAB_NAMES = { "Cayo", "Casino", "Doomsday", "Apartment", "Cluckin" }
-local HEIST_SUBTAB_KEYS = { "cayo", "casino", "doomsday", "apartment", "cluckin" }
+local HEIST_SUBTAB_NAMES = { "Cayo", "Casino", "Doomsday", "Apartment", "Agency", "Cluckin" }
+local HEIST_SUBTAB_KEYS = { "cayo", "casino", "doomsday", "apartment", "agency", "cluckin" }
 
 -- Legacy visual order hints. Used only to flatten groups into a stable sequence.
 local HEIST_GROUP_LAYOUTS = {
@@ -655,6 +655,13 @@ local HEIST_GROUP_LAYOUTS = {
 		["Instant Finish"] = { col = 3, order = 2 },
 		["Teleport"] = { col = 3, order = 3 },
 		["DANGER"] = { col = 3, order = 4 },
+	},
+	[5] = { -- Agency
+		["Info"] = { col = 1, order = 1 },
+		["Presets (JSON)"] = { col = 1, order = 2 },
+		["Preps"] = { col = 2, order = 1 },
+		["Payout"] = { col = 2, order = 2 },
+		["Misc"] = { col = 3, order = 1 },
 	},
 }
 
@@ -1678,12 +1685,12 @@ ui.render = function()
 	local wm_y = config.origin_y + config.space.x2
 	local wm_scale = config.font_scale_small or 1.0
 	local wm_col = { r = 0, g = 0, b = 0, a = 255 }
-	render_text("ShillenSilent v0.0.8", wm_x, wm_y, wm_scale, wm_col, "left")
+	render_text("ShillenSilent v0.0.9", wm_x, wm_y, wm_scale, wm_col, "left")
 
 	-- [INJECTED] Credits Watermark (Bottom Left)
 	local credits_x = config.origin_x + config.space.x2
 	local credits_y = config.origin_y + dynamicBodyH - (config.space.x2 * 2)
-	render_text("Thank you dustyideas. shillen000, & SilentSalo", credits_x, credits_y, wm_scale, wm_col, "left")
+	render_text("Thank you dustyideas, shillen000, & SilentSalo", credits_x, credits_y, wm_scale, wm_col, "left")
 end
 
 return ui

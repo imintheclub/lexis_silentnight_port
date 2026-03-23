@@ -1411,6 +1411,17 @@ ui.render = function()
 	local contentY = config.content_area.y + config.content_margin
 	local contentW = config.content_area.w - (config.content_margin * 2)
 	local contentH = config.content_area.h - (config.content_margin * 2)
+	local layout_cfg = config.layout or {}
+	local column_gap = layout_cfg.column_gap or config.space.x4
+	local fixed_col_w = layout_cfg.fixed_column_w or math.max(1, math.floor((contentW - (2 * column_gap)) / 3))
+	local max_columns = layout_cfg.max_columns or 3
+	local column_count = math.floor((contentW + column_gap) / (fixed_col_w + column_gap))
+	if column_count < 1 then
+		column_count = 1
+	end
+	if column_count > max_columns then
+		column_count = max_columns
+	end
 
 	-- Render subtabs for Heist tab (BEFORE clip, so they stay fixed at top)
 	local subtab_bar_height = 0
@@ -1433,10 +1444,14 @@ ui.render = function()
 		local subtab_text_col = render_cache.subtab_text_col
 		local subtab_names = HEIST_SUBTAB_NAMES
 		local subtab_count = #subtab_names
-		local subtab_h = config.space.x9
+		local compact_subtabs = (column_count == 1)
+		local subtab_h = compact_subtabs and config.space.x8 or config.space.x9
 		local subtab_gap = config.space.x2
 		local subtab_w = (contentW - (subtab_count - 1) * subtab_gap) / subtab_count
 		local subtab_y = contentY
+		local subtab_text_size = compact_subtabs and config.font_scale_small or config.font_scale_body
+		local subtab_text_pad_x = compact_subtabs and config.space.x2 or config.space.x3
+		local subtab_text_pad_y = compact_subtabs and config.space.x1_5 or config.space.x1
 
 		for i, name in ipairs(subtab_names) do
 			local subtab_x = contentX + (i - 1) * (subtab_w + subtab_gap)
@@ -1466,11 +1481,16 @@ ui.render = function()
 
 			render_rect(subtab_x, subtab_y, subtab_w, subtab_h, subtab_bg_col, config.radius.md)
 			render_outline(subtab_x, subtab_y, subtab_w, subtab_h, subtab_border_col, 1, config.radius.md)
+			local label = name
+			if compact_subtabs then
+				local label_max_w = math.max(1, subtab_w - (subtab_text_pad_x * 2))
+				label = text_with_ellipsis(name, label_max_w, subtab_text_size)
+			end
 			render_text(
-				name,
-				subtab_x + config.space.x3,
-				subtab_y + config.space.x1,
-				config.font_scale_body,
+				label,
+				subtab_x + subtab_text_pad_x,
+				subtab_y + subtab_text_pad_y,
+				subtab_text_size,
 				subtab_text_col
 			)
 		end
@@ -1506,18 +1526,6 @@ ui.render = function()
 	end
 
 	if #activeGroups > 0 then
-		local layout_cfg = config.layout or {}
-		local column_gap = layout_cfg.column_gap or config.space.x4
-		local fixed_col_w = layout_cfg.fixed_column_w or math.max(1, math.floor((contentW - (2 * column_gap)) / 3))
-		local max_columns = layout_cfg.max_columns or 3
-		local column_count = math.floor((contentW + column_gap) / (fixed_col_w + column_gap))
-		if column_count < 1 then
-			column_count = 1
-		end
-		if column_count > max_columns then
-			column_count = max_columns
-		end
-
 		local col_w = fixed_col_w
 		local used_w = (column_count * col_w) + ((column_count - 1) * column_gap)
 		local start_x = contentX + math.max(0, math.floor((contentW - used_w) / 2))

@@ -268,7 +268,7 @@ local state = {
 	active_tab_y = nil,
 	particles = {},
 	mouse = { x = 0, y = 0, down = false, clicked = false },
-	heist_subtab = 1, -- 1=Cayo, 2=Casino, 3=Doomsday, 4=Apartment, 5=Agency, 6=Auto Shop, 7=Cluckin
+	heist_subtab = 1, -- 1=Cayo, 2=Casino, 3=Doomsday, 4=Apartment, 5=Agency, 6=Auto Shop, 7=Salvage Yard, 8=Cluckin
 	solo_launch = {
 		casino = false,
 		apartment = false,

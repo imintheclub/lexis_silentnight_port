@@ -9,6 +9,7 @@ local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local solo_launch = require("ShillenSilent_core.runtime.solo_launch")
 local cayo_logic = require("ShillenSilent_core.heists.cayo.logic")
 local casino_logic = require("ShillenSilent_core.heists.casino.logic")
+local salvageyard_logic = require("ShillenSilent_core.heists.salvageyard.logic")
 
 local state = core.state
 local config = core.config
@@ -88,6 +89,7 @@ local function maybe_enforce_heist_toggles()
 	pcall(presets.hp_refresh_apartment_max_payout, false, false)
 	pcall(cayo_logic.cayo_enforce_heist_toggles)
 	pcall(casino_logic.casino_enforce_heist_toggles)
+	pcall(salvageyard_logic.salvage_enforce_heist_toggles)
 
 	if now_tick then
 		next_heist_enforce_tick = now_tick + HEIST_ENFORCE_INTERVAL_MS

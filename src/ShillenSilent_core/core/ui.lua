@@ -609,8 +609,9 @@ local BUTTON_COLOR_STYLES = {
 	},
 }
 
-local HEIST_SUBTAB_NAMES = { "Cayo", "Casino", "Doomsday", "Apartment", "Agency", "Auto Shop", "Cluckin" }
-local HEIST_SUBTAB_KEYS = { "cayo", "casino", "doomsday", "apartment", "agency", "autoshop", "cluckin" }
+local HEIST_SUBTAB_NAMES =
+	{ "Cayo", "Casino", "Doomsday", "Apartment", "Agency", "Auto Shop", "Salvage Yard", "Cluckin" }
+local HEIST_SUBTAB_KEYS = { "cayo", "casino", "doomsday", "apartment", "agency", "autoshop", "salvageyard", "cluckin" }
 
 -- Legacy visual order hints. Used only to flatten groups into a stable sequence.
 local HEIST_GROUP_LAYOUTS = {
@@ -669,7 +670,16 @@ local HEIST_GROUP_LAYOUTS = {
 		["Payout"] = { col = 2, order = 2 },
 		["Misc"] = { col = 3, order = 1 },
 	},
-	[7] = { -- Cluckin
+	[7] = { -- Salvage Yard
+		["Info"] = { col = 1, order = 1 },
+		["Slot 1"] = { col = 1, order = 2 },
+		["Slot 2"] = { col = 2, order = 1 },
+		["Slot 3"] = { col = 2, order = 2 },
+		["Preps"] = { col = 3, order = 1 },
+		["Misc"] = { col = 3, order = 2 },
+		["Payout"] = { col = 1, order = 3 },
+	},
+	[8] = { -- Cluckin
 		["Info"] = { col = 1, order = 1 },
 		["Preps"] = { col = 2, order = 1 },
 		["Tools"] = { col = 3, order = 1 },

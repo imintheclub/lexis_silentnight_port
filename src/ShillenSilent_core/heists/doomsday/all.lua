@@ -60,10 +60,110 @@ local DOOMSDAY_FINISH_NEW_OFFSETS = {
 	},
 }
 
+local function hp_try_set_global_int(offset, value)
+	if not script or not script.globals then
+		return false
+	end
+
+	local ok = pcall(function()
+		script.globals(offset).int32 = value
+	end)
+	return ok
+end
+
+local function hp_try_set_local_int(script_name, offset, value)
+	if not script or not script.locals then
+		return false
+	end
+
+	local ok = pcall(function()
+		script.locals(script_name, offset).int32 = value
+	end)
+	return ok
+end
+
+local function hp_try_get_global_int(offset, fallback)
+	if not script or not script.globals then
+		return fallback
+	end
+
+	local ok, result = pcall(function()
+		return script.globals(offset).int32
+	end)
+	if not ok then
+		return fallback
+	end
+
+	if result == nil then
+		return fallback
+	end
+	return result
+end
+
+local function hp_try_get_local_int(script_name, offset, fallback)
+	if not script or not script.locals then
+		return fallback
+	end
+
+	local ok, result = pcall(function()
+		return script.locals(script_name, offset).int32
+	end)
+	if not ok then
+		return fallback
+	end
+
+	if result == nil then
+		return fallback
+	end
+	return result
+end
+
+local function hp_try_force_host(script_name)
+	if not script or type(script.force_host) ~= "function" then
+		return false
+	end
+
+	local ok, result = pcall(script.force_host, script_name)
+	if not ok then
+		return false
+	end
+	return result and true or false
+end
+
+local function hp_is_script_running(script_name)
+	if not script or type(script.running) ~= "function" then
+		return false
+	end
+
+	local ok, result = pcall(script.running, script_name)
+	if not ok then
+		return false
+	end
+	return result and true or false
+end
+
+local function hp_try_get_stat_int(stat_name, fallback)
+	if not account or type(account.stats) ~= "function" then
+		return fallback
+	end
+
+	local ok, result = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			return nil
+		end
+		return stat.int32
+	end)
+	if not ok or result == nil then
+		return fallback
+	end
+
+	return result
+end
+
 local function doomsday_reload_board(show_missing_notice)
-	if script.running("gb_gang_ops_planning") then
-		script.locals("gb_gang_ops_planning", 211).int32 = 6
-		return true
+	if hp_is_script_running("gb_gang_ops_planning") then
+		return hp_try_set_local_int("gb_gang_ops_planning", 211, 6)
 	end
 
 	if show_missing_notice and notify then
@@ -148,17 +248,19 @@ end
 
 local function doomsday_force_ready()
 	return run_guarded_job("doomsday_force_ready", function()
-		if script and script.force_host then
-			script.force_host("fm_mission_controller")
-		end
+		hp_try_force_host("fm_mission_controller")
 		util.yield(1000)
 
-		script.globals(1883089).int32 = 1
-		script.globals(1883405).int32 = 1
-		script.globals(1883721).int32 = 1
+		local ok1 = hp_try_set_global_int(1883089, 1)
+		local ok2 = hp_try_set_global_int(1883405, 1)
+		local ok3 = hp_try_set_global_int(1883721, 1)
 
 		if notify then
-			notify.push("Doomsday Launch", "All players ready", 2000)
+			if ok1 and ok2 and ok3 then
+				notify.push("Doomsday Launch", "All players ready", 2000)
+			else
+				notify.push("Doomsday Launch", "Could not set ready state", 2000)
+			end
 		end
 	end, function()
 		if notify then
@@ -189,7 +291,7 @@ end
 
 local function hp_get_doomsday_max_payout_cut()
 	local p = GetMP()
-	local heist = account.stats(p .. "GANGOPS_FLOW_MISSION_PROG").int32
+	local heist = hp_try_get_stat_int(p .. "GANGOPS_FLOW_MISSION_PROG", nil)
 	if not DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act] then
 		DoomsdayConfig.act = 1
 	end
@@ -197,7 +299,7 @@ local function hp_get_doomsday_max_payout_cut()
 		heist = DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act].flow
 	end
 
-	local difficulty_raw = script.globals(4718592 + 3538).int32
+	local difficulty_raw = hp_try_get_global_int(4718592 + 3538, 0)
 	local difficulty = 1
 	if difficulty_raw ~= nil then
 		if difficulty_raw <= 1 then
@@ -248,15 +350,19 @@ local function apply_doomsday_cuts(cuts)
 	local p3 = doomsday_cut_enabled.player3 and hp_clamp_doomsday_cut_percent(DoomsdayCutsValues.player3) or 0
 	local p4 = doomsday_cut_enabled.player4 and hp_clamp_doomsday_cut_percent(DoomsdayCutsValues.player4) or 0
 
-	script.globals(1969406).int32 = p1
-	script.globals(1969407).int32 = p2
-	script.globals(1969408).int32 = p3
-	script.globals(1969409).int32 = p4
+	local ok1 = hp_try_set_global_int(1969406, p1)
+	local ok2 = hp_try_set_global_int(1969407, p2)
+	local ok3 = hp_try_set_global_int(1969408, p3)
+	local ok4 = hp_try_set_global_int(1969409, p4)
 
 	if notify then
-		notify.push("Doomsday Cuts", "Cuts applied", 2000)
+		if ok1 and ok2 and ok3 and ok4 then
+			notify.push("Doomsday Cuts", "Cuts applied", 2000)
+		else
+			notify.push("Doomsday Cuts", "Could not apply cuts (memory write failed)", 2200)
+		end
 	end
-	return true
+	return ok1 and ok2 and ok3 and ok4
 end
 
 local function apply_selected_doomsday_cut_preset(apply_now, silent)
@@ -308,12 +414,12 @@ local function doomsday_set_max_payout(enable, silent)
 end
 
 local function doomsday_data_hack()
-	if script.running("fm_mission_controller") then
-		script.locals("fm_mission_controller", 1541).int32 = 2
+	if hp_is_script_running("fm_mission_controller") then
+		local ok = hp_try_set_local_int("fm_mission_controller", 1541, 2)
 		if notify then
-			notify.push("Doomsday Tools", "Data hack completed", 2000)
+			notify.push("Doomsday Tools", ok and "Data hack completed" or "Data hack write failed", 2000)
 		end
-		return true
+		return ok
 	end
 
 	if notify then
@@ -323,12 +429,12 @@ local function doomsday_data_hack()
 end
 
 local function doomsday_doomsday_hack()
-	if script.running("fm_mission_controller") then
-		script.locals("fm_mission_controller", 1298 + 135).int32 = 3
+	if hp_is_script_running("fm_mission_controller") then
+		local ok = hp_try_set_local_int("fm_mission_controller", 1298 + 135, 3)
 		if notify then
-			notify.push("Doomsday Tools", "Doomsday hack completed", 2000)
+			notify.push("Doomsday Tools", ok and "Doomsday hack completed" or "Doomsday hack write failed", 2000)
 		end
-		return true
+		return ok
 	end
 
 	if notify then
@@ -339,22 +445,26 @@ end
 
 local function doomsday_instant_finish_old()
 	return run_guarded_job("doomsday_instant_finish_old", function()
-		if not script.running("fm_mission_controller") then
+		if not hp_is_script_running("fm_mission_controller") then
 			if notify then
 				notify.push("Doomsday Tools", "Old method requires fm_mission_controller", 2000)
 			end
 			return
 		end
 
-		if script.force_host("fm_mission_controller") then
+		if hp_try_force_host("fm_mission_controller") then
 			util.yield(1000)
-			script.locals("fm_mission_controller", 20395).int32 = 12
-			script.locals("fm_mission_controller", 22136).int32 = 150
-			script.locals("fm_mission_controller", 29017).int32 = 99999
-			script.locals("fm_mission_controller", 32541).int32 = 99999
-			script.locals("fm_mission_controller", 32569).int32 = 80
+			local ok1 = hp_try_set_local_int("fm_mission_controller", 20395, 12)
+			local ok2 = hp_try_set_local_int("fm_mission_controller", 22136, 150)
+			local ok3 = hp_try_set_local_int("fm_mission_controller", 29017, 99999)
+			local ok4 = hp_try_set_local_int("fm_mission_controller", 32541, 99999)
+			local ok5 = hp_try_set_local_int("fm_mission_controller", 32569, 80)
 			if notify then
-				notify.push("Doomsday Tools", "Instant finish triggered (Old)", 2000)
+				if ok1 and ok2 and ok3 and ok4 and ok5 then
+					notify.push("Doomsday Tools", "Instant finish triggered (Old)", 2000)
+				else
+					notify.push("Doomsday Tools", "Old finish write failed", 2200)
+				end
 			end
 		elseif notify then
 			notify.push("Doomsday Tools", "Could not force host", 2000)
@@ -369,9 +479,9 @@ end
 local function doomsday_instant_finish_new()
 	return run_guarded_job("doomsday_instant_finish_new", function()
 		local script_name = nil
-		if script.running("fm_mission_controller") then
+		if hp_is_script_running("fm_mission_controller") then
 			script_name = "fm_mission_controller"
-		elseif script.running("fm_mission_controller_2020") then
+		elseif hp_is_script_running("fm_mission_controller_2020") then
 			script_name = "fm_mission_controller_2020"
 		end
 
@@ -382,22 +492,31 @@ local function doomsday_instant_finish_new()
 			return
 		end
 
-		if script and script.force_host then
-			script.force_host(script_name)
-		end
+		hp_try_force_host(script_name)
 		util.yield(1000)
 
 		local offsets = DOOMSDAY_FINISH_NEW_OFFSETS[script_name]
-		local bits = script.locals(script_name, offsets.step3).int32 or 0
+		if not offsets then
+			if notify then
+				notify.push("Doomsday Tools", "Unsupported mission controller", 2000)
+			end
+			return
+		end
+
+		local bits = hp_try_get_local_int(script_name, offsets.step3, 0)
 		bits = bits | (1 << 9)
 		bits = bits | (1 << 16)
 
-		script.locals(script_name, offsets.step1).int32 = 5
-		script.locals(script_name, offsets.step2).int32 = 999999
-		script.locals(script_name, offsets.step3).int32 = bits
+		local ok1 = hp_try_set_local_int(script_name, offsets.step1, 5)
+		local ok2 = hp_try_set_local_int(script_name, offsets.step2, 999999)
+		local ok3 = hp_try_set_local_int(script_name, offsets.step3, bits)
 
 		if notify then
-			notify.push("Doomsday Tools", "Instant finish triggered (New)", 2000)
+			if ok1 and ok2 and ok3 then
+				notify.push("Doomsday Tools", "Instant finish triggered (New)", 2000)
+			else
+				notify.push("Doomsday Tools", "New finish write failed", 2200)
+			end
 		end
 	end, function()
 		if notify then
@@ -445,7 +564,11 @@ local function register(heistTab)
 	if not DoomsdayConfig.act or not DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act] then
 		DoomsdayConfig.act = 1
 	end
-	if not doomsday_flags.cut_preset_index or doomsday_flags.cut_preset_index < 1 then
+	if
+		not doomsday_flags.cut_preset_index
+		or doomsday_flags.cut_preset_index < 1
+		or doomsday_flags.cut_preset_index > #APARTMENT_CUT_PRESET_OPTIONS
+	then
 		doomsday_flags.cut_preset_index = #APARTMENT_CUT_PRESET_OPTIONS
 	end
 

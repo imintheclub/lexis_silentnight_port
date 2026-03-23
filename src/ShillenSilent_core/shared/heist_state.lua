@@ -227,6 +227,20 @@ local agency_prep_options = {
 	},
 }
 
+local autoshop_prep_options = {
+	contracts = {
+		{ name = "None", value = -1 },
+		{ name = "Union Depository", value = 0 },
+		{ name = "Superdollar Deal", value = 1 },
+		{ name = "Bank Contract", value = 2 },
+		{ name = "ECU Job", value = 3 },
+		{ name = "Prison Contract", value = 4 },
+		{ name = "Agency Deal", value = 5 },
+		{ name = "Lost Contract", value = 6 },
+		{ name = "Data Contract", value = 7 },
+	},
+}
+
 local heist_state = {
 	apartment = {
 		cuts = {
@@ -444,6 +458,30 @@ local heist_state = {
 			kill_cooldowns = nil,
 			apply_payout = nil,
 			instant_finish = nil,
+		},
+	},
+	autoshop = {
+		prep_options = autoshop_prep_options,
+		config = {
+			contract = -1,
+			contract_index = 1,
+			payout = 1000000,
+		},
+		flags = {
+			board_reload_offset_406_supported = true,
+			board_reload_offset_408_supported = true,
+		},
+		refs = {
+			contract_dropdown = nil,
+			payout_slider = nil,
+		},
+		callbacks = {
+			apply_preps = nil,
+			reset_preps = nil,
+			redraw_board = nil,
+			kill_cooldowns = nil,
+			instant_finish = nil,
+			apply_payout = nil,
 		},
 	},
 }

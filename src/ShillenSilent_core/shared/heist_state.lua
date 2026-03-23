@@ -575,6 +575,7 @@ local heist_state = {
 			contract_dropdown = nil,
 			payout_slider = nil,
 			collect_safe_button = nil,
+			presets_group = nil,
 		},
 		callbacks = {
 			apply_preps = nil,
@@ -597,6 +598,7 @@ local heist_state = {
 		refs = {
 			contract_dropdown = nil,
 			payout_slider = nil,
+			presets_group = nil,
 		},
 		callbacks = {
 			apply_preps = nil,
@@ -647,6 +649,7 @@ local heist_state = {
 			sell_value_slot2_slider = nil,
 			sell_value_slot3_slider = nil,
 			collect_safe_button = nil,
+			presets_group = nil,
 		},
 		callbacks = {
 			apply_slot = nil,

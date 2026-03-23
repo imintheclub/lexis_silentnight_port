@@ -6,6 +6,7 @@ local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 local agency_logic = require("ShillenSilent_core.heists.agency.logic")
 
 local config = core.config
+local hp_build_heist_preset_group = presets.hp_build_heist_preset_group
 local hp_options_to_names = presets.hp_options_to_names
 local hp_option_index_by_value = presets.hp_option_index_by_value
 local hp_option_value_by_name = presets.hp_option_value_by_name
@@ -36,6 +37,7 @@ local function register(heistTab)
 	ui.label(gAgencyInfo, "Agency", config.colors.accent)
 	ui.label(gAgencyInfo, "Max transaction: $2,500,000", config.colors.text_main)
 	ui.label(gAgencyInfo, "Transaction cooldown: 20 min", config.colors.text_sec)
+	agency_refs.presets_group = hp_build_heist_preset_group(heistTab, "agency", "agency", "agency")
 
 	local gAgencyPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "agency")
 	agency_refs.contract_dropdown = ui.dropdown(

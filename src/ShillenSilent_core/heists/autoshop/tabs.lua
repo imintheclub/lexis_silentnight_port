@@ -6,6 +6,7 @@ local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 local autoshop_logic = require("ShillenSilent_core.heists.autoshop.logic")
 
 local config = core.config
+local hp_build_heist_preset_group = presets.hp_build_heist_preset_group
 local hp_options_to_names = presets.hp_options_to_names
 local hp_option_index_by_value = presets.hp_option_index_by_value
 local hp_option_value_by_name = presets.hp_option_value_by_name
@@ -39,6 +40,7 @@ local function register(heistTab)
 	ui.label(gAutoshopInfo, "Auto Shop", config.colors.accent)
 	ui.label(gAutoshopInfo, "Max transaction: $2,200,000", config.colors.text_main)
 	ui.label(gAutoshopInfo, "Transaction cooldown: 60 min", config.colors.text_sec)
+	autoshop_refs.presets_group = hp_build_heist_preset_group(heistTab, "autoshop", "autoshop", "autoshop")
 
 	local gAutoshopPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "autoshop")
 	autoshop_refs.contract_dropdown = ui.dropdown(

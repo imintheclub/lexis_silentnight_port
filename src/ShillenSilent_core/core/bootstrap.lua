@@ -81,7 +81,7 @@ local function init_config()
 	local default_content_w = menu_width - (content_margin * 2)
 	local fixed_column_w = math.floor((default_content_w - (2 * column_gap)) / 3)
 	local min_column_side_pad = tw(6)
-	local subtab_count = 7
+	local subtab_count = 9
 	local min_subtab_w = tw(18)
 	local subtab_gap = tw(2)
 	local min_w_from_subtabs = (content_margin * 2) + (subtab_count * min_subtab_w) + ((subtab_count - 1) * subtab_gap)
@@ -268,7 +268,7 @@ local state = {
 	active_tab_y = nil,
 	particles = {},
 	mouse = { x = 0, y = 0, down = false, clicked = false },
-	heist_subtab = 1, -- 1=Cayo, 2=Casino, 3=Doomsday, 4=Apartment, 5=Agency, 6=Auto Shop, 7=Salvage Yard, 8=Cluckin
+	heist_subtab = 1, -- default Cayo
 	solo_launch = {
 		casino = false,
 		apartment = false,

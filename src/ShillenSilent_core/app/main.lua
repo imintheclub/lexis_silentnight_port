@@ -7,6 +7,7 @@ local autoshop_tabs = require("ShillenSilent_core.heists.autoshop.tabs")
 local salvageyard_tabs = require("ShillenSilent_core.heists.salvageyard.tabs")
 local doomsday_module = require("ShillenSilent_core.heists.doomsday.all")
 local cluckin_module = require("ShillenSilent_core.heists.cluckin.all")
+local knoway_module = require("ShillenSilent_core.heists.knoway.all")
 local runtime_main_loop = require("ShillenSilent_core.runtime.main_loop")
 
 local app_main = {
@@ -50,6 +51,9 @@ local function register_heist_tabs(heistTab)
 	end
 	if cluckin_module.register then
 		cluckin_module.register(heistTab)
+	end
+	if knoway_module.register then
+		knoway_module.register(heistTab)
 	end
 end
 

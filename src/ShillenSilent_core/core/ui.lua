@@ -1647,7 +1647,13 @@ ui.render = function()
 				end
 				local option_max_w = dd.w - config.space.x6
 				local option_text = text_with_ellipsis(opt, option_max_w, config.font_scale_body)
-				render_text(option_text, dd.x + config.space.x3, optY + config.space.x1, config.font_scale_body, optTextCol)
+				render_text(
+					option_text,
+					dd.x + config.space.x3,
+					optY + config.space.x1,
+					config.font_scale_body,
+					optTextCol
+				)
 			end
 
 			gui.pop_clip()

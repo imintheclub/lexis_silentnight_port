@@ -1,6 +1,7 @@
 local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local native_api = require("ShillenSilent_core.core.native_api")
+local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local danger_groups = require("ShillenSilent_core.shared.danger_groups")
@@ -90,8 +91,8 @@ local function hp_update_casino_vehicle_dropdown(reset_selection)
 end
 
 local function hp_reload_casino_planning_board()
-	script.locals("gb_casino_heist_planning", 210).int32 = 2
-	script.locals("gb_casino_heist_planning", 212).int32 = 2
+	safe_access.set_local_int("gb_casino_heist_planning", 210, 2)
+	safe_access.set_local_int("gb_casino_heist_planning", 212, 2)
 end
 
 casino_callbacks.update_loadout_dropdown = hp_update_casino_loadout_dropdown

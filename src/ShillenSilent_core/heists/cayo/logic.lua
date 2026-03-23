@@ -1,6 +1,7 @@
 -- ---------------------------------------------------------
 
 local core = require("ShillenSilent_core.core.bootstrap")
+local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -142,17 +143,17 @@ local function cayo_apply_preps()
 	local p = GetMP()
 
 	if CayoConfig.unlock_all_poi then
-		account.stats(p .. "H4CNF_BS_GEN").int32 = -1
-		account.stats(p .. "H4CNF_BS_ENTR").int32 = 63
-		account.stats(p .. "H4CNF_BS_ABIL").int32 = 63
-		account.stats(p .. "H4CNF_APPROACH").int32 = -1
-		account.stats(p .. "H4_PLAYTHROUGH_STATUS").int32 = 10
+		safe_access.set_stat_int(p .. "H4CNF_BS_GEN", -1)
+		safe_access.set_stat_int(p .. "H4CNF_BS_ENTR", 63)
+		safe_access.set_stat_int(p .. "H4CNF_BS_ABIL", 63)
+		safe_access.set_stat_int(p .. "H4CNF_APPROACH", -1)
+		safe_access.set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 10)
 	end
 
-	account.stats(p .. "H4_PROGRESS").int32 = CayoConfig.diff
-	account.stats(p .. "H4_MISSIONS").int32 = CayoConfig.app
-	account.stats(p .. "H4CNF_WEAPONS").int32 = CayoConfig.wep
-	account.stats(p .. "H4CNF_TARGET").int32 = CayoConfig.tgt
+	safe_access.set_stat_int(p .. "H4_PROGRESS", CayoConfig.diff)
+	safe_access.set_stat_int(p .. "H4_MISSIONS", CayoConfig.app)
+	safe_access.set_stat_int(p .. "H4CNF_WEAPONS", CayoConfig.wep)
+	safe_access.set_stat_int(p .. "H4CNF_TARGET", CayoConfig.tgt)
 
 	local has_secondary_target = (CayoConfig.sec_comp ~= "NONE") or (CayoConfig.sec_isl ~= "NONE")
 	local value_map = {
@@ -168,23 +169,23 @@ local function cayo_apply_preps()
 		local island_value = (CayoConfig.sec_isl == loot) and CayoConfig.amt_isl or 0
 		local value_stat = has_secondary_target and value_map[loot] or 0
 
-		account.stats(p .. "H4LOOT_" .. loot .. "_C").int32 = compound_value
-		account.stats(p .. "H4LOOT_" .. loot .. "_C_SCOPED").int32 = compound_value
-		account.stats(p .. "H4LOOT_" .. loot .. "_I").int32 = island_value
-		account.stats(p .. "H4LOOT_" .. loot .. "_I_SCOPED").int32 = island_value
-		account.stats(p .. "H4LOOT_" .. loot .. "_V").int32 = value_stat
+		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_C", compound_value)
+		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_C_SCOPED", compound_value)
+		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_I", island_value)
+		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_I_SCOPED", island_value)
+		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_V", value_stat)
 	end
 
-	account.stats(p .. "H4LOOT_PAINT").int32 = CayoConfig.paint
-	account.stats(p .. "H4LOOT_PAINT_SCOPED").int32 = CayoConfig.paint
-	account.stats(p .. "H4LOOT_PAINT_V").int32 = (CayoConfig.paint ~= 0) and CayoConfig.val_art or 0
-	account.stats(p .. "H4CNF_UNIFORM").int32 = -1
-	account.stats(p .. "H4CNF_GRAPPEL").int32 = -1
-	account.stats(p .. "H4CNF_TROJAN").int32 = 5
-	account.stats(p .. "H4CNF_WEP_DISRP").int32 = 3
-	account.stats(p .. "H4CNF_ARM_DISRP").int32 = 3
-	account.stats(p .. "H4CNF_HEL_DISRP").int32 = 3
-	script.locals("heist_island_planning", 1570).int32 = 2
+	safe_access.set_stat_int(p .. "H4LOOT_PAINT", CayoConfig.paint)
+	safe_access.set_stat_int(p .. "H4LOOT_PAINT_SCOPED", CayoConfig.paint)
+	safe_access.set_stat_int(p .. "H4LOOT_PAINT_V", (CayoConfig.paint ~= 0) and CayoConfig.val_art or 0)
+	safe_access.set_stat_int(p .. "H4CNF_UNIFORM", -1)
+	safe_access.set_stat_int(p .. "H4CNF_GRAPPEL", -1)
+	safe_access.set_stat_int(p .. "H4CNF_TROJAN", 5)
+	safe_access.set_stat_int(p .. "H4CNF_WEP_DISRP", 3)
+	safe_access.set_stat_int(p .. "H4CNF_ARM_DISRP", 3)
+	safe_access.set_stat_int(p .. "H4CNF_HEL_DISRP", 3)
+	safe_access.set_local_int("heist_island_planning", 1570, 2)
 	if notify then
 		notify.push("Cayo Perico", "Preps applied", 2000)
 	end
@@ -193,8 +194,8 @@ end
 -- Apply Cayo Cuts
 local function hp_get_cayo_max_payout_cut()
 	local p = GetMP()
-	local target = account.stats(p .. "H4CNF_TARGET").int32 or 0
-	local difficulty = (account.stats(p .. "H4_PROGRESS").int32 == 131055) and 2 or 1
+	local target = safe_access.get_stat_int(p .. "H4CNF_TARGET", 0)
+	local difficulty = (safe_access.get_stat_int(p .. "H4_PROGRESS", 0) == 131055) and 2 or 1
 
 	local payouts = {
 		[0] = { 630000, 693000 }, -- Tequila
@@ -239,10 +240,10 @@ local function hp_get_cayo_max_payout_cut()
 end
 
 local function cayo_apply_cuts()
-	script.globals(CayoGlobals.Host).int32 = CayoCutsValues.host
-	script.globals(CayoGlobals.P2).int32 = CayoCutsValues.player2
-	script.globals(CayoGlobals.P3).int32 = CayoCutsValues.player3
-	script.globals(CayoGlobals.P4).int32 = CayoCutsValues.player4
+	safe_access.set_global_int(CayoGlobals.Host, CayoCutsValues.host)
+	safe_access.set_global_int(CayoGlobals.P2, CayoCutsValues.player2)
+	safe_access.set_global_int(CayoGlobals.P3, CayoCutsValues.player3)
+	safe_access.set_global_int(CayoGlobals.P4, CayoCutsValues.player4)
 	if notify then
 		notify.push("Cayo Perico", "Cuts applied", 2000)
 	end
@@ -251,14 +252,12 @@ end
 -- Force Ready
 local function cayo_force_ready()
 	return run_guarded_job("cayo_force_ready", function()
-		if script and script.force_host then
-			script.force_host("fm_mission_controller_2020")
-		end
+		safe_access.force_host("fm_mission_controller_2020")
 		util.yield(1000)
 
-		script.globals(CayoReady.PLAYER2).int32 = 1
-		script.globals(CayoReady.PLAYER3).int32 = 1 -- READY_STATE_HEIST = 1
-		script.globals(CayoReady.PLAYER4).int32 = 1 -- READY_STATE_HEIST = 1
+		safe_access.set_global_int(CayoReady.PLAYER2, 1)
+		safe_access.set_global_int(CayoReady.PLAYER3, 1) -- READY_STATE_HEIST = 1
+		safe_access.set_global_int(CayoReady.PLAYER4, 1) -- READY_STATE_HEIST = 1
 
 		if notify then
 			notify.push("Cayo Perico", "All players ready", 2000)
@@ -274,16 +273,16 @@ end
 local function cayo_unlock_all_poi()
 	local p = GetMP()
 	-- Unlock all POIs (set to -1 to unlock all)
-	account.stats(p .. "H4CNF_BS_GEN").int32 = -1
+	safe_access.set_stat_int(p .. "H4CNF_BS_GEN", -1)
 	-- Unlock all entry points
-	account.stats(p .. "H4CNF_BS_ENTR").int32 = 63
+	safe_access.set_stat_int(p .. "H4CNF_BS_ENTR", 63)
 	-- Unlock all abilities/equipment
-	account.stats(p .. "H4CNF_BS_ABIL").int32 = 63
-	account.stats(p .. "H4CNF_APPROACH").int32 = -1
-	account.stats(p .. "H4_PLAYTHROUGH_STATUS").int32 = 10
+	safe_access.set_stat_int(p .. "H4CNF_BS_ABIL", 63)
+	safe_access.set_stat_int(p .. "H4CNF_APPROACH", -1)
+	safe_access.set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 10)
 	-- Reload planning board if script is running
-	if script.running("heist_island_planning") then
-		script.locals("heist_island_planning", 1570).int32 = 2
+	if safe_access.is_script_running("heist_island_planning") then
+		safe_access.set_local_int("heist_island_planning", 1570, 2)
 	end
 	if notify then
 		notify.push("Cayo Tools", "All POI unlocked", 2000)
@@ -292,56 +291,56 @@ end
 
 local function cayo_reset_preps()
 	local p = GetMP()
-	account.stats(p .. "H4_PROGRESS").int32 = 0
-	account.stats(p .. "H4_MISSIONS").int32 = 0
-	account.stats(p .. "H4CNF_APPROACH").int32 = 0
-	account.stats(p .. "H4CNF_TARGET").int32 = -1
-	account.stats(p .. "H4CNF_BS_GEN").int32 = 0
-	account.stats(p .. "H4CNF_BS_ENTR").int32 = 0
-	account.stats(p .. "H4CNF_BS_ABIL").int32 = 0
-	account.stats(p .. "H4_PLAYTHROUGH_STATUS").int32 = 0
-	script.locals("heist_island_planning", 1570).int32 = 2
+	safe_access.set_stat_int(p .. "H4_PROGRESS", 0)
+	safe_access.set_stat_int(p .. "H4_MISSIONS", 0)
+	safe_access.set_stat_int(p .. "H4CNF_APPROACH", 0)
+	safe_access.set_stat_int(p .. "H4CNF_TARGET", -1)
+	safe_access.set_stat_int(p .. "H4CNF_BS_GEN", 0)
+	safe_access.set_stat_int(p .. "H4CNF_BS_ENTR", 0)
+	safe_access.set_stat_int(p .. "H4CNF_BS_ABIL", 0)
+	safe_access.set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 0)
+	safe_access.set_local_int("heist_island_planning", 1570, 2)
 	if notify then
 		notify.push("Cayo Tools", "Preps reset", 2000)
 	end
 end
 
 local function cayo_instant_voltlab_hack()
-	if not script.running("fm_content_island_heist") then
+	if not safe_access.is_script_running("fm_content_island_heist") then
 		if notify then
 			notify.push("Cayo Tools", "Mission not running", 2000)
 		end
 		return
 	end
-	script.locals("fm_content_island_heist", 10166 + 24).int32 = 5
+	safe_access.set_local_int("fm_content_island_heist", 10166 + 24, 5)
 	if notify then
 		notify.push("Cayo Tools", "Voltlab hack completed", 2000)
 	end
 end
 
 local function cayo_instant_password_hack()
-	script.locals("fm_mission_controller_2020", 26486).int32 = 5
+	safe_access.set_local_int("fm_mission_controller_2020", 26486, 5)
 	if notify then
 		notify.push("Cayo Tools", "Password hack completed", 2000)
 	end
 end
 
 local function cayo_bypass_plasma_cutter()
-	script.locals("fm_mission_controller_2020", 32589 + 3).float = 100.0
+	safe_access.set_local_float("fm_mission_controller_2020", 32589 + 3, 100.0)
 	if notify then
 		notify.push("Cayo Tools", "Plasma cutter bypassed", 2000)
 	end
 end
 
 local function cayo_bypass_drainage_pipe()
-	script.locals("fm_mission_controller_2020", 31349).int32 = 6
+	safe_access.set_local_int("fm_mission_controller_2020", 31349, 6)
 	if notify then
 		notify.push("Cayo Tools", "Drainage pipe bypassed", 2000)
 	end
 end
 
 local function cayo_reload_planning_screen()
-	script.locals("heist_island_planning", 1570).int32 = 2
+	safe_access.set_local_int("heist_island_planning", 1570, 2)
 	if notify then
 		notify.push("Cayo Tools", "Planning screen reloaded", 2000)
 	end
@@ -349,9 +348,9 @@ end
 
 local function cayo_remove_cooldown()
 	local p = GetMP()
-	account.stats(p .. "H4_TARGET_POSIX").int32 = 1659643454
-	account.stats(p .. "H4_COOLDOWN").int32 = 0
-	account.stats(p .. "H4_COOLDOWN_HARD").int32 = 0
+	safe_access.set_stat_int(p .. "H4_TARGET_POSIX", 1659643454)
+	safe_access.set_stat_int(p .. "H4_COOLDOWN", 0)
+	safe_access.set_stat_int(p .. "H4_COOLDOWN_HARD", 0)
 	if notify then
 		notify.push("Cayo Tools", "Solo cooldown removed", 2000)
 	end
@@ -359,9 +358,9 @@ end
 
 local function cayo_remove_cooldown_team()
 	local p = GetMP()
-	account.stats(p .. "H4_TARGET_POSIX").int32 = 1659429119
-	account.stats(p .. "H4_COOLDOWN").int32 = 0
-	account.stats(p .. "H4_COOLDOWN_HARD").int32 = 0
+	safe_access.set_stat_int(p .. "H4_TARGET_POSIX", 1659429119)
+	safe_access.set_stat_int(p .. "H4_COOLDOWN", 0)
+	safe_access.set_stat_int(p .. "H4_COOLDOWN_HARD", 0)
 	if notify then
 		notify.push("Cayo Tools", "Team cooldown removed", 2000)
 	end
@@ -369,10 +368,10 @@ end
 
 local function cayo_instant_finish()
 	run_guarded_job("cayo_instant_finish", function()
-		if script.force_host("fm_mission_controller_2020") then
+		if safe_access.force_host("fm_mission_controller_2020") then
 			util.yield(1000)
-			script.locals("fm_mission_controller_2020", 56223).int32 = 9
-			script.locals("fm_mission_controller_2020", 58000).int32 = 50
+			safe_access.set_local_int("fm_mission_controller_2020", 56223, 9)
+			safe_access.set_local_int("fm_mission_controller_2020", 58000, 50)
 			if notify then
 				notify.push("Cayo Tools", "Instant finish triggered", 2000)
 			end
@@ -491,22 +490,22 @@ local function cayo_teleport_kosatka()
 
 	local function player_owns_kosatka()
 		local p = GetMP()
-		return (account.stats(p .. "IH_SUB_OWNED").int32 or 0) ~= 0
+		return (safe_access.get_stat_int(p .. "IH_SUB_OWNED", 0) or 0) ~= 0
 	end
 
 	local function request_kosatka_spawn()
 		for i = 1, #KOSATKA_REQUEST_GLOBALS do
-			script.globals(KOSATKA_REQUEST_GLOBALS[i]).int32 = 1
+			safe_access.set_global_int(KOSATKA_REQUEST_GLOBALS[i], 1)
 		end
 	end
 
 	local function is_kosatka_in_ocean()
 		local player_id = get_local_player_id()
-		local status_ee = script.globals(2658294 + 1 + (player_id * 468) + 325 + 4).int32 or 0
+		local status_ee = safe_access.get_global_int(2658294 + 1 + (player_id * 468) + 325 + 4, 0)
 		if (status_ee & (1 << 31)) ~= 0 then
 			return true
 		end
-		local status_legacy = script.globals(2658291 + 1 + (player_id * 468) + 325 + 4).int32 or 0
+		local status_legacy = safe_access.get_global_int(2658291 + 1 + (player_id * 468) + 325 + 4, 0)
 		return (status_legacy & (1 << 31)) ~= 0
 	end
 

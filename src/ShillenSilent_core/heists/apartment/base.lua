@@ -3,6 +3,7 @@
 -- ---------------------------------------------------------
 
 local core = require("ShillenSilent_core.core.bootstrap")
+local safe_access = require("ShillenSilent_core.core.safe_access")
 local run_guarded_job = core.run_guarded_job
 
 -- Apartment Globals
@@ -20,14 +21,12 @@ local ApartmentGlobals = {
 -- Apartment Force Ready
 local function apartment_force_ready()
 	return run_guarded_job("apartment_force_ready", function()
-		if script and script.force_host then
-			script.force_host("fm_mission_controller")
-		end
+		safe_access.force_host("fm_mission_controller")
 		util.yield(1000)
 
-		script.globals(ApartmentGlobals.Ready.PLAYER2).int32 = 6
-		script.globals(ApartmentGlobals.Ready.PLAYER3).int32 = 6
-		script.globals(ApartmentGlobals.Ready.PLAYER4).int32 = 6
+		safe_access.set_global_int(ApartmentGlobals.Ready.PLAYER2, 6)
+		safe_access.set_global_int(ApartmentGlobals.Ready.PLAYER3, 6)
+		safe_access.set_global_int(ApartmentGlobals.Ready.PLAYER4, 6)
 
 		if notify then
 			notify.push("Apartment Launch", "All players ready", 2000)
@@ -40,14 +39,14 @@ local function apartment_force_ready()
 end
 
 local function apartment_redraw_board()
-	script.globals(ApartmentGlobals.Board).int32 = 22
+	safe_access.set_global_int(ApartmentGlobals.Board, 22)
 	if notify then
 		notify.push("Apartment Launch", "Board refreshed", 2000)
 	end
 end
 
 local function apartment_complete_preps()
-	account.stats("HEIST_PLANNING_STAGE").int32 = -1
+	safe_access.set_stat_int("HEIST_PLANNING_STAGE", -1)
 	if notify then
 		notify.push("Apartment Preps", "Preps applied", 2000)
 	end
@@ -56,7 +55,7 @@ end
 local function apartment_kill_cooldown()
 	local player_id = (players and players.user and players.user()) or 0
 	local cooldown_global = 1877303 + 1 + (player_id * 77) + 76
-	script.globals(cooldown_global).int32 = -1
+	safe_access.set_global_int(cooldown_global, -1)
 	if notify then
 		notify.push("Apartment Preps", "Cooldown removed", 2000)
 	end

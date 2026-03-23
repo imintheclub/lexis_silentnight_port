@@ -5,6 +5,7 @@
 local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local native_api = require("ShillenSilent_core.core.native_api")
+local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
@@ -60,110 +61,9 @@ local DOOMSDAY_FINISH_NEW_OFFSETS = {
 	},
 }
 
-local function hp_try_set_global_int(offset, value)
-	if not script or not script.globals then
-		return false
-	end
-
-	local ok = pcall(function()
-		script.globals(offset).int32 = value
-	end)
-	return ok
-end
-
-local function hp_try_set_local_int(script_name, offset, value)
-	if not script or not script.locals then
-		return false
-	end
-
-	local ok = pcall(function()
-		script.locals(script_name, offset).int32 = value
-	end)
-	return ok
-end
-
-local function hp_try_get_global_int(offset, fallback)
-	if not script or not script.globals then
-		return fallback
-	end
-
-	local ok, result = pcall(function()
-		return script.globals(offset).int32
-	end)
-	if not ok then
-		return fallback
-	end
-
-	if result == nil then
-		return fallback
-	end
-	return result
-end
-
-local function hp_try_get_local_int(script_name, offset, fallback)
-	if not script or not script.locals then
-		return fallback
-	end
-
-	local ok, result = pcall(function()
-		return script.locals(script_name, offset).int32
-	end)
-	if not ok then
-		return fallback
-	end
-
-	if result == nil then
-		return fallback
-	end
-	return result
-end
-
-local function hp_try_force_host(script_name)
-	if not script or type(script.force_host) ~= "function" then
-		return false
-	end
-
-	local ok, result = pcall(script.force_host, script_name)
-	if not ok then
-		return false
-	end
-	return result and true or false
-end
-
-local function hp_is_script_running(script_name)
-	if not script or type(script.running) ~= "function" then
-		return false
-	end
-
-	local ok, result = pcall(script.running, script_name)
-	if not ok then
-		return false
-	end
-	return result and true or false
-end
-
-local function hp_try_get_stat_int(stat_name, fallback)
-	if not account or type(account.stats) ~= "function" then
-		return fallback
-	end
-
-	local ok, result = pcall(function()
-		local stat = account.stats(stat_name)
-		if not stat then
-			return nil
-		end
-		return stat.int32
-	end)
-	if not ok or result == nil then
-		return fallback
-	end
-
-	return result
-end
-
 local function doomsday_reload_board(show_missing_notice)
-	if hp_is_script_running("gb_gang_ops_planning") then
-		return hp_try_set_local_int("gb_gang_ops_planning", 211, 6)
+	if safe_access.is_script_running("gb_gang_ops_planning") then
+		return safe_access.set_local_int("gb_gang_ops_planning", 211, 6)
 	end
 
 	if show_missing_notice and notify then
@@ -248,12 +148,12 @@ end
 
 local function doomsday_force_ready()
 	return run_guarded_job("doomsday_force_ready", function()
-		hp_try_force_host("fm_mission_controller")
+		safe_access.force_host("fm_mission_controller")
 		util.yield(1000)
 
-		local ok1 = hp_try_set_global_int(1883089, 1)
-		local ok2 = hp_try_set_global_int(1883405, 1)
-		local ok3 = hp_try_set_global_int(1883721, 1)
+		local ok1 = safe_access.set_global_int(1883089, 1)
+		local ok2 = safe_access.set_global_int(1883405, 1)
+		local ok3 = safe_access.set_global_int(1883721, 1)
 
 		if notify then
 			if ok1 and ok2 and ok3 then
@@ -291,7 +191,7 @@ end
 
 local function hp_get_doomsday_max_payout_cut()
 	local p = GetMP()
-	local heist = hp_try_get_stat_int(p .. "GANGOPS_FLOW_MISSION_PROG", nil)
+	local heist = safe_access.get_stat_int(p .. "GANGOPS_FLOW_MISSION_PROG", nil)
 	if not DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act] then
 		DoomsdayConfig.act = 1
 	end
@@ -299,7 +199,7 @@ local function hp_get_doomsday_max_payout_cut()
 		heist = DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act].flow
 	end
 
-	local difficulty_raw = hp_try_get_global_int(4718592 + 3538, 0)
+	local difficulty_raw = safe_access.get_global_int(4718592 + 3538, 0)
 	local difficulty = 1
 	if difficulty_raw ~= nil then
 		if difficulty_raw <= 1 then
@@ -350,10 +250,10 @@ local function apply_doomsday_cuts(cuts)
 	local p3 = doomsday_cut_enabled.player3 and hp_clamp_doomsday_cut_percent(DoomsdayCutsValues.player3) or 0
 	local p4 = doomsday_cut_enabled.player4 and hp_clamp_doomsday_cut_percent(DoomsdayCutsValues.player4) or 0
 
-	local ok1 = hp_try_set_global_int(1969406, p1)
-	local ok2 = hp_try_set_global_int(1969407, p2)
-	local ok3 = hp_try_set_global_int(1969408, p3)
-	local ok4 = hp_try_set_global_int(1969409, p4)
+	local ok1 = safe_access.set_global_int(1969406, p1)
+	local ok2 = safe_access.set_global_int(1969407, p2)
+	local ok3 = safe_access.set_global_int(1969408, p3)
+	local ok4 = safe_access.set_global_int(1969409, p4)
 
 	if notify then
 		if ok1 and ok2 and ok3 and ok4 then
@@ -414,8 +314,8 @@ local function doomsday_set_max_payout(enable, silent)
 end
 
 local function doomsday_data_hack()
-	if hp_is_script_running("fm_mission_controller") then
-		local ok = hp_try_set_local_int("fm_mission_controller", 1541, 2)
+	if safe_access.is_script_running("fm_mission_controller") then
+		local ok = safe_access.set_local_int("fm_mission_controller", 1541, 2)
 		if notify then
 			notify.push("Doomsday Tools", ok and "Data hack completed" or "Data hack write failed", 2000)
 		end
@@ -429,8 +329,8 @@ local function doomsday_data_hack()
 end
 
 local function doomsday_doomsday_hack()
-	if hp_is_script_running("fm_mission_controller") then
-		local ok = hp_try_set_local_int("fm_mission_controller", 1298 + 135, 3)
+	if safe_access.is_script_running("fm_mission_controller") then
+		local ok = safe_access.set_local_int("fm_mission_controller", 1298 + 135, 3)
 		if notify then
 			notify.push("Doomsday Tools", ok and "Doomsday hack completed" or "Doomsday hack write failed", 2000)
 		end
@@ -445,20 +345,20 @@ end
 
 local function doomsday_instant_finish_old()
 	return run_guarded_job("doomsday_instant_finish_old", function()
-		if not hp_is_script_running("fm_mission_controller") then
+		if not safe_access.is_script_running("fm_mission_controller") then
 			if notify then
 				notify.push("Doomsday Tools", "Old method requires fm_mission_controller", 2000)
 			end
 			return
 		end
 
-		if hp_try_force_host("fm_mission_controller") then
+		if safe_access.force_host("fm_mission_controller") then
 			util.yield(1000)
-			local ok1 = hp_try_set_local_int("fm_mission_controller", 20395, 12)
-			local ok2 = hp_try_set_local_int("fm_mission_controller", 22136, 150)
-			local ok3 = hp_try_set_local_int("fm_mission_controller", 29017, 99999)
-			local ok4 = hp_try_set_local_int("fm_mission_controller", 32541, 99999)
-			local ok5 = hp_try_set_local_int("fm_mission_controller", 32569, 80)
+			local ok1 = safe_access.set_local_int("fm_mission_controller", 20395, 12)
+			local ok2 = safe_access.set_local_int("fm_mission_controller", 22136, 150)
+			local ok3 = safe_access.set_local_int("fm_mission_controller", 29017, 99999)
+			local ok4 = safe_access.set_local_int("fm_mission_controller", 32541, 99999)
+			local ok5 = safe_access.set_local_int("fm_mission_controller", 32569, 80)
 			if notify then
 				if ok1 and ok2 and ok3 and ok4 and ok5 then
 					notify.push("Doomsday Tools", "Instant finish triggered (Old)", 2000)
@@ -479,9 +379,9 @@ end
 local function doomsday_instant_finish_new()
 	return run_guarded_job("doomsday_instant_finish_new", function()
 		local script_name = nil
-		if hp_is_script_running("fm_mission_controller") then
+		if safe_access.is_script_running("fm_mission_controller") then
 			script_name = "fm_mission_controller"
-		elseif hp_is_script_running("fm_mission_controller_2020") then
+		elseif safe_access.is_script_running("fm_mission_controller_2020") then
 			script_name = "fm_mission_controller_2020"
 		end
 
@@ -492,7 +392,7 @@ local function doomsday_instant_finish_new()
 			return
 		end
 
-		hp_try_force_host(script_name)
+		safe_access.force_host(script_name)
 		util.yield(1000)
 
 		local offsets = DOOMSDAY_FINISH_NEW_OFFSETS[script_name]
@@ -503,13 +403,13 @@ local function doomsday_instant_finish_new()
 			return
 		end
 
-		local bits = hp_try_get_local_int(script_name, offsets.step3, 0)
+		local bits = safe_access.get_local_int(script_name, offsets.step3, 0)
 		bits = bits | (1 << 9)
 		bits = bits | (1 << 16)
 
-		local ok1 = hp_try_set_local_int(script_name, offsets.step1, 5)
-		local ok2 = hp_try_set_local_int(script_name, offsets.step2, 999999)
-		local ok3 = hp_try_set_local_int(script_name, offsets.step3, bits)
+		local ok1 = safe_access.set_local_int(script_name, offsets.step1, 5)
+		local ok2 = safe_access.set_local_int(script_name, offsets.step2, 999999)
+		local ok3 = safe_access.set_local_int(script_name, offsets.step3, bits)
 
 		if notify then
 			if ok1 and ok2 and ok3 then

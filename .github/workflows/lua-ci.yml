@@ -25,7 +25,9 @@ jobs:
         if: steps.changed.outputs.any_changed == 'true'
         uses: JohnnyMorganz/stylua-action@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           version: latest
+          args: false
 
       - name: Check formatting (changed files only)
         if: steps.changed.outputs.any_changed == 'true'

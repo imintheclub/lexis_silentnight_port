@@ -27,11 +27,17 @@ local runtime_main_loop = {
 }
 
 local function subscribe_scroll_handler()
-	if not events.event.scroll then return end
+	if not events.event.scroll then
+		return
+	end
 
 	events.subscribe(events.event.scroll, function(e)
-		if _G.ShillenSilent_ForceStop then return end
-		if not state.animation.open and state.animation.progress < 0.01 then return end
+		if _G.ShillenSilent_ForceStop then
+			return
+		end
+		if not state.animation.open and state.animation.progress < 0.01 then
+			return
+		end
 
 		local scroll_speed = 30
 		local delta = e.offset * scroll_speed
@@ -46,7 +52,9 @@ local function subscribe_scroll_handler()
 		local bodyY_local = config.sidebar_gap
 		local bodyY_abs = win_y + bodyY_local
 
-		if my < bodyY_abs then return end
+		if my < bodyY_abs then
+			return
+		end
 
 		if mx >= win_x and mx <= win_x + menu_w then
 			if state.scroll.max_y > 0 then
@@ -73,7 +81,9 @@ local next_heist_enforce_tick = 0
 
 local function maybe_enforce_heist_toggles()
 	local now_tick = (util and util.get_tick_count and util.get_tick_count()) or nil
-	if now_tick and now_tick < next_heist_enforce_tick then return end
+	if now_tick and now_tick < next_heist_enforce_tick then
+		return
+	end
 
 	pcall(presets.hp_refresh_apartment_max_payout, false, false)
 	pcall(cayo_logic.cayo_enforce_heist_toggles)
@@ -87,7 +97,9 @@ end
 local function start_runtime_loop()
 	util.create_thread(function()
 		while true do
-			if _G.ShillenSilent_ForceStop then return end
+			if _G.ShillenSilent_ForceStop then
+				return
+			end
 
 			for i = 1, #SOLO_LAUNCH_HANDLERS do
 				local handler = SOLO_LAUNCH_HANDLERS[i]
@@ -98,7 +110,9 @@ local function start_runtime_loop()
 
 				if enabled then
 					pcall(solo_launch_generic)
-					if handler.setup then pcall(handler.setup) end
+					if handler.setup then
+						pcall(handler.setup)
+					end
 				elseif was_enabled and handler.reset then
 					pcall(handler.reset)
 				end
@@ -118,7 +132,9 @@ local function start_runtime_loop()
 			if t_pressed then
 				state.animation.open = not state.animation.open
 				state.animation.target = state.animation.open and 1.0 or 0.0
-				pcall(function() input.show_cursor(state.animation.open) end)
+				pcall(function()
+					input.show_cursor(state.animation.open)
+				end)
 
 				if state.animation.open then
 					if native and native.set_cursor_position then
@@ -156,7 +172,9 @@ local function start_runtime_loop()
 end
 
 function runtime_main_loop.start()
-	if runtime_main_loop.started then return false end
+	if runtime_main_loop.started then
+		return false
+	end
 	runtime_main_loop.started = true
 
 	pcall(subscribe_scroll_handler)

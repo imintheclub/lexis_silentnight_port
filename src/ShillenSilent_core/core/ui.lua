@@ -1621,7 +1621,6 @@ ui.render = function()
 	local wm_scale = config.font_scale_small or 1.0
 	local wm_col = { r = 0, g = 0, b = 0, a = 255 }
 	render_text("ShillenSilent v1.0.8", wm_x, wm_y, wm_scale, wm_col, "left")
-
 end
 
 return ui

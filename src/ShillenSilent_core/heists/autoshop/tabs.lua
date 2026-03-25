@@ -27,7 +27,7 @@ local autoshop_kill_cooldowns = autoshop_logic.autoshop_kill_cooldowns
 local autoshop_apply_payout = autoshop_logic.autoshop_apply_payout
 local autoshop_sync_contract_index = autoshop_logic.autoshop_sync_contract_index
 
-local AUTOSHOP_PAYOUT_MAX = 2200000
+local AUTOSHOP_PAYOUT_MAX = 2000000
 
 local function register(heistTab)
 	if type(heistTab) ~= "table" then
@@ -38,8 +38,8 @@ local function register(heistTab)
 
 	local gAutoshopInfo = ui.group(heistTab, "Info", nil, nil, nil, 140, "autoshop")
 	ui.label(gAutoshopInfo, "Auto Shop", config.colors.accent)
-	ui.label(gAutoshopInfo, "Max transaction: $2,200,000", config.colors.text_main)
-	ui.label(gAutoshopInfo, "Transaction cooldown: 60 min", config.colors.text_sec)
+	ui.label(gAutoshopInfo, "Max transaction: $2,000,000", config.colors.text_main)
+	ui.label(gAutoshopInfo, "Transaction cooldown: 20 min", config.colors.text_sec)
 	autoshop_refs.presets_group = hp_build_heist_preset_group(heistTab, "autoshop", "autoshop", "autoshop")
 
 	local gAutoshopPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "autoshop")

@@ -1,5 +1,4 @@
 local core = require("ShillenSilent_core.core.bootstrap")
-local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -105,6 +104,81 @@ local SALVAGE_SCRIPTS = {
 	PLANNING_RELOAD_OFFSETS = { 537, 535 },
 }
 
+local function is_script_running(script_name)
+	local ok, result = pcall(script.running, script_name)
+	return ok and result and true or false
+end
+
+local function set_local_int(script_name, offset, value)
+	local ok = pcall(function()
+		script.locals(script_name, offset).int32 = value
+	end)
+	return ok
+end
+
+local function get_local_int(script_name, offset, fallback)
+	local ok, value = pcall(function()
+		return script.locals(script_name, offset).int32
+	end)
+	if ok and value ~= nil then
+		return value
+	end
+	return fallback
+end
+
+local function set_stat_int(stat_name, value)
+	local ok = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			error("missing stat")
+		end
+		stat.int32 = value
+	end)
+	return ok
+end
+
+local function get_stat_int(stat_name, fallback)
+	local ok, value = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			return nil
+		end
+		return stat.int32
+	end)
+	if ok and value ~= nil then
+		return value
+	end
+	return fallback
+end
+
+local function set_tunable_int(name, value)
+	local ok = pcall(function()
+		script.tunables(name).int32 = value
+	end)
+	return ok
+end
+
+local function set_tunable_float(name, value)
+	local ok = pcall(function()
+		script.tunables(name).float = value
+	end)
+	return ok
+end
+
+local function set_global_bool(offset, value)
+	local ok = pcall(function()
+		script.globals(offset).bool = value and true or false
+	end)
+	return ok
+end
+
+local function global_bool_supported(offset)
+	local ok = pcall(function()
+		local _ = script.globals(offset).bool
+	end)
+	return ok
+end
+
 local function salvage_get_slot_config(slot)
 	if slot == 1 then
 		return SalvageConfig.slot1
@@ -130,14 +204,14 @@ local function salvage_apply_slot_tunables(slot)
 	local mod = math.floor(tonumber(slot_cfg.modification) or 0)
 	local keep = math.floor(tonumber(slot_cfg.keep) or 0)
 
-	local ok1 = safe_access.set_tunable_int(tunables.robbery, robbery)
-	local ok2 = safe_access.set_tunable_int(tunables.vehicle, vehicle + (mod * 100))
-	local ok3 = safe_access.set_tunable_int(tunables.keep, keep)
+	local ok1 = set_tunable_int(tunables.robbery, robbery)
+	local ok2 = set_tunable_int(tunables.vehicle, vehicle + (mod * 100))
+	local ok3 = set_tunable_int(tunables.keep, keep)
 	return ok1 and ok2 and ok3
 end
 
 local function salvage_reload_screen()
-	if not safe_access.is_script_running(SALVAGE_SCRIPTS.PLANNING) then
+	if not is_script_running(SALVAGE_SCRIPTS.PLANNING) then
 		if notify then
 			notify.push("Salvage Yard", "Planning screen is not active", 2000)
 		end
@@ -147,7 +221,7 @@ local function salvage_reload_screen()
 	local wrote_any = false
 	for i = 1, #SALVAGE_SCRIPTS.PLANNING_RELOAD_OFFSETS do
 		local offset = SALVAGE_SCRIPTS.PLANNING_RELOAD_OFFSETS[i]
-		local ok = safe_access.set_local_int(SALVAGE_SCRIPTS.PLANNING, offset, 2)
+		local ok = set_local_int(SALVAGE_SCRIPTS.PLANNING, offset, 2)
 		if offset == 537 then
 			salvage_flags.planning_reload_offset_537_supported = ok and true or false
 		elseif offset == 535 then
@@ -194,7 +268,7 @@ local function salvage_make_slot_available(slot)
 		return false
 	end
 
-	local ok = safe_access.set_stat_int(p .. tunables.status_stat, 0)
+	local ok = set_stat_int(p .. tunables.status_stat, 0)
 	local reload_ok = salvage_reload_screen()
 	if notify then
 		notify.push(
@@ -209,10 +283,10 @@ end
 local function salvage_complete_preps()
 	local p = GetMP()
 	local ok = true
-	ok = safe_access.set_stat_int(p .. SALVAGE_STATS.GEN_BS, -1) and ok
-	ok = safe_access.set_stat_int(p .. SALVAGE_STATS.SCOPE_BS, -1) and ok
-	ok = safe_access.set_stat_int(p .. SALVAGE_STATS.FM_PROG, -1) and ok
-	ok = safe_access.set_stat_int(p .. SALVAGE_STATS.INST_PROG, -1) and ok
+	ok = set_stat_int(p .. SALVAGE_STATS.GEN_BS, -1) and ok
+	ok = set_stat_int(p .. SALVAGE_STATS.SCOPE_BS, -1) and ok
+	ok = set_stat_int(p .. SALVAGE_STATS.FM_PROG, -1) and ok
+	ok = set_stat_int(p .. SALVAGE_STATS.INST_PROG, -1) and ok
 
 	local reload_ok = salvage_reload_screen()
 	if notify then
@@ -224,10 +298,10 @@ end
 local function salvage_reset_preps()
 	local p = GetMP()
 	local ok = true
-	ok = safe_access.set_stat_int(p .. SALVAGE_STATS.GEN_BS, 0) and ok
-	ok = safe_access.set_stat_int(p .. SALVAGE_STATS.SCOPE_BS, 0) and ok
-	ok = safe_access.set_stat_int(p .. SALVAGE_STATS.FM_PROG, 0) and ok
-	ok = safe_access.set_stat_int(p .. SALVAGE_STATS.INST_PROG, 0) and ok
+	ok = set_stat_int(p .. SALVAGE_STATS.GEN_BS, 0) and ok
+	ok = set_stat_int(p .. SALVAGE_STATS.SCOPE_BS, 0) and ok
+	ok = set_stat_int(p .. SALVAGE_STATS.FM_PROG, 0) and ok
+	ok = set_stat_int(p .. SALVAGE_STATS.INST_PROG, 0) and ok
 
 	local reload_ok = salvage_reload_screen()
 	if notify then
@@ -244,11 +318,12 @@ local function salvage_set_free_setup(enable, silent)
 	end
 
 	local setup_price = enabled and 0 or SALVAGE_DEFAULTS.setup_price
-	safe_access.set_tunable_int(SALVAGE_TUNABLES.SETUP_PRICE, setup_price)
+	local ok = set_tunable_int(SALVAGE_TUNABLES.SETUP_PRICE, setup_price)
 	if notify and not silent then
-		notify.push("Salvage Yard", enabled and "Free Setup enabled" or "Free Setup disabled", 2000)
+		local success_message = enabled and "Free Setup enabled" or "Free Setup disabled"
+		notify.push("Salvage Yard", ok and success_message or "Free Setup write failed", 2000)
 	end
-	return true
+	return ok
 end
 
 local function salvage_set_free_claim(enable, silent)
@@ -260,21 +335,22 @@ local function salvage_set_free_claim(enable, silent)
 
 	local standard = enabled and 0 or SALVAGE_DEFAULTS.claim_price_standard
 	local discounted = enabled and 0 or SALVAGE_DEFAULTS.claim_price_discounted
-	local ok1 = safe_access.set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_STANDARD, standard)
-	local ok2 = safe_access.set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_DISCOUNTED, discounted)
+	local ok1 = set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_STANDARD, standard)
+	local ok2 = set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_DISCOUNTED, discounted)
 	if notify and not silent then
-		notify.push("Salvage Yard", enabled and "Free Claim enabled" or "Free Claim disabled", 2000)
+		local success_message = enabled and "Free Claim enabled" or "Free Claim disabled"
+		notify.push("Salvage Yard", (ok1 and ok2) and success_message or "Free Claim write failed", 2000)
 	end
 	return ok1 and ok2
 end
 
 local function salvage_enforce_heist_toggles()
 	if salvage_flags.free_setup then
-		safe_access.set_tunable_int(SALVAGE_TUNABLES.SETUP_PRICE, 0)
+		set_tunable_int(SALVAGE_TUNABLES.SETUP_PRICE, 0)
 	end
 	if salvage_flags.free_claim then
-		safe_access.set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_STANDARD, 0)
-		safe_access.set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_DISCOUNTED, 0)
+		set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_STANDARD, 0)
+		set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_DISCOUNTED, 0)
 	end
 end
 
@@ -329,7 +405,7 @@ local function salvage_instant_finish()
 		local mission = nil
 		for i = 1, #SALVAGE_SCRIPTS.MISSIONS do
 			local candidate = SALVAGE_SCRIPTS.MISSIONS[i]
-			if safe_access.is_script_running(candidate.script) then
+			if is_script_running(candidate.script) then
 				mission = candidate
 				break
 			end
@@ -345,22 +421,22 @@ local function salvage_instant_finish()
 		local selected = mission.offsets[1]
 		for i = 1, #mission.offsets do
 			local offsets = mission.offsets[i]
-			if safe_access.get_local_int(mission.script, offsets.step1, nil) ~= nil then
+			if get_local_int(mission.script, offsets.step1, nil) ~= nil then
 				selected = offsets
 				break
 			end
 		end
 
-		local step1_value = safe_access.get_local_int(mission.script, selected.step1, 0)
-		local ok1 = safe_access.set_local_int(mission.script, selected.step1, step1_value | (1 << 11))
-		local ok2 = safe_access.set_local_int(mission.script, selected.step2, 2)
+		local step1_value = get_local_int(mission.script, selected.step1, 0)
+		local ok1 = set_local_int(mission.script, selected.step1, step1_value | (1 << 11))
+		local ok2 = set_local_int(mission.script, selected.step2, 2)
 
 		local used_fallback = false
 		local success = ok1 and ok2
 		if not success then
 			used_fallback = true
-			local fallback1 = safe_access.set_local_int(mission.script, selected.step1, 4)
-			local fallback2 = safe_access.set_local_int(mission.script, selected.step2, 5)
+			local fallback1 = set_local_int(mission.script, selected.step1, 4)
+			local fallback2 = set_local_int(mission.script, selected.step2, 5)
 			success = fallback1 and fallback2
 		end
 
@@ -384,7 +460,7 @@ end
 
 local function salvage_force_through_error()
 	return run_guarded_job("salvage_force_through_error", function()
-		if not safe_access.is_script_running(SALVAGE_SCRIPTS.PLANNING) then
+		if not is_script_running(SALVAGE_SCRIPTS.PLANNING) then
 			if notify then
 				notify.push("Salvage Yard", "Planning screen is not active", 2200)
 			end
@@ -394,7 +470,7 @@ local function salvage_force_through_error()
 		local wrote_any = false
 		for i = 1, #SALVAGE_SCRIPTS.PLANNING_FORCE_OFFSETS do
 			local offset = SALVAGE_SCRIPTS.PLANNING_FORCE_OFFSETS[i]
-			local ok = safe_access.set_local_int(SALVAGE_SCRIPTS.PLANNING, offset, 1)
+			local ok = set_local_int(SALVAGE_SCRIPTS.PLANNING, offset, 1)
 			if offset == 418 then
 				salvage_flags.planning_force_offset_418_supported = ok and true or false
 			elseif offset == 416 then
@@ -419,8 +495,8 @@ end
 
 local function salvage_skip_weekly_cooldown()
 	local p = GetMP()
-	local week_sync = safe_access.get_stat_int(p .. SALVAGE_STATS.WEEK_SYNC, 0) or 0
-	local ok = safe_access.set_tunable_int(SALVAGE_TUNABLES.WEEKLY_COOLDOWN, week_sync + 1)
+	local week_sync = get_stat_int(p .. SALVAGE_STATS.WEEK_SYNC, 0) or 0
+	local ok = set_tunable_int(SALVAGE_TUNABLES.WEEKLY_COOLDOWN, week_sync + 1)
 	local reload_ok = salvage_reload_screen()
 	if notify then
 		notify.push("Salvage Yard", (ok and reload_ok) and "Weekly cooldown skipped" or "Could not skip cooldown", 2200)
@@ -437,7 +513,7 @@ local function salvage_collect_safe()
 	end
 
 	local p = GetMP()
-	local value = safe_access.get_stat_int(p .. SALVAGE_STATS.SAFE_CASH_VALUE, 0) or 0
+	local value = get_stat_int(p .. SALVAGE_STATS.SAFE_CASH_VALUE, 0) or 0
 	if value <= 0 then
 		if notify then
 			notify.push("Salvage Yard", "Safe is empty", 2000)
@@ -445,7 +521,7 @@ local function salvage_collect_safe()
 		return false
 	end
 
-	local ok = safe_access.set_global_bool(SALVAGE_GLOBALS.SAFE_COLLECT_BOOL, true)
+	local ok = set_global_bool(SALVAGE_GLOBALS.SAFE_COLLECT_BOOL, true)
 	if notify then
 		notify.push("Salvage Yard", ok and "Safe collected" or "Collect failed", 2000)
 	end
@@ -453,7 +529,7 @@ local function salvage_collect_safe()
 end
 
 local function salvage_refresh_collect_safe_state()
-	salvage_flags.collect_safe_ee_only = safe_access.get_global_bool(SALVAGE_GLOBALS.SAFE_COLLECT_BOOL, nil) ~= nil
+	salvage_flags.collect_safe_ee_only = global_bool_supported(SALVAGE_GLOBALS.SAFE_COLLECT_BOOL)
 	if salvage_refs.collect_safe_button then
 		salvage_refs.collect_safe_button.disabled = not salvage_flags.collect_safe_ee_only
 	end
@@ -467,10 +543,10 @@ local function salvage_apply_sell_values()
 	local slot3 = math.floor(tonumber(SalvageConfig.sell_value_slot3) or 0)
 
 	local ok = true
-	ok = safe_access.set_tunable_float(SALVAGE_TUNABLES.SALVAGE_MULTIPLIER, multiplier) and ok
-	ok = safe_access.set_tunable_int(SALVAGE_SLOT_TUNABLES[1].value, slot1) and ok
-	ok = safe_access.set_tunable_int(SALVAGE_SLOT_TUNABLES[2].value, slot2) and ok
-	ok = safe_access.set_tunable_int(SALVAGE_SLOT_TUNABLES[3].value, slot3) and ok
+	ok = set_tunable_float(SALVAGE_TUNABLES.SALVAGE_MULTIPLIER, multiplier) and ok
+	ok = set_tunable_int(SALVAGE_SLOT_TUNABLES[1].value, slot1) and ok
+	ok = set_tunable_int(SALVAGE_SLOT_TUNABLES[2].value, slot2) and ok
+	ok = set_tunable_int(SALVAGE_SLOT_TUNABLES[3].value, slot3) and ok
 
 	local reload_ok = salvage_reload_screen()
 	if notify then

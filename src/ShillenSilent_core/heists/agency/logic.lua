@@ -1,5 +1,4 @@
 local core = require("ShillenSilent_core.core.bootstrap")
-local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -33,16 +32,11 @@ local AGENCY_STATS = {
 	STORY_STRAND = "FIXER_STORY_STRAND",
 	GENERAL_BS = "FIXER_GENERAL_BS",
 	COMPLETED_BS = "FIXER_COMPLETED_BS",
-	STORY_COOLDOWN = "FIXER_STORY_COOLDOWN_POSIX",
-	SECURITY_COOLDOWN = "FIXER_SECURITY_CONTRACT_COOLDOWN_TIME",
-	PAYPHONE_COOLDOWN = "REQUEST_FRANKLIN_PAYPHONE_HIT_COOLDOWN",
+	STORY_COOLDOWN = "FIXER_STORY_COOLDOWN",
 	SAFE_CASH_VALUE = "FIXER_SAFE_CASH_VALUE",
 }
 
 local AGENCY_GLOBALS = {
-	PAYOUT_COMPAT = 262145 + 31249,
-	PAYPHONE_COOLDOWN = 262145 + 31283,
-	PAYPHONE_SECURITY_COOLDOWN = 262145 + 31203,
 	SAFE_COLLECT_BOOL = 2708850,
 }
 
@@ -67,6 +61,79 @@ local AGENCY_FINISH_NEW = {
 	},
 }
 
+local function is_script_running(script_name)
+	local ok, result = pcall(script.running, script_name)
+	return ok and result and true or false
+end
+
+local function force_script_host(script_name)
+	local ok, result = pcall(script.force_host, script_name)
+	return ok and result and true or false
+end
+
+local function set_global_bool(offset, value)
+	local ok = pcall(function()
+		script.globals(offset).bool = value and true or false
+	end)
+	return ok
+end
+
+local function global_bool_supported(offset)
+	local ok = pcall(function()
+		local _ = script.globals(offset).bool
+	end)
+	return ok
+end
+
+local function set_local_int(script_name, offset, value)
+	local ok = pcall(function()
+		script.locals(script_name, offset).int32 = value
+	end)
+	return ok
+end
+
+local function get_local_int(script_name, offset, fallback)
+	local ok, value = pcall(function()
+		return script.locals(script_name, offset).int32
+	end)
+	if ok and value ~= nil then
+		return value
+	end
+	return fallback
+end
+
+local function set_tunable_int(name, value)
+	local ok = pcall(function()
+		script.tunables(name).int32 = value
+	end)
+	return ok
+end
+
+local function set_stat_int(stat_name, value)
+	local ok = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			error("missing stat")
+		end
+		stat.int32 = value
+	end)
+	return ok
+end
+
+local function get_stat_int(stat_name, fallback)
+	local ok, value = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			return nil
+		end
+		return stat.int32
+	end)
+	if ok and value ~= nil then
+		return value
+	end
+	return fallback
+end
+
 local function agency_story_strand_from_contract(contract)
 	if contract < 18 then
 		return 0
@@ -82,47 +149,38 @@ end
 
 local function agency_apply_and_complete_preps()
 	local p = GetMP()
-	safe_access.set_stat_int(p .. AGENCY_STATS.STORY_BS, AgencyConfig.contract)
-	safe_access.set_stat_int(p .. AGENCY_STATS.STORY_STRAND, agency_story_strand_from_contract(AgencyConfig.contract))
-	safe_access.set_stat_int(p .. AGENCY_STATS.GENERAL_BS, -1)
-	safe_access.set_stat_int(p .. AGENCY_STATS.COMPLETED_BS, -1)
+	local ok = true
+	ok = set_stat_int(p .. AGENCY_STATS.STORY_BS, AgencyConfig.contract) and ok
+	ok = set_stat_int(p .. AGENCY_STATS.STORY_STRAND, agency_story_strand_from_contract(AgencyConfig.contract)) and ok
+	ok = set_stat_int(p .. AGENCY_STATS.GENERAL_BS, -1) and ok
+	ok = set_stat_int(p .. AGENCY_STATS.COMPLETED_BS, -1) and ok
 	if notify then
-		notify.push("Agency", "Preps applied", 2000)
+		notify.push("Agency", ok and "Preps applied" or "Prep write failed", 2000)
 	end
-	return true
+	return ok
 end
 
 local function agency_kill_cooldowns()
 	local p = GetMP()
-	safe_access.set_tunable_int(AGENCY_TUNABLES.STORY_COOLDOWN, 0)
-	safe_access.set_tunable_int(AGENCY_TUNABLES.SECURITY_COOLDOWN, 0)
-	safe_access.set_tunable_int(AGENCY_TUNABLES.PAYPHONE_COOLDOWN, 0)
-
-	safe_access.set_stat_int(p .. AGENCY_STATS.STORY_COOLDOWN, -1)
-	safe_access.set_stat_int(p .. AGENCY_STATS.SECURITY_COOLDOWN, -1)
-	safe_access.set_stat_int(p .. AGENCY_STATS.PAYPHONE_COOLDOWN, 0)
-
-	safe_access.set_global_int(AGENCY_GLOBALS.PAYPHONE_COOLDOWN, 0)
-	safe_access.set_global_int(AGENCY_GLOBALS.PAYPHONE_SECURITY_COOLDOWN, 0)
+	local ok = true
+	ok = set_tunable_int(AGENCY_TUNABLES.STORY_COOLDOWN, 0) and ok
+	ok = set_tunable_int(AGENCY_TUNABLES.SECURITY_COOLDOWN, 0) and ok
+	ok = set_tunable_int(AGENCY_TUNABLES.PAYPHONE_COOLDOWN, 0) and ok
+	ok = set_stat_int(p .. AGENCY_STATS.STORY_COOLDOWN, -1) and ok
 
 	if notify then
-		notify.push("Agency", "Cooldowns removed", 2000)
+		notify.push("Agency", ok and "Cooldowns removed" or "Cooldown write failed", 2000)
 	end
-	return true
+	return ok
 end
 
 local function agency_apply_payout()
-	safe_access.set_tunable_int(AGENCY_TUNABLES.PAYOUT, AgencyConfig.payout)
-
-	local compat_exists = safe_access.get_global_int(AGENCY_GLOBALS.PAYOUT_COMPAT, nil) ~= nil
-	if compat_exists then
-		safe_access.set_global_int(AGENCY_GLOBALS.PAYOUT_COMPAT, AgencyConfig.payout)
-	end
+	local ok = set_tunable_int(AGENCY_TUNABLES.PAYOUT, AgencyConfig.payout)
 
 	if notify then
-		notify.push("Agency", "Payout applied", 2000)
+		notify.push("Agency", ok and "Payout applied" or "Payout write failed", 2000)
 	end
-	return true
+	return ok
 end
 
 local function agency_teleport_entrance()
@@ -171,7 +229,7 @@ local function agency_collect_safe()
 	end
 
 	local p = GetMP()
-	local value = safe_access.get_stat_int(p .. AGENCY_STATS.SAFE_CASH_VALUE, 0) or 0
+	local value = get_stat_int(p .. AGENCY_STATS.SAFE_CASH_VALUE, 0) or 0
 	if value <= 0 then
 		if notify then
 			notify.push("Agency", "Safe is empty", 2000)
@@ -179,7 +237,7 @@ local function agency_collect_safe()
 		return false
 	end
 
-	local ok = safe_access.set_global_bool(AGENCY_GLOBALS.SAFE_COLLECT_BOOL, true)
+	local ok = set_global_bool(AGENCY_GLOBALS.SAFE_COLLECT_BOOL, true)
 	if notify then
 		notify.push("Agency", ok and "Safe collected" or "Collect failed", 2000)
 	end
@@ -187,10 +245,10 @@ local function agency_collect_safe()
 end
 
 local function agency_find_new_finish_script()
-	if safe_access.is_script_running("fm_mission_controller") then
+	if is_script_running("fm_mission_controller") then
 		return "fm_mission_controller"
 	end
-	if safe_access.is_script_running("fm_mission_controller_2020") then
+	if is_script_running("fm_mission_controller_2020") then
 		return "fm_mission_controller_2020"
 	end
 	return nil
@@ -198,25 +256,24 @@ end
 
 local function agency_instant_finish_old()
 	return run_guarded_job("agency_instant_finish_old", function()
-		if not safe_access.is_script_running(AGENCY_FINISH_OLD.script) then
+		if not is_script_running(AGENCY_FINISH_OLD.script) then
 			if notify then
 				notify.push("Agency", "Old finish requires fm_mission_controller_2020", 2200)
 			end
 			return
 		end
 
-		safe_access.force_host(AGENCY_FINISH_OLD.script)
+		if not force_script_host(AGENCY_FINISH_OLD.script) then
+			if notify then
+				notify.push("Agency", "Could not force host", 2200)
+			end
+			return
+		end
 		util.yield(1000)
-		local ok1 = safe_access.set_local_int(
-			AGENCY_FINISH_OLD.script,
-			AGENCY_FINISH_OLD.step1_offset,
-			AGENCY_FINISH_OLD.step1_value
-		)
-		local ok2 = safe_access.set_local_int(
-			AGENCY_FINISH_OLD.script,
-			AGENCY_FINISH_OLD.step2_offset,
-			AGENCY_FINISH_OLD.step2_value
-		)
+		local ok1 =
+			set_local_int(AGENCY_FINISH_OLD.script, AGENCY_FINISH_OLD.step1_offset, AGENCY_FINISH_OLD.step1_value)
+		local ok2 =
+			set_local_int(AGENCY_FINISH_OLD.script, AGENCY_FINISH_OLD.step2_offset, AGENCY_FINISH_OLD.step2_value)
 
 		if notify then
 			notify.push("Agency", (ok1 and ok2) and "Instant finish triggered (Old)" or "Old finish write failed", 2200)
@@ -246,16 +303,21 @@ local function agency_instant_finish_new()
 			return
 		end
 
-		safe_access.force_host(script_name)
+		if not force_script_host(script_name) then
+			if notify then
+				notify.push("Agency", "Could not force host", 2200)
+			end
+			return
+		end
 		util.yield(1000)
 
-		local flags = safe_access.get_local_int(script_name, offsets.step3_offset, 0)
+		local flags = get_local_int(script_name, offsets.step3_offset, 0)
 		flags = flags | (1 << 9)
 		flags = flags | (1 << 16)
 
-		local ok1 = safe_access.set_local_int(script_name, offsets.step1_offset, 5)
-		local ok2 = safe_access.set_local_int(script_name, offsets.step2_offset, 999999)
-		local ok3 = safe_access.set_local_int(script_name, offsets.step3_offset, flags)
+		local ok1 = set_local_int(script_name, offsets.step1_offset, 5)
+		local ok2 = set_local_int(script_name, offsets.step2_offset, 999999)
+		local ok3 = set_local_int(script_name, offsets.step3_offset, flags)
 
 		if notify then
 			notify.push(
@@ -272,7 +334,7 @@ local function agency_instant_finish_new()
 end
 
 local function agency_refresh_collect_safe_state()
-	agency_flags.collect_safe_ee_only = safe_access.get_global_bool(AGENCY_GLOBALS.SAFE_COLLECT_BOOL, nil) ~= nil
+	agency_flags.collect_safe_ee_only = global_bool_supported(AGENCY_GLOBALS.SAFE_COLLECT_BOOL)
 	if agency_refs.collect_safe_button then
 		agency_refs.collect_safe_button.disabled = not agency_flags.collect_safe_ee_only
 	end

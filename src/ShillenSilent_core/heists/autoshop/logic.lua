@@ -1,5 +1,4 @@
 local core = require("ShillenSilent_core.core.bootstrap")
-local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -59,6 +58,58 @@ local AUTOSHOP_FINISH_NEW = {
 	step3_offset = 56223 + 1,
 }
 
+local function is_script_running(script_name)
+	local ok, result = pcall(script.running, script_name)
+	return ok and result and true or false
+end
+
+local function force_script_host(script_name)
+	local ok, result = pcall(script.force_host, script_name)
+	return ok and result and true or false
+end
+
+local function set_local_int(script_name, offset, value)
+	local ok = pcall(function()
+		script.locals(script_name, offset).int32 = value
+	end)
+	return ok
+end
+
+local function get_local_int(script_name, offset, fallback)
+	local ok, value = pcall(function()
+		return script.locals(script_name, offset).int32
+	end)
+	if ok and value ~= nil then
+		return value
+	end
+	return fallback
+end
+
+local function set_stat_int(stat_name, value)
+	local ok = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			error("missing stat")
+		end
+		stat.int32 = value
+	end)
+	return ok
+end
+
+local function set_tunable_int(name, value)
+	local ok = pcall(function()
+		script.tunables(name).int32 = value
+	end)
+	return ok
+end
+
+local function set_tunable_float(name, value)
+	local ok = pcall(function()
+		script.tunables(name).float = value
+	end)
+	return ok
+end
+
 local function autoshop_sync_contract_index()
 	AutoshopConfig.contract_index = hp_option_index_by_value(
 		AutoshopPrepOptions.contracts,
@@ -71,7 +122,7 @@ local function autoshop_sync_contract_index()
 end
 
 local function autoshop_redraw_board()
-	if not safe_access.is_script_running(AUTOSHOP_BOARD_RELOAD_SCRIPT) then
+	if not is_script_running(AUTOSHOP_BOARD_RELOAD_SCRIPT) then
 		if notify then
 			notify.push("Auto Shop", "Auto Shop board is not active", 2000)
 		end
@@ -81,7 +132,7 @@ local function autoshop_redraw_board()
 	local wrote_any = false
 	for i = 1, #AUTOSHOP_BOARD_RELOAD_OFFSETS do
 		local offset = AUTOSHOP_BOARD_RELOAD_OFFSETS[i]
-		local ok = safe_access.set_local_int(AUTOSHOP_BOARD_RELOAD_SCRIPT, offset, AUTOSHOP_BOARD_RELOAD_VALUE)
+		local ok = set_local_int(AUTOSHOP_BOARD_RELOAD_SCRIPT, offset, AUTOSHOP_BOARD_RELOAD_VALUE)
 		if offset == 406 then
 			autoshop_flags.board_reload_offset_406_supported = ok and true or false
 		elseif offset == 408 then
@@ -101,8 +152,8 @@ local function autoshop_apply_and_complete_preps()
 	local contract = math.floor(tonumber(AutoshopConfig.contract) or -1)
 	local gen_bs = (contract == 1) and 4351 or 12543
 
-	local ok1 = safe_access.set_stat_int(p .. AUTOSHOP_STATS.CURRENT, contract)
-	local ok2 = safe_access.set_stat_int(p .. AUTOSHOP_STATS.GEN_BS, gen_bs)
+	local ok1 = set_stat_int(p .. AUTOSHOP_STATS.CURRENT, contract)
+	local ok2 = set_stat_int(p .. AUTOSHOP_STATS.GEN_BS, gen_bs)
 	local board_ok = autoshop_redraw_board()
 
 	if notify then
@@ -113,7 +164,7 @@ end
 
 local function autoshop_reset_preps()
 	local p = GetMP()
-	local ok = safe_access.set_stat_int(p .. AUTOSHOP_STATS.GEN_BS, 12467)
+	local ok = set_stat_int(p .. AUTOSHOP_STATS.GEN_BS, 12467)
 	local board_ok = autoshop_redraw_board()
 	if notify then
 		notify.push("Auto Shop", (ok and board_ok) and "Preps reset" or "Could not reset preps", 2000)
@@ -151,26 +202,25 @@ end
 
 local function autoshop_instant_finish_old()
 	return run_guarded_job("autoshop_instant_finish_old", function()
-		if not safe_access.is_script_running(AUTOSHOP_FINISH_SCRIPT) then
+		if not is_script_running(AUTOSHOP_FINISH_SCRIPT) then
 			if notify then
 				notify.push("Auto Shop", "Old finish requires fm_mission_controller_2020", 2200)
 			end
 			return
 		end
 
-		safe_access.force_host(AUTOSHOP_FINISH_SCRIPT)
+		if not force_script_host(AUTOSHOP_FINISH_SCRIPT) then
+			if notify then
+				notify.push("Auto Shop", "Could not force host", 2200)
+			end
+			return
+		end
 		util.yield(1000)
 
-		local ok1 = safe_access.set_local_int(
-			AUTOSHOP_FINISH_SCRIPT,
-			AUTOSHOP_FINISH_OLD.step1_offset,
-			AUTOSHOP_FINISH_OLD.step1_value
-		)
-		local ok2 = safe_access.set_local_int(
-			AUTOSHOP_FINISH_SCRIPT,
-			AUTOSHOP_FINISH_OLD.step2_offset,
-			AUTOSHOP_FINISH_OLD.step2_value
-		)
+		local ok1 =
+			set_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_OLD.step1_offset, AUTOSHOP_FINISH_OLD.step1_value)
+		local ok2 =
+			set_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_OLD.step2_offset, AUTOSHOP_FINISH_OLD.step2_value)
 
 		if notify then
 			notify.push(
@@ -188,23 +238,28 @@ end
 
 local function autoshop_instant_finish_new()
 	return run_guarded_job("autoshop_instant_finish_new", function()
-		if not safe_access.is_script_running(AUTOSHOP_FINISH_SCRIPT) then
+		if not is_script_running(AUTOSHOP_FINISH_SCRIPT) then
 			if notify then
 				notify.push("Auto Shop", "New finish requires fm_mission_controller_2020", 2200)
 			end
 			return
 		end
 
-		safe_access.force_host(AUTOSHOP_FINISH_SCRIPT)
+		if not force_script_host(AUTOSHOP_FINISH_SCRIPT) then
+			if notify then
+				notify.push("Auto Shop", "Could not force host", 2200)
+			end
+			return
+		end
 		util.yield(1000)
 
-		local flags = safe_access.get_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_NEW.step3_offset, 0)
+		local flags = get_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_NEW.step3_offset, 0)
 		flags = flags | (1 << 9)
 		flags = flags | (1 << 16)
 
-		local ok1 = safe_access.set_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_NEW.step1_offset, 5)
-		local ok2 = safe_access.set_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_NEW.step2_offset, 999999)
-		local ok3 = safe_access.set_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_NEW.step3_offset, flags)
+		local ok1 = set_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_NEW.step1_offset, 5)
+		local ok2 = set_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_NEW.step2_offset, 999999)
+		local ok3 = set_local_int(AUTOSHOP_FINISH_SCRIPT, AUTOSHOP_FINISH_NEW.step3_offset, flags)
 
 		if notify then
 			notify.push(
@@ -225,12 +280,12 @@ local function autoshop_kill_cooldowns()
 
 	local stats_ok = true
 	for i = 0, 7 do
-		local ok = safe_access.set_stat_int(p .. "TUNER_CONTRACT" .. tostring(i) .. "_POSIX", 0)
+		local ok = set_stat_int(p .. "TUNER_CONTRACT" .. tostring(i) .. "_POSIX", 0)
 		stats_ok = stats_ok and ok
 	end
 
-	local cooldown_ok = safe_access.set_tunable_int(AUTOSHOP_TUNABLES.COOLDOWN, 0)
-	local cooldown_legacy_ok = safe_access.set_tunable_int(AUTOSHOP_TUNABLES.COOLDOWN_LEGACY, 0)
+	local cooldown_ok = set_tunable_int(AUTOSHOP_TUNABLES.COOLDOWN, 0)
+	local cooldown_legacy_ok = set_tunable_int(AUTOSHOP_TUNABLES.COOLDOWN_LEGACY, 0)
 	local any_tunable = cooldown_ok or cooldown_legacy_ok
 
 	if notify then
@@ -248,11 +303,11 @@ local function autoshop_apply_payout()
 	local payout_ok = true
 
 	for i = 1, #AUTOSHOP_TUNABLES.LEADER_REWARDS do
-		local ok = safe_access.set_tunable_int(AUTOSHOP_TUNABLES.LEADER_REWARDS[i], payout)
+		local ok = set_tunable_int(AUTOSHOP_TUNABLES.LEADER_REWARDS[i], payout)
 		payout_ok = payout_ok and ok
 	end
 
-	local fee_ok = safe_access.set_tunable_float(AUTOSHOP_TUNABLES.CONTACT_FEE, 0.0)
+	local fee_ok = set_tunable_float(AUTOSHOP_TUNABLES.CONTACT_FEE, 0.0)
 	if notify then
 		notify.push("Auto Shop", (payout_ok and fee_ok) and "Payout applied" or "Payout write incomplete", 2200)
 	end

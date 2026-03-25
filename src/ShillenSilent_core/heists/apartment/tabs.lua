@@ -1,7 +1,6 @@
 local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local native_api = require("ShillenSilent_core.core.native_api")
-local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local danger_groups = require("ShillenSilent_core.shared.danger_groups")
@@ -23,7 +22,6 @@ local BLIP_SPRITES_HEIST = blip_teleport.BLIP_SPRITES_HEIST
 local heist_skip_cutscene = native_api.heist_skip_cutscene
 local GetMP = presets.GetMP
 local hp_build_heist_preset_group = presets.hp_build_heist_preset_group
-local hp_set_uniform_cuts = presets.hp_set_uniform_cuts
 local hp_options_to_names = presets.hp_options_to_names
 local hp_find_option_index = presets.hp_find_option_index
 local hp_set_apartment_uniform_cuts = presets.hp_set_apartment_uniform_cuts
@@ -37,6 +35,59 @@ local ApartmentCutsValues = apartment_state.cuts
 local apartment_flags = apartment_state.flags
 local apartment_refs = apartment_state.refs
 local apartment_callbacks = apartment_state.callbacks
+
+local function is_script_running(script_name)
+	local ok, result = pcall(script.running, script_name)
+	return ok and result and true or false
+end
+
+local function force_script_host(script_name)
+	local ok, result = pcall(script.force_host, script_name)
+	return ok and result and true or false
+end
+
+local function set_local_int(script_name, offset, value)
+	local ok = pcall(function()
+		script.locals(script_name, offset).int32 = value
+	end)
+	return ok
+end
+
+local function set_local_float(script_name, offset, value)
+	local ok = pcall(function()
+		script.locals(script_name, offset).float = value
+	end)
+	return ok
+end
+
+local function set_global_int(offset, value)
+	local ok = pcall(function()
+		script.globals(offset).int32 = value
+	end)
+	return ok
+end
+
+local function set_stat_int(stat_name, value)
+	local ok = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			error("missing stat")
+		end
+		stat.int32 = value
+	end)
+	return ok
+end
+
+local function set_stat_bool(stat_name, value)
+	local ok = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			error("missing stat")
+		end
+		stat.bool = value and true or false
+	end)
+	return ok
+end
 
 local function register(heistTab)
 	if type(heistTab) ~= "table" then
@@ -79,13 +130,13 @@ local function register(heistTab)
 			apartment_change_session()
 		end)
 
-		local apartmentPresetsGroup = hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
+		hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
 
 		local function apartment_fleeca_hack()
-			if safe_access.is_script_running("fm_mission_controller") then
-				safe_access.set_local_int("fm_mission_controller", 12223 + 24, 7)
+			if is_script_running("fm_mission_controller") then
+				local ok = set_local_int("fm_mission_controller", 12223 + 24, 7)
 				if notify then
-					notify.push("Apartment Tools", "Fleeca hack completed", 2000)
+					notify.push("Apartment Tools", ok and "Fleeca hack completed" or "Fleeca hack write failed", 2000)
 				end
 			else
 				if notify then
@@ -95,10 +146,10 @@ local function register(heistTab)
 		end
 
 		local function apartment_fleeca_drill()
-			if safe_access.is_script_running("fm_mission_controller") then
-				safe_access.set_local_float("fm_mission_controller", 10511 + 11, 100.0)
+			if is_script_running("fm_mission_controller") then
+				local ok = set_local_float("fm_mission_controller", 10511 + 11, 100.0)
 				if notify then
-					notify.push("Apartment Tools", "Fleeca drill completed", 2000)
+					notify.push("Apartment Tools", ok and "Fleeca drill completed" or "Fleeca drill write failed", 2000)
 				end
 			else
 				if notify then
@@ -108,10 +159,10 @@ local function register(heistTab)
 		end
 
 		local function apartment_pacific_hack()
-			if safe_access.is_script_running("fm_mission_controller") then
-				safe_access.set_local_int("fm_mission_controller", 10217, 9)
+			if is_script_running("fm_mission_controller") then
+				local ok = set_local_int("fm_mission_controller", 10217, 9)
 				if notify then
-					notify.push("Apartment Tools", "Pacific hack completed", 2000)
+					notify.push("Apartment Tools", ok and "Pacific hack completed" or "Pacific hack write failed", 2000)
 				end
 			else
 				if notify then
@@ -123,20 +174,32 @@ local function register(heistTab)
 		-- Instant Finish (Pacific Standard)
 		local function apartment_instant_finish_pacific()
 			run_guarded_job("apartment_instant_finish_pacific", function()
-				if safe_access.force_host("fm_mission_controller") then
-					util.yield(1000)
-					safe_access.set_local_int("fm_mission_controller", 21457, 5)
-					safe_access.set_local_int("fm_mission_controller", 22136, 80)
-					safe_access.set_local_int("fm_mission_controller", 23081, 10000000)
-					safe_access.set_local_int("fm_mission_controller", 29017, 99999)
-					safe_access.set_local_int("fm_mission_controller", 32541, 99999)
+				if not is_script_running("fm_mission_controller") then
 					if notify then
-						notify.push("Apartment", "Instant finish triggered (Pacific Standard)", 2000)
+						notify.push("Apartment", "fm_mission_controller is not running", 2000)
 					end
-				else
+					return
+				end
+				if not force_script_host("fm_mission_controller") then
 					if notify then
 						notify.push("Apartment", "Could not force host", 2000)
 					end
+					return
+				end
+
+				util.yield(1000)
+				local ok = true
+				ok = set_local_int("fm_mission_controller", 21457, 5) and ok
+				ok = set_local_int("fm_mission_controller", 22136, 80) and ok
+				ok = set_local_int("fm_mission_controller", 23081, 10000000) and ok
+				ok = set_local_int("fm_mission_controller", 29017, 99999) and ok
+				ok = set_local_int("fm_mission_controller", 32541, 99999) and ok
+				if notify then
+					notify.push(
+						"Apartment",
+						ok and "Instant finish triggered (Pacific Standard)" or "Instant finish write failed",
+						2000
+					)
 				end
 			end, function()
 				if notify then
@@ -148,19 +211,31 @@ local function register(heistTab)
 		-- Instant Finish (Other Classics)
 		local function apartment_instant_finish_other()
 			run_guarded_job("apartment_instant_finish_other", function()
-				if safe_access.force_host("fm_mission_controller") then
-					util.yield(1000)
-					safe_access.set_local_int("fm_mission_controller", 20395, 12)
-					safe_access.set_local_int("fm_mission_controller", 23081, 99999)
-					safe_access.set_local_int("fm_mission_controller", 29017, 99999)
-					safe_access.set_local_int("fm_mission_controller", 32541, 99999)
+				if not is_script_running("fm_mission_controller") then
 					if notify then
-						notify.push("Apartment", "Instant finish triggered (Other Classics)", 2000)
+						notify.push("Apartment", "fm_mission_controller is not running", 2000)
 					end
-				else
+					return
+				end
+				if not force_script_host("fm_mission_controller") then
 					if notify then
 						notify.push("Apartment", "Could not force host", 2000)
 					end
+					return
+				end
+
+				util.yield(1000)
+				local ok = true
+				ok = set_local_int("fm_mission_controller", 20395, 12) and ok
+				ok = set_local_int("fm_mission_controller", 23081, 99999) and ok
+				ok = set_local_int("fm_mission_controller", 29017, 99999) and ok
+				ok = set_local_int("fm_mission_controller", 32541, 99999) and ok
+				if notify then
+					notify.push(
+						"Apartment",
+						ok and "Instant finish triggered (Other Classics)" or "Instant finish write failed",
+						2000
+					)
 				end
 			end, function()
 				if notify then
@@ -171,10 +246,12 @@ local function register(heistTab)
 
 		local function apartment_play_unavailable()
 			local player_id = (players and players.user and players.user()) or 0
-			local cooldown_global = 1877303 + 1 + (player_id * 77) + 76
-			safe_access.set_global_int(cooldown_global, -1)
+			local cooldown_step1 = ApartmentGlobals.Cooldown.STEP1 + (player_id * 77)
+			local ok = true
+			ok = set_global_int(cooldown_step1, -1) and ok
+			ok = set_global_int(ApartmentGlobals.Cooldown.STEP2, 0) and ok
 			if notify then
-				notify.push("Apartment Tools", "Unavailable jobs unlocked", 2000)
+				notify.push("Apartment Tools", ok and "Unavailable jobs unlocked" or "Play unavailable failed", 2000)
 			end
 		end
 
@@ -220,14 +297,19 @@ local function register(heistTab)
 				hash_text("hKSf9RCT8UiaZlykyGrMwg"),
 			}
 
+			local ok = true
 			for i = 0, 4 do
-				safe_access.set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i, root_hashes[i + 1])
-				safe_access.set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i .. "_L", 5)
+				ok = set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i, root_hashes[i + 1]) and ok
+				ok = set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i .. "_L", 5) and ok
 			end
 
-			safe_access.set_global_int(ApartmentGlobals.Board, 22)
+			ok = apartment_redraw_board() and ok
 			if notify then
-				notify.push("Apartment Tools", "All jobs unlocked. Change session to apply.", 2600)
+				notify.push(
+					"Apartment Tools",
+					ok and "All jobs unlocked. Change session to apply." or "Unlock-all write failed",
+					2600
+				)
 			end
 		end
 
@@ -319,8 +401,10 @@ local function register(heistTab)
 
 		-- Apply Apartment Cuts
 		local function apply_apartment_cuts()
-			local base_global = 1936013
-			local base_local = 1937981
+			local base_pairs = {
+				{ global_base = 1936013, local_base = 1937981 }, -- current script offsets
+				{ global_base = 1935536, local_base = 1937504 }, -- SilentNight legacy offsets
+			}
 			local total_cut = ApartmentCutsValues.player1
 				+ ApartmentCutsValues.player2
 				+ ApartmentCutsValues.player3
@@ -328,26 +412,36 @@ local function register(heistTab)
 
 			-- Calculate over_cap - if total > 100, we need to compensate
 			local over_cap = total_cut - 100
-			if over_cap > 0 then
-				safe_access.set_global_int(base_global + 1 + 1, -over_cap)
-			else
-				safe_access.set_global_int(base_global + 1 + 1, 0)
+			local any_pair_ok = false
+
+			for i = 1, #base_pairs do
+				local pair = base_pairs[i]
+				local pair_ok = true
+				if over_cap > 0 then
+					pair_ok = set_global_int(pair.global_base + 1 + 1, -over_cap) and pair_ok
+				else
+					pair_ok = set_global_int(pair.global_base + 1 + 1, 0) and pair_ok
+				end
+
+				-- Set globals for players 2, 3, 4
+				pair_ok = set_global_int(pair.global_base + 1 + 2, ApartmentCutsValues.player2) and pair_ok
+				pair_ok = set_global_int(pair.global_base + 1 + 3, ApartmentCutsValues.player3) and pair_ok
+				pair_ok = set_global_int(pair.global_base + 1 + 4, ApartmentCutsValues.player4) and pair_ok
+
+				-- "Local" cut entries are exposed as global offsets in SN tables.
+				pair_ok = set_global_int(pair.local_base + 3008 + 1, ApartmentCutsValues.player1) and pair_ok
+				pair_ok = set_global_int(pair.local_base + 3008 + 2, ApartmentCutsValues.player2) and pair_ok
+				pair_ok = set_global_int(pair.local_base + 3008 + 3, ApartmentCutsValues.player3) and pair_ok
+				pair_ok = set_global_int(pair.local_base + 3008 + 4, ApartmentCutsValues.player4) and pair_ok
+
+				any_pair_ok = any_pair_ok or pair_ok
 			end
-
-			-- Set globals for players 2, 3, 4
-			safe_access.set_global_int(base_global + 1 + 2, ApartmentCutsValues.player2)
-			safe_access.set_global_int(base_global + 1 + 3, ApartmentCutsValues.player3)
-			safe_access.set_global_int(base_global + 1 + 4, ApartmentCutsValues.player4)
-
-			-- Set locals for ALL players (critical fix!)
-			safe_access.set_global_int(base_local + 3008 + 1, ApartmentCutsValues.player1)
-			safe_access.set_global_int(base_local + 3008 + 2, ApartmentCutsValues.player2)
-			safe_access.set_global_int(base_local + 3008 + 3, ApartmentCutsValues.player3)
-			safe_access.set_global_int(base_local + 3008 + 4, ApartmentCutsValues.player4)
+			local ok = any_pair_ok
 
 			if notify then
-				notify.push("Apartment Cuts", "Cuts applied", 2000)
+				notify.push("Apartment Cuts", ok and "Cuts applied" or "Cut write failed", 2000)
 			end
+			return ok
 		end
 
 		local gApartmentCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "apartment")
@@ -454,59 +548,43 @@ local function register(heistTab)
 			end
 		)
 
-		ui.button_pair(
-			gApartmentCuts,
-			"apartment_apply_selected_preset",
-			"Apply Selected Preset",
-			function()
-				hp_apply_selected_apartment_cut_preset(true)
-			end,
-			"apartment_cuts_max_instant",
-			"Apply Preset (Max Payout)",
-			function()
-				local cut = hp_get_apartment_max_payout_cut(apartment_flags.double_rewards_week)
-				if not cut then
-					if notify then
-						notify.push("Apartment Cuts", "Unknown heist. Load an Apartment finale first.", 2400)
-					end
-					return
-				end
-				hp_set_apartment_uniform_cuts(cut, true)
-			end
-		)
+		ui.button(gApartmentCuts, "apartment_apply_selected_preset", "Apply Selected Preset", function()
+			hp_apply_selected_apartment_cut_preset(true)
+		end)
 		ui.button(gApartmentCuts, "apartment_cuts_apply", "Apply Cuts", function()
 			apply_apartment_cuts()
 		end)
 
 		-- 12M Bonus Function
 		local function apartment_12mil_bonus(enable, silent)
+			local ok = true
 			if enable then
-				safe_access.set_stat_int("MPPLY_HEISTFLOWORDERPROGRESS", 268435455)
-				safe_access.set_stat_bool("MPPLY_AWD_HST_ORDER", false)
+				ok = set_stat_int("MPPLY_HEISTFLOWORDERPROGRESS", 268435455) and ok
+				ok = set_stat_bool("MPPLY_AWD_HST_ORDER", false) and ok
 
-				safe_access.set_stat_int("MPPLY_HEISTTEAMPROGRESSBITSET", 268435455)
-				safe_access.set_stat_bool("MPPLY_AWD_HST_SAME_TEAM", false)
+				ok = set_stat_int("MPPLY_HEISTTEAMPROGRESSBITSET", 268435455) and ok
+				ok = set_stat_bool("MPPLY_AWD_HST_SAME_TEAM", false) and ok
 
-				safe_access.set_stat_int("MPPLY_HEISTNODEATHPROGREITSET", 268435455)
-				safe_access.set_stat_bool("MPPLY_AWD_HST_ULT_CHAL", false)
+				ok = set_stat_int("MPPLY_HEISTNODEATHPROGREITSET", 268435455) and ok
+				ok = set_stat_bool("MPPLY_AWD_HST_ULT_CHAL", false) and ok
 				if not silent and notify then
-					notify.push("Apartment Bonuses", "12M bonus enabled", 2000)
+					notify.push("Apartment Bonuses", ok and "12M bonus enabled" or "12M bonus write failed", 2000)
 				end
 			else
-				safe_access.set_stat_int("MPPLY_HEISTFLOWORDERPROGRESS", 134217727)
-				safe_access.set_stat_bool("MPPLY_AWD_HST_ORDER", true)
+				ok = set_stat_int("MPPLY_HEISTFLOWORDERPROGRESS", 134217727) and ok
+				ok = set_stat_bool("MPPLY_AWD_HST_ORDER", true) and ok
 
-				safe_access.set_stat_int("MPPLY_HEISTTEAMPROGRESSBITSET", 134217727)
-				safe_access.set_stat_bool("MPPLY_AWD_HST_SAME_TEAM", true)
+				ok = set_stat_int("MPPLY_HEISTTEAMPROGRESSBITSET", 134217727) and ok
+				ok = set_stat_bool("MPPLY_AWD_HST_SAME_TEAM", true) and ok
 
-				safe_access.set_stat_int("MPPLY_HEISTNODEATHPROGREITSET", 134217727)
-				safe_access.set_stat_bool("MPPLY_AWD_HST_ULT_CHAL", true)
+				ok = set_stat_int("MPPLY_HEISTNODEATHPROGREITSET", 134217727) and ok
+				ok = set_stat_bool("MPPLY_AWD_HST_ULT_CHAL", true) and ok
 				if not silent and notify then
-					notify.push("Apartment Bonuses", "12M bonus disabled", 2000)
+					notify.push("Apartment Bonuses", ok and "12M bonus disabled" or "12M bonus write failed", 2000)
 				end
 			end
 			apartment_flags.bonus_enabled = enable
-			return true
+			return ok
 		end
 
 		-- Bonuses Group

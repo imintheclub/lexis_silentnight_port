@@ -6,9 +6,11 @@ local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
+local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 
 local config = core.config
 local hp_set_stat_for_all_characters = presets.hp_set_stat_for_all_characters
+local build_skip_cooldown_danger_group = danger_groups.build_skip_cooldown_danger_group
 
 -- Cluckin Bell Functions
 local function cluckin_skip_to_finale()
@@ -40,17 +42,7 @@ end
 local function cluckin_instant_finish()
 	local action_taken = false
 
-	if safe_access.is_script_running("circuitblockhack") then
-		safe_access.set_local_int("circuitblockhack", 62, 2)
-		action_taken = true
-	end
-
-	if safe_access.is_script_running("word_hack") then
-		safe_access.set_local_int("word_hack", 106, 5)
-		action_taken = true
-	end
-
-	if not action_taken and safe_access.is_script_running("fm_mission_controller_2020") then
+	if safe_access.is_script_running("fm_mission_controller_2020") then
 		local base = 56223
 		local cash_take_offset = 55173
 		safe_access.set_local_int("fm_mission_controller_2020", cash_take_offset, 4000000)
@@ -84,19 +76,9 @@ local function register(heistTab)
 	ui.label(gCluckinInfo, "Farm Raid Heist", config.colors.text_main)
 
 	local gCluckinTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "cluckin")
-	ui.button_pair(
-		gCluckinTools,
-		"cluckin_skip_finale",
-		"Skip to Finale",
-		function()
-			cluckin_skip_to_finale()
-		end,
-		"cluckin_remove_cooldown",
-		"Remove Cooldown",
-		function()
-			cluckin_remove_cooldown()
-		end
-	)
+	ui.button(gCluckinTools, "cluckin_skip_finale", "Skip to Finale", function()
+		cluckin_skip_to_finale()
+	end)
 	ui.button_pair(
 		gCluckinTools,
 		"cluckin_reset_progress",
@@ -110,6 +92,10 @@ local function register(heistTab)
 			cluckin_instant_finish()
 		end
 	)
+
+	build_skip_cooldown_danger_group(heistTab, "cluckin", "cluckin_remove_cooldown", function()
+		cluckin_remove_cooldown()
+	end)
 	return heistTab
 end
 

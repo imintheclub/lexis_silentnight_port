@@ -47,6 +47,28 @@ local cayo_tunable_backup = {
 	pavel_cut = nil,
 	fencing_fee = nil,
 }
+local cayo_apply_cuts
+
+local cayo_max_payout_cache = {
+	target = nil,
+	difficulty = nil,
+	cut = nil,
+}
+
+local function cayo_sync_crew_cut_ui_lock()
+	local toggle = cayo_refs.remove_crew_cuts_toggle
+	if not toggle then
+		return
+	end
+	if cayo_flags.max_payout_enabled then
+		toggle.label = "Remove Crew Cuts (Locked by Max Payout)"
+		toggle.state = false
+		toggle.disabled = true
+	else
+		toggle.label = "Remove Crew Cuts"
+		toggle.disabled = false
+	end
+end
 
 local function hp_tunable_int(name)
 	return script.tunables(name).int32
@@ -93,6 +115,9 @@ end
 
 local function cayo_set_remove_crew_cuts(enable, silent)
 	local enabled = enable and true or false
+	if cayo_flags.max_payout_enabled and enabled then
+		enabled = false
+	end
 	local changed = (cayo_flags.remove_crew_cuts_enabled ~= enabled)
 
 	if enabled then
@@ -123,6 +148,7 @@ local function cayo_set_remove_crew_cuts(enable, silent)
 	if cayo_refs.remove_crew_cuts_toggle then
 		cayo_refs.remove_crew_cuts_toggle.state = enabled
 	end
+	cayo_sync_crew_cut_ui_lock()
 	if changed and not silent and notify then
 		notify.push("Cayo Perico", enabled and "Crew cuts removed" or "Crew cuts restored", 2000)
 	end
@@ -132,10 +158,14 @@ local function cayo_enforce_heist_toggles()
 	if cayo_flags.womans_bag_enabled then
 		hp_set_tunable_int("HEIST_BAG_MAX_CAPACITY", 99999)
 	end
+	if cayo_flags.max_payout_enabled and cayo_flags.remove_crew_cuts_enabled then
+		cayo_set_remove_crew_cuts(false, true)
+	end
 	if cayo_flags.remove_crew_cuts_enabled then
 		hp_set_tunable_float("IH_DEDUCTION_PAVEL_CUT", 0.0)
 		hp_set_tunable_float("IH_DEDUCTION_FENCING_FEE", 0.0)
 	end
+	cayo_sync_crew_cut_ui_lock()
 end
 
 -- Apply Cayo Preps
@@ -195,7 +225,8 @@ end
 local function hp_get_cayo_max_payout_cut()
 	local p = GetMP()
 	local target = safe_access.get_stat_int(p .. "H4CNF_TARGET", 0)
-	local difficulty = (safe_access.get_stat_int(p .. "H4_PROGRESS", 0) == 131055) and 2 or 1
+	local progress = safe_access.get_stat_int(p .. "H4_PROGRESS", 0)
+	local difficulty = ((progress & 4096) ~= 0) and 2 or 1
 
 	local payouts = {
 		[0] = { 630000, 693000 }, -- Tequila
@@ -215,31 +246,104 @@ local function hp_get_cayo_max_payout_cut()
 	local max_payout = SAFE_PAYOUT_TARGETS.cayo
 	local initial_cut = math.floor(max_payout / (payout / 100))
 	local cut = initial_cut
+	local final_payout = math.floor(payout * (cut / 100))
 	local difference = 1000
-	local tries = 0
+	local found_cut = false
 
-	while tries < 10000 do
-		local final_payout = math.floor(payout * (cut / 100))
+	while not found_cut do
 		local pavel_fee = math.floor(final_payout * 0.02)
 		local fencing_fee = math.floor(final_payout * 0.10)
 		local fee_payout = final_payout - (pavel_fee + fencing_fee)
 
 		if fee_payout >= (max_payout - difference) and fee_payout <= max_payout then
-			break
-		end
+			found_cut = true
+		else
+			cut = cut + 1
+			final_payout = math.floor(payout * (cut / 100))
 
-		cut = cut + 1
-		if cut > 500 then
-			cut = initial_cut
-			difference = difference + 1000
+			if cut > 500 then
+				cut = initial_cut
+				final_payout = math.floor(payout * (cut / 100))
+				difference = difference + 1000
+			end
 		end
-		tries = tries + 1
 	end
 
-	return hp_clamp_cut_percent(cut)
+	return hp_clamp_cut_percent(cut), target, difficulty
 end
 
-local function cayo_apply_cuts()
+local function cayo_refresh_max_payout(force_update, apply_now)
+	if not cayo_flags.max_payout_enabled then
+		cayo_max_payout_cache.target = nil
+		cayo_max_payout_cache.difficulty = nil
+		cayo_max_payout_cache.cut = nil
+		cayo_sync_crew_cut_ui_lock()
+		return false
+	end
+
+	cayo_set_remove_crew_cuts(false, true)
+	cayo_sync_crew_cut_ui_lock()
+
+	local cut, target, difficulty = hp_get_cayo_max_payout_cut()
+	if not cut then
+		return false
+	end
+
+	local changed = force_update
+		or cayo_max_payout_cache.target ~= target
+		or cayo_max_payout_cache.difficulty ~= difficulty
+		or cayo_max_payout_cache.cut ~= cut
+
+	if changed then
+		CayoCutsValues.host = cut
+		CayoCutsValues.player2 = cut
+		CayoCutsValues.player3 = cut
+		CayoCutsValues.player4 = cut
+		if cayo_refs.host_slider then
+			cayo_refs.host_slider.value = cut
+		end
+		if cayo_refs.p2_slider then
+			cayo_refs.p2_slider.value = cut
+		end
+		if cayo_refs.p3_slider then
+			cayo_refs.p3_slider.value = cut
+		end
+		if cayo_refs.p4_slider then
+			cayo_refs.p4_slider.value = cut
+		end
+
+		if apply_now then
+			cayo_apply_cuts()
+		end
+
+		cayo_max_payout_cache.target = target
+		cayo_max_payout_cache.difficulty = difficulty
+		cayo_max_payout_cache.cut = cut
+	end
+
+	return changed
+end
+
+local function cayo_set_max_payout(enable, silent)
+	local enabled = enable and true or false
+	local changed = (cayo_flags.max_payout_enabled ~= enabled)
+	cayo_flags.max_payout_enabled = enabled
+	if cayo_refs.max_payout_toggle then
+		cayo_refs.max_payout_toggle.state = enabled
+	end
+
+	if enabled then
+		cayo_set_remove_crew_cuts(false, true)
+		cayo_refresh_max_payout(true, false)
+	end
+	cayo_sync_crew_cut_ui_lock()
+
+	if changed and not silent and notify then
+		notify.push("Cayo Perico Cuts", enabled and "Max payout enabled" or "Max payout disabled", 2000)
+	end
+end
+
+cayo_apply_cuts = function()
 	safe_access.set_global_int(CayoGlobals.Host, CayoCutsValues.host)
 	safe_access.set_global_int(CayoGlobals.P2, CayoCutsValues.player2)
 	safe_access.set_global_int(CayoGlobals.P3, CayoCutsValues.player3)
@@ -463,62 +567,24 @@ local function cayo_teleport_kosatka()
 		return false
 	end
 
-	local MAZE_RELAY = { x = -75.146, y = -818.687, z = 326.175, heading = 357.531 }
-	local KOSATKA_INTERIOR = { x = 1561.087, y = 386.610, z = -49.685, heading = 179.884 }
-	local BLIP_SPRITE_HEIST = 428
-	local LOOP_TIMEOUT_MS = 30000
-	local LOOP_STEP_MS = 100
-	local MAX_WAIT_ATTEMPTS = math.floor(LOOP_TIMEOUT_MS / LOOP_STEP_MS)
+	local BLIP_SPRITES_KOSATKA = 760
+	local BLIP_SPRITES_HEIST = 428
+	local TELEPORT_COORDS_MAZEBANK = { x = -75.146, y = -818.687, z = 326.175, heading = 357.531 }
+	local TELEPORT_COORDS_KOSATKA_INTERIOR = { x = 1561.087, y = 386.610, z = -49.685, heading = 179.884 }
 	local KOSATKA_REQUEST_GLOBALS = {
 		2733138 + 613, -- EE
 		2733002 + 613, -- Legacy
 	}
 
-	local function get_local_player_id()
-		if players and players.user then
-			local id = players.user()
-			if type(id) == "number" and id >= 0 then
-				return id
-			end
-		end
-		local me = players and players.me and players.me() or nil
-		if me and type(me.id) == "number" and me.id >= 0 then
-			return me.id
-		end
-		return 0
-	end
-
-	local function player_owns_kosatka()
-		local p = GetMP()
-		return (safe_access.get_stat_int(p .. "IH_SUB_OWNED", 0) or 0) ~= 0
+	local function is_kosatka_blip_exists()
+		local blip_result = invoker.call(0x1BEDE233E6CD2A1F, BLIP_SPRITES_KOSATKA) -- GET_FIRST_BLIP_INFO_ID
+		return blip_result and blip_result.int and blip_result.int ~= 0
 	end
 
 	local function request_kosatka_spawn()
 		for i = 1, #KOSATKA_REQUEST_GLOBALS do
 			safe_access.set_global_int(KOSATKA_REQUEST_GLOBALS[i], 1)
 		end
-	end
-
-	local function is_kosatka_in_ocean()
-		local player_id = get_local_player_id()
-		local status_ee = safe_access.get_global_int(2658294 + 1 + (player_id * 468) + 325 + 4, 0)
-		if (status_ee & (1 << 31)) ~= 0 then
-			return true
-		end
-		local status_legacy = safe_access.get_global_int(2658291 + 1 + (player_id * 468) + 325 + 4, 0)
-		return (status_legacy & (1 << 31)) ~= 0
-	end
-
-	local function has_heist_blip()
-		local result = invoker.call(0xD484BF71050CA1EE, BLIP_SPRITE_HEIST) -- GET_CLOSEST_BLIP_INFO_ID
-		return result and result.int and result.int ~= 0
-	end
-
-	if not player_owns_kosatka() then
-		if notify then
-			notify.push("Cayo Teleport", "You don't own a Kosatka", 2200)
-		end
-		return false
 	end
 
 	teleport_in_progress = true
@@ -532,75 +598,69 @@ local function cayo_teleport_kosatka()
 	end
 
 	local ped = me.ped
+	-- Interior teleport should always use ped; vehicle teleport can leave you outside/desynced.
 	local entity = ped
-
-	local function set_coords(coords)
-		invoker.call(0x239A3351AC1DA385, entity, coords.x, coords.y, coords.z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
-	end
-
-	local function set_heading(heading)
-		invoker.call(0x8E2530AA8ADA980E, entity, heading) -- SET_ENTITY_HEADING
-	end
-
-	local function move_to_maze_bank()
-		set_coords(MAZE_RELAY)
-		set_heading(MAZE_RELAY.heading)
-	end
 
 	local ok, err = pcall(function()
 		invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
-		move_to_maze_bank()
-		util.yield(700)
 
-		local announced_request = false
-		local spawned = is_kosatka_in_ocean()
-		if not spawned then
-			for _ = 1, MAX_WAIT_ATTEMPTS do
-				if is_kosatka_in_ocean() then
-					spawned = true
-					break
-				end
+		if me.in_interior then
+			invoker.call(
+				0x239A3351AC1DA385,
+				entity,
+				TELEPORT_COORDS_MAZEBANK.x,
+				TELEPORT_COORDS_MAZEBANK.y,
+				TELEPORT_COORDS_MAZEBANK.z,
+				false,
+				false,
+				false
+			) -- SET_ENTITY_COORDS_NO_OFFSET
+			invoker.call(0x8E2530AA8ADA980E, entity, TELEPORT_COORDS_MAZEBANK.heading) -- SET_ENTITY_HEADING
+			util.yield(800)
+		end
+
+		if not is_kosatka_blip_exists() then
+			if notify then
+				notify.push("Cayo Teleport", "Kosatka not spawned, requesting...", 2000)
+			end
+			while not is_kosatka_blip_exists() do
 				request_kosatka_spawn()
-				if not announced_request and notify then
-					notify.push("Cayo Teleport", "Requesting Kosatka...", 1200)
-					announced_request = true
-				end
-				util.yield(LOOP_STEP_MS)
+				util.yield()
 			end
-		end
-
-		if not spawned then
-			move_to_maze_bank()
 			if notify then
-				notify.push("Cayo Teleport", "Kosatka not ready after 30s. Stayed at Maze Bank.", 3000)
-			end
-			invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
-			return
-		end
-
-		set_coords(KOSATKA_INTERIOR)
-		set_heading(KOSATKA_INTERIOR.heading)
-
-		local interior_loaded = false
-		for _ = 1, MAX_WAIT_ATTEMPTS do
-			if has_heist_blip() then
-				interior_loaded = true
-				break
-			end
-			util.yield(LOOP_STEP_MS)
-		end
-
-		if interior_loaded then
-			if notify then
-				notify.push("Cayo Teleport", "Teleported to Kosatka interior", 2000)
-			end
-		else
-			move_to_maze_bank()
-			if notify then
-				notify.push("Cayo Teleport", "Kosatka interior not ready after 30s. Stayed at Maze Bank.", 3000)
+				notify.push("Cayo Teleport", "Kosatka spawned successfully", 2000)
 			end
 		end
 
+		invoker.call(
+			0x239A3351AC1DA385,
+			entity,
+			TELEPORT_COORDS_KOSATKA_INTERIOR.x,
+			TELEPORT_COORDS_KOSATKA_INTERIOR.y,
+			TELEPORT_COORDS_KOSATKA_INTERIOR.z,
+			false,
+			false,
+			false
+		) -- SET_ENTITY_COORDS_NO_OFFSET
+		invoker.call(0x8E2530AA8ADA980E, entity, TELEPORT_COORDS_KOSATKA_INTERIOR.heading) -- SET_ENTITY_HEADING
+
+		local blip_check = 0
+		local attempts = 0
+		while blip_check == 0 and attempts < 120 do
+			local check_result = invoker.call(0xD484BF71050CA1EE, BLIP_SPRITES_HEIST) -- GET_CLOSEST_BLIP_INFO_ID
+			if check_result and check_result.int and check_result.int ~= 0 then
+				blip_check = check_result.int
+			else
+				util.yield()
+				attempts = attempts + 1
+			end
+		end
+
+		if notify then
+			notify.push("Cayo Teleport", "Teleported to Kosatka interior", 2000)
+		end
+
+		util.yield(500)
 		invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
 	end)
 
@@ -620,6 +680,8 @@ end
 
 cayo_callbacks.set_womans_bag = cayo_set_womans_bag
 cayo_callbacks.set_remove_crew_cuts = cayo_set_remove_crew_cuts
+cayo_callbacks.set_max_payout = cayo_set_max_payout
+cayo_callbacks.refresh_max_payout = cayo_refresh_max_payout
 
 local cayo_logic = {
 	CayoConfig = CayoConfig,
@@ -630,6 +692,8 @@ local cayo_logic = {
 	cayo_callbacks = cayo_callbacks,
 	cayo_set_womans_bag = cayo_set_womans_bag,
 	cayo_set_remove_crew_cuts = cayo_set_remove_crew_cuts,
+	cayo_set_max_payout = cayo_set_max_payout,
+	cayo_refresh_max_payout = cayo_refresh_max_payout,
 	cayo_enforce_heist_toggles = cayo_enforce_heist_toggles,
 	cayo_apply_preps = cayo_apply_preps,
 	cayo_apply_cuts = cayo_apply_cuts,

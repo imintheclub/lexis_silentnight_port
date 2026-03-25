@@ -58,6 +58,23 @@ local doomsday_flags = doomsday_state.flags
 local doomsday_refs = doomsday_state.refs
 local doomsday_callbacks = doomsday_state.callbacks
 
+local agency_state = heist_state.agency
+local AgencyPrepOptions = agency_state.prep_options
+local AgencyConfig = agency_state.config
+local agency_refs = agency_state.refs
+
+local autoshop_state = heist_state.autoshop
+local AutoshopPrepOptions = autoshop_state.prep_options
+local AutoshopConfig = autoshop_state.config
+local autoshop_refs = autoshop_state.refs
+
+local salvageyard_state = heist_state.salvageyard
+local SalvagePrepOptions = salvageyard_state.prep_options
+local SalvageConfig = salvageyard_state.config
+local salvage_flags = salvageyard_state.flags
+local salvage_refs = salvageyard_state.refs
+local salvage_callbacks = salvageyard_state.callbacks
+
 -- GetMP function
 local function GetMP()
 	local mp_idx = script.globals(MPGlobal).int32
@@ -141,6 +158,30 @@ local hp_heist_presets = {
 		dropdown = nil,
 		name_label = nil,
 	},
+	agency = {
+		dir = "",
+		name = "QuickPreset",
+		options = { "(empty)" },
+		selected = 1,
+		dropdown = nil,
+		name_label = nil,
+	},
+	autoshop = {
+		dir = "",
+		name = "QuickPreset",
+		options = { "(empty)" },
+		selected = 1,
+		dropdown = nil,
+		name_label = nil,
+	},
+	salvageyard = {
+		dir = "",
+		name = "QuickPreset",
+		options = { "(empty)" },
+		selected = 1,
+		dropdown = nil,
+		name_label = nil,
+	},
 	keyboard = { waiting = false, mode = nil },
 }
 
@@ -148,6 +189,9 @@ hp_heist_presets.apartment.dir = hp_heist_presets.root .. "\\Apartment"
 hp_heist_presets.cayo.dir = hp_heist_presets.root .. "\\CayoPerico"
 hp_heist_presets.casino.dir = hp_heist_presets.root .. "\\DiamondCasino"
 hp_heist_presets.doomsday.dir = hp_heist_presets.root .. "\\Doomsday"
+hp_heist_presets.agency.dir = hp_heist_presets.root .. "\\Agency"
+hp_heist_presets.autoshop.dir = hp_heist_presets.root .. "\\AutoShop"
+hp_heist_presets.salvageyard.dir = hp_heist_presets.root .. "\\SalvageYard"
 
 -- Forward declarations for functions referenced before their definitions.
 local hp_save_heist_preset
@@ -183,6 +227,15 @@ local function hp_get_preset_state(mode)
 	end
 	if mode == "doomsday" then
 		return hp_heist_presets.doomsday
+	end
+	if mode == "agency" then
+		return hp_heist_presets.agency
+	end
+	if mode == "autoshop" then
+		return hp_heist_presets.autoshop
+	end
+	if mode == "salvageyard" then
+		return hp_heist_presets.salvageyard
 	end
 	return nil
 end
@@ -283,6 +336,9 @@ local PRESET_HEIST_MODE_TO_ID = {
 	cayo = "cayo_perico",
 	casino = "diamond_casino",
 	doomsday = "doomsday",
+	agency = "agency",
+	autoshop = "auto_shop",
+	salvageyard = "salvage_yard",
 }
 
 local function hp_validate_heist_preset(mode, preps)
@@ -392,11 +448,17 @@ local function hp_read_player_enabled(preps, player_key, legacy_key, fallback)
 end
 
 local SAFE_PAYOUT_TARGETS = {
-	apartment = 2995999,
-	cayo = 2500000,
-	casino = 3550000,
-	doomsday = 2500000,
+	apartment = 3000000,
+	cayo = 2550000,
+	casino = 3619000,
+	doomsday = 2550000,
 }
+
+local AGENCY_PAYOUT_MAX = 2500000
+local AUTOSHOP_PAYOUT_MAX = 2200000
+local SALVAGE_MULTIPLIER_MIN = 0.0
+local SALVAGE_MULTIPLIER_MAX = 5.0
+local SALVAGE_SELL_VALUE_MAX = 2100000
 
 local APARTMENT_HEIST_IDS = {
 	fleeca = "hK5OgJk1BkinXGGXghhTMg",
@@ -453,6 +515,15 @@ local function hp_ensure_heist_preset_dirs()
 	end
 	if not dirs.exists(hp_heist_presets.doomsday.dir) then
 		dirs.create(hp_heist_presets.doomsday.dir)
+	end
+	if not dirs.exists(hp_heist_presets.agency.dir) then
+		dirs.create(hp_heist_presets.agency.dir)
+	end
+	if not dirs.exists(hp_heist_presets.autoshop.dir) then
+		dirs.create(hp_heist_presets.autoshop.dir)
+	end
+	if not dirs.exists(hp_heist_presets.salvageyard.dir) then
+		dirs.create(hp_heist_presets.salvageyard.dir)
 	end
 end
 
@@ -702,6 +773,7 @@ local function hp_collect_cayo_preset_data()
 		arts_value = CayoConfig.val_art,
 		womans_bag = cayo_flags.womans_bag_enabled and true or false,
 		remove_crew_cuts = cayo_flags.remove_crew_cuts_enabled and true or false,
+		max_payout = cayo_flags.max_payout_enabled and true or false,
 		unlock_all_poi = CayoConfig.unlock_all_poi and true or false,
 		player1 = { enabled = true, cut = CayoCutsValues.host },
 		player2 = { enabled = (CayoCutsValues.player2 > 0), cut = CayoCutsValues.player2 },
@@ -745,6 +817,13 @@ local function hp_apply_cayo_preset_data(preps)
 			cayo_callbacks.set_remove_crew_cuts(preps.remove_crew_cuts, true)
 		else
 			cayo_flags.remove_crew_cuts_enabled = preps.remove_crew_cuts
+		end
+	end
+	if type(preps.max_payout) == "boolean" then
+		if type(cayo_callbacks.set_max_payout) == "function" then
+			cayo_callbacks.set_max_payout(preps.max_payout, true)
+		else
+			cayo_flags.max_payout_enabled = preps.max_payout
 		end
 	end
 
@@ -829,6 +908,9 @@ local function hp_apply_cayo_preset_data(preps)
 	if cayo_refs.remove_crew_cuts_toggle then
 		cayo_refs.remove_crew_cuts_toggle.state = cayo_flags.remove_crew_cuts_enabled
 	end
+	if cayo_refs.max_payout_toggle then
+		cayo_refs.max_payout_toggle.state = cayo_flags.max_payout_enabled
+	end
 	if cayo_refs.host_slider then
 		cayo_refs.host_slider.value = CayoCutsValues.host
 	end
@@ -840,6 +922,9 @@ local function hp_apply_cayo_preset_data(preps)
 	end
 	if cayo_refs.p4_slider then
 		cayo_refs.p4_slider.value = CayoCutsValues.player4
+	end
+	if cayo_flags.max_payout_enabled and type(cayo_callbacks.refresh_max_payout) == "function" then
+		cayo_callbacks.refresh_max_payout(true, false)
 	end
 
 	return true
@@ -864,6 +949,7 @@ local function hp_collect_casino_preset_data()
 		solo_launch = state.solo_launch.casino and true or false,
 		remove_crew_cuts = casino_flags.remove_crew_cuts_enabled and true or false,
 		autograbber = casino_flags.autograbber_enabled and true or false,
+		max_payout = casino_flags.max_payout_enabled and true or false,
 		player1 = { enabled = true, cut = CutsValues.host },
 		player2 = { enabled = (CutsValues.player2 > 0), cut = CutsValues.player2 },
 		player3 = { enabled = (CutsValues.player3 > 0), cut = CutsValues.player3 },
@@ -924,6 +1010,13 @@ local function hp_apply_casino_preset_data(preps)
 			casino_flags.autograbber_enabled = preps.autograbber
 		end
 	end
+	if type(preps.max_payout) == "boolean" then
+		if type(casino_callbacks.set_max_payout) == "function" then
+			casino_callbacks.set_max_payout(preps.max_payout, true)
+		else
+			casino_flags.max_payout_enabled = preps.max_payout
+		end
+	end
 
 	CutsValues.host = hp_read_player_cut(preps, "player1", "host_cut", CutsValues.host, hp_clamp_cut_percent)
 	CutsValues.player2 = hp_read_player_cut(preps, "player2", "player2_cut", CutsValues.player2, hp_clamp_cut_percent)
@@ -975,6 +1068,9 @@ local function hp_apply_casino_preset_data(preps)
 	if casino_refs.remove_crew_cuts_toggle then
 		casino_refs.remove_crew_cuts_toggle.state = casino_flags.remove_crew_cuts_enabled
 	end
+	if casino_refs.max_payout_toggle then
+		casino_refs.max_payout_toggle.state = casino_flags.max_payout_enabled
+	end
 	if casino_refs.autograbber_toggle then
 		casino_refs.autograbber_toggle.state = casino_flags.autograbber_enabled
 	end
@@ -1011,6 +1107,9 @@ local function hp_apply_casino_preset_data(preps)
 	end
 	if casino_refs.p4_slider then
 		casino_refs.p4_slider.value = CutsValues.player4
+	end
+	if casino_flags.max_payout_enabled and type(casino_callbacks.refresh_max_payout) == "function" then
+		casino_callbacks.refresh_max_payout(true, false)
 	end
 
 	return true
@@ -1229,6 +1328,228 @@ local function hp_apply_doomsday_preset_data(preps)
 	return true
 end
 
+local function hp_collect_agency_preset_data()
+	return {
+		schema = PRESET_SCHEMA_VERSION,
+		heist = "agency",
+		contract = hp_get_zero_based_option_index(AgencyPrepOptions.contracts, AgencyConfig.contract, 1),
+		payout = math.floor(tonumber(AgencyConfig.payout) or 0),
+	}
+end
+
+local function hp_apply_agency_preset_data(preps)
+	if type(preps) ~= "table" then
+		return false
+	end
+
+	AgencyConfig.contract = hp_resolve_option_value(AgencyPrepOptions.contracts, preps.contract, AgencyConfig.contract)
+	if tonumber(preps.payout) then
+		AgencyConfig.payout = math.floor(hp_clamp_number(preps.payout, 0, AGENCY_PAYOUT_MAX))
+	end
+
+	if agency_refs.contract_dropdown then
+		agency_refs.contract_dropdown.value =
+			hp_option_index_by_value(AgencyPrepOptions.contracts, AgencyConfig.contract, 1)
+	end
+	if agency_refs.payout_slider then
+		agency_refs.payout_slider.value = AgencyConfig.payout
+	end
+
+	return true
+end
+
+local function hp_collect_autoshop_preset_data()
+	return {
+		schema = PRESET_SCHEMA_VERSION,
+		heist = "auto_shop",
+		contract = hp_get_zero_based_option_index(AutoshopPrepOptions.contracts, AutoshopConfig.contract, 1),
+		payout = math.floor(tonumber(AutoshopConfig.payout) or 0),
+	}
+end
+
+local function hp_apply_autoshop_preset_data(preps)
+	if type(preps) ~= "table" then
+		return false
+	end
+
+	AutoshopConfig.contract =
+		hp_resolve_option_value(AutoshopPrepOptions.contracts, preps.contract, AutoshopConfig.contract)
+	AutoshopConfig.contract_index = hp_option_index_by_value(
+		AutoshopPrepOptions.contracts,
+		AutoshopConfig.contract,
+		AutoshopConfig.contract_index or 1
+	)
+
+	if tonumber(preps.payout) then
+		AutoshopConfig.payout = math.floor(hp_clamp_number(preps.payout, 0, AUTOSHOP_PAYOUT_MAX))
+	end
+
+	if autoshop_refs.contract_dropdown then
+		autoshop_refs.contract_dropdown.value = AutoshopConfig.contract_index
+	end
+	if autoshop_refs.payout_slider then
+		autoshop_refs.payout_slider.value = AutoshopConfig.payout
+	end
+
+	return true
+end
+
+local function hp_collect_salvage_slot_data(slot_cfg)
+	return {
+		robbery = hp_get_zero_based_option_index(SalvagePrepOptions.robberies, slot_cfg.robbery, 1),
+		vehicle = hp_get_zero_based_option_index(SalvagePrepOptions.vehicles, slot_cfg.vehicle, 1),
+		modification = hp_get_zero_based_option_index(SalvagePrepOptions.modifications, slot_cfg.modification, 1),
+		keep = hp_get_zero_based_option_index(SalvagePrepOptions.keep_statuses, slot_cfg.keep, 1),
+	}
+end
+
+local function hp_apply_salvage_slot_from_preset(slot_cfg, slot_preps)
+	if type(slot_cfg) ~= "table" or type(slot_preps) ~= "table" then
+		return
+	end
+
+	slot_cfg.robbery = hp_resolve_option_value(SalvagePrepOptions.robberies, slot_preps.robbery, slot_cfg.robbery)
+	slot_cfg.vehicle = hp_resolve_option_value(SalvagePrepOptions.vehicles, slot_preps.vehicle, slot_cfg.vehicle)
+	slot_cfg.modification =
+		hp_resolve_option_value(SalvagePrepOptions.modifications, slot_preps.modification, slot_cfg.modification)
+	slot_cfg.keep = hp_resolve_option_value(SalvagePrepOptions.keep_statuses, slot_preps.keep, slot_cfg.keep)
+end
+
+local function hp_collect_salvageyard_preset_data()
+	local slot1 = SalvageConfig.slot1 or {}
+	local slot2 = SalvageConfig.slot2 or {}
+	local slot3 = SalvageConfig.slot3 or {}
+	return {
+		schema = PRESET_SCHEMA_VERSION,
+		heist = "salvage_yard",
+		slot1 = hp_collect_salvage_slot_data(slot1),
+		slot2 = hp_collect_salvage_slot_data(slot2),
+		slot3 = hp_collect_salvage_slot_data(slot3),
+		free_setup = salvage_flags.free_setup and true or false,
+		free_claim = salvage_flags.free_claim and true or false,
+		salvage_multiplier = tonumber(SalvageConfig.salvage_multiplier) or 0.0,
+		sell_value_slot1 = math.floor(tonumber(SalvageConfig.sell_value_slot1) or 0),
+		sell_value_slot2 = math.floor(tonumber(SalvageConfig.sell_value_slot2) or 0),
+		sell_value_slot3 = math.floor(tonumber(SalvageConfig.sell_value_slot3) or 0),
+	}
+end
+
+local function hp_apply_salvageyard_preset_data(preps)
+	if type(preps) ~= "table" then
+		return false
+	end
+
+	SalvageConfig.slot1 = SalvageConfig.slot1 or { robbery = 0, vehicle = 1, modification = 0, keep = 1 }
+	SalvageConfig.slot2 = SalvageConfig.slot2 or { robbery = 1, vehicle = 2, modification = 0, keep = 1 }
+	SalvageConfig.slot3 = SalvageConfig.slot3 or { robbery = 2, vehicle = 3, modification = 0, keep = 1 }
+
+	hp_apply_salvage_slot_from_preset(SalvageConfig.slot1, preps.slot1)
+	hp_apply_salvage_slot_from_preset(SalvageConfig.slot2, preps.slot2)
+	hp_apply_salvage_slot_from_preset(SalvageConfig.slot3, preps.slot3)
+
+	if tonumber(preps.salvage_multiplier) then
+		SalvageConfig.salvage_multiplier =
+			hp_clamp_number(preps.salvage_multiplier, SALVAGE_MULTIPLIER_MIN, SALVAGE_MULTIPLIER_MAX)
+	end
+
+	if tonumber(preps.sell_value_slot1) then
+		SalvageConfig.sell_value_slot1 = math.floor(hp_clamp_number(preps.sell_value_slot1, 0, SALVAGE_SELL_VALUE_MAX))
+	end
+	if tonumber(preps.sell_value_slot2) then
+		SalvageConfig.sell_value_slot2 = math.floor(hp_clamp_number(preps.sell_value_slot2, 0, SALVAGE_SELL_VALUE_MAX))
+	end
+	if tonumber(preps.sell_value_slot3) then
+		SalvageConfig.sell_value_slot3 = math.floor(hp_clamp_number(preps.sell_value_slot3, 0, SALVAGE_SELL_VALUE_MAX))
+	end
+
+	if type(preps.free_setup) == "boolean" then
+		if type(salvage_callbacks.set_free_setup) == "function" then
+			salvage_callbacks.set_free_setup(preps.free_setup, true)
+		else
+			salvage_flags.free_setup = preps.free_setup
+		end
+	end
+	if type(preps.free_claim) == "boolean" then
+		if type(salvage_callbacks.set_free_claim) == "function" then
+			salvage_callbacks.set_free_claim(preps.free_claim, true)
+		else
+			salvage_flags.free_claim = preps.free_claim
+		end
+	end
+
+	if salvage_refs.slot1_robbery_dropdown then
+		salvage_refs.slot1_robbery_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.robberies, SalvageConfig.slot1.robbery, 1)
+	end
+	if salvage_refs.slot1_vehicle_dropdown then
+		salvage_refs.slot1_vehicle_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.vehicles, SalvageConfig.slot1.vehicle, 1)
+	end
+	if salvage_refs.slot1_modification_dropdown then
+		salvage_refs.slot1_modification_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.modifications, SalvageConfig.slot1.modification, 1)
+	end
+	if salvage_refs.slot1_keep_dropdown then
+		salvage_refs.slot1_keep_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.keep_statuses, SalvageConfig.slot1.keep, 1)
+	end
+
+	if salvage_refs.slot2_robbery_dropdown then
+		salvage_refs.slot2_robbery_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.robberies, SalvageConfig.slot2.robbery, 1)
+	end
+	if salvage_refs.slot2_vehicle_dropdown then
+		salvage_refs.slot2_vehicle_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.vehicles, SalvageConfig.slot2.vehicle, 1)
+	end
+	if salvage_refs.slot2_modification_dropdown then
+		salvage_refs.slot2_modification_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.modifications, SalvageConfig.slot2.modification, 1)
+	end
+	if salvage_refs.slot2_keep_dropdown then
+		salvage_refs.slot2_keep_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.keep_statuses, SalvageConfig.slot2.keep, 1)
+	end
+
+	if salvage_refs.slot3_robbery_dropdown then
+		salvage_refs.slot3_robbery_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.robberies, SalvageConfig.slot3.robbery, 1)
+	end
+	if salvage_refs.slot3_vehicle_dropdown then
+		salvage_refs.slot3_vehicle_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.vehicles, SalvageConfig.slot3.vehicle, 1)
+	end
+	if salvage_refs.slot3_modification_dropdown then
+		salvage_refs.slot3_modification_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.modifications, SalvageConfig.slot3.modification, 1)
+	end
+	if salvage_refs.slot3_keep_dropdown then
+		salvage_refs.slot3_keep_dropdown.value =
+			hp_option_index_by_value(SalvagePrepOptions.keep_statuses, SalvageConfig.slot3.keep, 1)
+	end
+
+	if salvage_refs.free_setup_toggle then
+		salvage_refs.free_setup_toggle.state = salvage_flags.free_setup
+	end
+	if salvage_refs.free_claim_toggle then
+		salvage_refs.free_claim_toggle.state = salvage_flags.free_claim
+	end
+	if salvage_refs.salvage_multiplier_slider then
+		salvage_refs.salvage_multiplier_slider.value = SalvageConfig.salvage_multiplier
+	end
+	if salvage_refs.sell_value_slot1_slider then
+		salvage_refs.sell_value_slot1_slider.value = SalvageConfig.sell_value_slot1
+	end
+	if salvage_refs.sell_value_slot2_slider then
+		salvage_refs.sell_value_slot2_slider.value = SalvageConfig.sell_value_slot2
+	end
+	if salvage_refs.sell_value_slot3_slider then
+		salvage_refs.sell_value_slot3_slider.value = SalvageConfig.sell_value_slot3
+	end
+
+	return true
+end
+
 local HP_PRESET_MODE_HANDLERS = {
 	apartment = {
 		collect = hp_collect_apartment_preset_data,
@@ -1245,6 +1566,18 @@ local HP_PRESET_MODE_HANDLERS = {
 	doomsday = {
 		collect = hp_collect_doomsday_preset_data,
 		apply = hp_apply_doomsday_preset_data,
+	},
+	agency = {
+		collect = hp_collect_agency_preset_data,
+		apply = hp_apply_agency_preset_data,
+	},
+	autoshop = {
+		collect = hp_collect_autoshop_preset_data,
+		apply = hp_apply_autoshop_preset_data,
+	},
+	salvageyard = {
+		collect = hp_collect_salvageyard_preset_data,
+		apply = hp_apply_salvageyard_preset_data,
 	},
 }
 

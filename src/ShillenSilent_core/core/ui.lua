@@ -168,9 +168,39 @@ local function measure_text_width(value, draw_size)
 		return nil
 	end
 
-	local size = gui.text_size(value, draw_size, { font = state.fonts.regular })
+	local text_width_cache = state._text_width_cache
+	if not text_width_cache then
+		text_width_cache = { by_font = {}, count = 0 }
+		state._text_width_cache = text_width_cache
+	end
+
+	local font_key = tostring(state.fonts.regular or "nil")
+	local font_bucket = text_width_cache.by_font[font_key]
+	if not font_bucket then
+		font_bucket = {}
+		text_width_cache.by_font[font_key] = font_bucket
+	end
+
+	local value_key = tostring(value)
+	local cache_key = value_key .. "\31" .. tostring(draw_size or 1.0)
+	local cached = font_bucket[cache_key]
+	if cached ~= nil then
+		if cached == false then
+			return nil
+		end
+		return cached
+	end
+
+	local size = gui.text_size(value_key, draw_size, { font = state.fonts.regular })
 	if not size then
+		font_bucket[cache_key] = false
 		return nil
+	end
+	font_bucket[cache_key] = size.x
+	text_width_cache.count = text_width_cache.count + 1
+	if text_width_cache.count > 4096 then
+		text_width_cache.by_font = {}
+		text_width_cache.count = 0
 	end
 	return size.x
 end
@@ -184,14 +214,37 @@ local function text_with_ellipsis(value, max_width, draw_size)
 		return ""
 	end
 
+	local ellipsis_cache = state._ellipsis_text_cache
+	if not ellipsis_cache then
+		ellipsis_cache = { by_font = {}, count = 0 }
+		state._ellipsis_text_cache = ellipsis_cache
+	end
+
+	local font_key = tostring(state.fonts.regular or "nil")
+	local font_bucket = ellipsis_cache.by_font[font_key]
+	if not font_bucket then
+		font_bucket = {}
+		ellipsis_cache.by_font[font_key] = font_bucket
+	end
+
+	local cache_key = text .. "\31" .. tostring(max_width) .. "\31" .. tostring(draw_size or 1.0)
+	local cached = font_bucket[cache_key]
+	if cached ~= nil then
+		return cached
+	end
+
 	local width = measure_text_width(text, draw_size)
 	if width and width <= max_width then
+		font_bucket[cache_key] = text
+		ellipsis_cache.count = ellipsis_cache.count + 1
 		return text
 	end
 
 	local ellipsis = "..."
 	local ellipsis_width = measure_text_width(ellipsis, draw_size) or (draw_size * 3.0)
 	if ellipsis_width >= max_width then
+		font_bucket[cache_key] = ""
+		ellipsis_cache.count = ellipsis_cache.count + 1
 		return ""
 	end
 
@@ -207,7 +260,14 @@ local function text_with_ellipsis(value, max_width, draw_size)
 		end
 	end
 
-	return text:sub(1, low) .. ellipsis
+	local output = text:sub(1, low) .. ellipsis
+	font_bucket[cache_key] = output
+	ellipsis_cache.count = ellipsis_cache.count + 1
+	if ellipsis_cache.count > 4096 then
+		ellipsis_cache.by_font = {}
+		ellipsis_cache.count = 0
+	end
+	return output
 end
 
 local function lerp(a, b, t)
@@ -343,11 +403,17 @@ end
 -- ---------------------------------------------------------
 ui.tabs = {}
 ui.currentTab = nil
+local layout_cache_revision = 0
+
+local function mark_layout_dirty()
+	layout_cache_revision = layout_cache_revision + 1
+end
 
 ui.tab = function(id, label, icon_path, hidden)
 	local icon = icon_path and load_tab_icon(icon_path) or nil
 	local tab = { id = id, label = label, icon = icon, icon_path = icon_path, groups = {}, hidden = hidden or false }
 	table.insert(ui.tabs, tab)
+	mark_layout_dirty()
 	if #ui.tabs == 1 and not tab.hidden then
 		ui.currentTab = tab
 	end
@@ -358,6 +424,7 @@ ui.group = function(tabRef, label, x, y, w, min_h, heist_subtab)
 	local group =
 		{ label = label, items = {}, rect = { x = x, y = y, w = w, h = min_h or 100 }, heist_subtab = heist_subtab }
 	table.insert(tabRef.groups, group)
+	mark_layout_dirty()
 	return group
 end
 
@@ -373,6 +440,7 @@ ui.toggle = function(groupRef, configKey, label, defaultState, onChange, tooltip
 		anim = defaultState and 1.0 or 0.0,
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -395,6 +463,7 @@ ui.slider = function(groupRef, configKey, label, min, max, defaultVal, onChange,
 		step = step,
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -409,6 +478,7 @@ ui.button = function(groupRef, id, label, onClick, tooltip, disabled, color)
 		color = color,
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -447,6 +517,7 @@ ui.button_pair = function(
 		},
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -462,12 +533,14 @@ ui.dropdown = function(groupRef, configKey, label, options, defaultIdx, onChange
 		tooltip = tooltip,
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
 ui.label = function(groupRef, text, color)
 	local item = { type = "label", text = text, color = color }
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -475,7 +548,9 @@ local function render_card(x, y, w, h, bg_col, border_col, rounding)
 	local r = rounding or config.radius.md
 	local shadow_y = config.space.x1
 	render_rect(x, y + (shadow_y * 2), w, h, { r = 0, g = 0, b = 0, a = 8 }, r)
-	render_rect(x, y + shadow_y, w, h, config.colors.card_shadow, r)
+	if (config.colors.card_shadow.a or 255) > 0 then
+		render_rect(x, y + shadow_y, w, h, config.colors.card_shadow, r)
+	end
 	render_rect(x, y, w, h, bg_col or config.colors.bg_panel, r)
 	render_outline(x, y, w, h, border_col or config.colors.border, 1, r)
 	render_rect(x + 1, y + 1, math.max(1, w - 2), 1, { r = 255, g = 255, b = 255, a = 10 }, config.radius.full)
@@ -609,8 +684,10 @@ local BUTTON_COLOR_STYLES = {
 	},
 }
 
-local HEIST_SUBTAB_NAMES = { "Cayo", "Casino", "Doomsday", "Apartment", "Cluckin" }
-local HEIST_SUBTAB_KEYS = { "cayo", "casino", "doomsday", "apartment", "cluckin" }
+local HEIST_SUBTAB_NAMES =
+	{ "Cayo", "Casino", "Doomsday", "Apartment", "Agency", "Auto Shop", "Salvage Yard", "Cluckin", "KnoWay" }
+local HEIST_SUBTAB_KEYS =
+	{ "cayo", "casino", "doomsday", "apartment", "agency", "autoshop", "salvageyard", "cluckin", "knoway" }
 
 -- Legacy visual order hints. Used only to flatten groups into a stable sequence.
 local HEIST_GROUP_LAYOUTS = {
@@ -656,6 +733,36 @@ local HEIST_GROUP_LAYOUTS = {
 		["Teleport"] = { col = 3, order = 3 },
 		["DANGER"] = { col = 3, order = 4 },
 	},
+	[5] = { -- Agency
+		["Info"] = { col = 1, order = 1 },
+		["Presets (JSON)"] = { col = 1, order = 2 },
+		["Preps"] = { col = 2, order = 1 },
+		["Payout"] = { col = 2, order = 2 },
+		["Misc"] = { col = 3, order = 1 },
+	},
+	[6] = { -- Auto Shop
+		["Info"] = { col = 1, order = 1 },
+		["Preps"] = { col = 2, order = 1 },
+		["Payout"] = { col = 2, order = 2 },
+		["Misc"] = { col = 3, order = 1 },
+	},
+	[7] = { -- Salvage Yard
+		["Info"] = { col = 1, order = 1 },
+		["Slot 1"] = { col = 1, order = 2 },
+		["Slot 2"] = { col = 2, order = 1 },
+		["Slot 3"] = { col = 2, order = 2 },
+		["Preps"] = { col = 3, order = 1 },
+		["Misc"] = { col = 3, order = 2 },
+		["Payout"] = { col = 1, order = 3 },
+	},
+	[8] = { -- Cluckin
+		["Info"] = { col = 1, order = 1 },
+		["Preps"] = { col = 2, order = 1 },
+		["Tools"] = { col = 3, order = 1 },
+	},
+	[9] = { -- KnoWay
+		["Tools"] = { col = 3, order = 1 },
+	},
 }
 
 local function clear_array(tbl)
@@ -670,6 +777,10 @@ local render_cache = {
 	groups_by_column = { {}, {}, {} },
 	ordered_groups = {},
 	pending_dropdowns = {},
+	layout_key = nil,
+	layout_revision = -1,
+	layout_dirty = true,
+	group_heights = {},
 }
 render_cache.subtab_bg_col = { r = 255, g = 255, b = 255, a = 255 }
 render_cache.subtab_border_col = { r = 255, g = 255, b = 255, a = 255 }
@@ -728,7 +839,7 @@ local function get_group_actual_height(group)
 	return h
 end
 
-local function distribute_groups_by_column(flattened, groups_by_column, column_count)
+local function distribute_groups_by_column(flattened, groups_by_column, column_count, group_heights)
 	for col = 1, column_count do
 		clear_array(groups_by_column[col])
 	end
@@ -744,7 +855,11 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 	if cols == 1 then
 		for i = 1, total do
 			local entry = flattened[i]
-			groups_by_column[1][#groups_by_column[1] + 1] = { group = entry.group, order = i }
+			groups_by_column[1][#groups_by_column[1] + 1] = {
+				group = entry.group,
+				order = i,
+				h = group_heights[entry.group],
+			}
 		end
 		return
 	end
@@ -752,7 +867,7 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 	local weights = {}
 	local prefix = { [0] = 0 }
 	for i = 1, total do
-		local group_h = get_group_actual_height(flattened[i].group)
+		local group_h = group_heights[flattened[i].group] or get_group_actual_height(flattened[i].group)
 		weights[i] = group_h + gap
 		prefix[i] = prefix[i - 1] + weights[i]
 	end
@@ -806,7 +921,11 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 		if range then
 			for idx = range.s, range.e do
 				local entry = flattened[idx]
-				groups_by_column[col][#groups_by_column[col] + 1] = { group = entry.group, order = idx }
+				groups_by_column[col][#groups_by_column[col] + 1] = {
+					group = entry.group,
+					order = idx,
+					h = group_heights[entry.group],
+				}
 			end
 		end
 	end
@@ -855,7 +974,8 @@ end
 local function draw_toggle_item(item, x, y, w, original_y)
 	local pad_x = config.space.x5
 	local hitbox_h = config.item_height.toggle - config.space.x1
-	local hovered = (not state.active_dropdown) and is_hovered_content(x, original_y, w, hitbox_h)
+	local disabled = item.disabled and true or false
+	local hovered = (not disabled) and not state.active_dropdown and is_hovered_content(x, original_y, w, hitbox_h)
 
 	if hovered and state.mouse.clicked and not state.active_dropdown then
 		item.state = not item.state
@@ -877,7 +997,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
 	local switchX = x + w - switchW - pad_x
 	local switchY = y + config.space.x3
 
-	local activeCol = config.colors.accent
+	local activeCol = disabled and TOGGLE_INACTIVE_COLOR or config.colors.accent
 
 	local trackR = math.floor(TOGGLE_INACTIVE_COLOR.r + (activeCol.r - TOGGLE_INACTIVE_COLOR.r) * item.anim)
 	local trackG = math.floor(TOGGLE_INACTIVE_COLOR.g + (activeCol.g - TOGGLE_INACTIVE_COLOR.g) * item.anim)
@@ -892,7 +1012,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
 		switchY,
 		switchW,
 		switchH,
-		config.colors.border_strong,
+		disabled and config.colors.border or config.colors.border_strong,
 		config.control.toggle_track_border_thickness,
 		config.radius.full
 	)
@@ -904,20 +1024,33 @@ local function draw_toggle_item(item, x, y, w, original_y)
 	local thumbX = lerp(minX, maxX, item.anim)
 	local thumbY = switchY + (switchH - thumbSize) / 2
 
-	render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.white, config.radius.full)
+	render_rect(
+		thumbX,
+		thumbY,
+		thumbSize,
+		thumbSize,
+		disabled and config.colors.bg_panel or config.colors.white,
+		config.radius.full
+	)
 	render_outline(
 		thumbX,
 		thumbY,
 		thumbSize,
 		thumbSize,
-		config.colors.accent_hover,
+		disabled and config.colors.border or config.colors.accent_hover,
 		config.control.toggle_thumb_border_thickness,
 		config.radius.full
 	)
 
 	-- Center text vertically with switch
 	local textY = switchY + (switchH - config.font_scale_body) / 2
-	render_text(item.label, x + pad_x, textY, config.font_scale_body, config.colors.text_main)
+	render_text(
+		item.label,
+		x + pad_x,
+		textY,
+		config.font_scale_body,
+		disabled and config.colors.border or config.colors.text_main
+	)
 end
 
 local function is_button_hovered(btnX, btnY, btnW, btnH)
@@ -1055,16 +1188,21 @@ local function draw_slider_item(item, x, y, w, original_y)
 		local relative_mx = mx - ox
 		local ratio = math.max(0, math.min(1, (relative_mx - barX) / barW))
 		local rawValue = item.min + ratio * (item.max - item.min)
+		local prev_value = item.value
+		local next_value
 
 		-- Round to step if specified (e.g., 5 for cuts sliders)
 		if item.step and item.step > 0 then
-			item.value = math.floor((rawValue + item.step / 2) / item.step) * item.step
+			next_value = math.floor((rawValue + item.step / 2) / item.step) * item.step
 		else
-			item.value = rawValue
+			next_value = rawValue
 		end
 
-		if item.onChange then
-			safe_call_ui_handler("slider", item.id, item.onChange, item.value)
+		if next_value ~= prev_value then
+			item.value = next_value
+			if item.onChange then
+				safe_call_ui_handler("slider", item.id, item.onChange, item.value)
+			end
 		end
 	end
 
@@ -1379,11 +1517,21 @@ ui.render = function()
 	local contentY = config.content_area.y + config.content_margin
 	local contentW = config.content_area.w - (config.content_margin * 2)
 	local contentH = config.content_area.h - (config.content_margin * 2)
+	local layout_cfg = config.layout or {}
+	local column_gap = layout_cfg.column_gap or config.space.x4
+	local fixed_col_w = layout_cfg.fixed_column_w or math.max(1, math.floor((contentW - (2 * column_gap)) / 3))
+	local max_columns = layout_cfg.max_columns or 3
+	local column_count = math.floor((contentW + column_gap) / (fixed_col_w + column_gap))
+	if column_count < 1 then
+		column_count = 1
+	end
+	if column_count > max_columns then
+		column_count = max_columns
+	end
 
 	-- Render subtabs for Heist tab (BEFORE clip, so they stay fixed at top)
 	local subtab_bar_height = 0
 	local groups_start_y = contentY
-	local content_intro_t = 1.0
 	if state.content_transition.subtab ~= state.heist_subtab then
 		state.content_transition.subtab = state.heist_subtab
 		state.content_transition.progress = 0.0
@@ -1394,7 +1542,7 @@ ui.render = function()
 		1.0,
 		animator.motion_speed(config.motion.subtab_switch_speed, config.motion.speed_base or 0.16)
 	)
-	content_intro_t = state.content_transition.progress
+	local content_intro_t = state.content_transition.progress
 
 	if ui.currentTab and ui.currentTab.id == "heist" then
 		local subtab_bg_col = render_cache.subtab_bg_col
@@ -1402,10 +1550,14 @@ ui.render = function()
 		local subtab_text_col = render_cache.subtab_text_col
 		local subtab_names = HEIST_SUBTAB_NAMES
 		local subtab_count = #subtab_names
-		local subtab_h = config.space.x9
+		local compact_subtabs = (column_count == 1)
+		local subtab_h = compact_subtabs and config.space.x8 or config.space.x9
 		local subtab_gap = config.space.x2
 		local subtab_w = (contentW - (subtab_count - 1) * subtab_gap) / subtab_count
 		local subtab_y = contentY
+		local subtab_text_size = compact_subtabs and config.font_scale_small or config.font_scale_body
+		local subtab_text_pad_x = compact_subtabs and config.space.x2 or config.space.x3
+		local subtab_text_pad_y = compact_subtabs and config.space.x1_5 or config.space.x1
 
 		for i, name in ipairs(subtab_names) do
 			local subtab_x = contentX + (i - 1) * (subtab_w + subtab_gap)
@@ -1435,11 +1587,16 @@ ui.render = function()
 
 			render_rect(subtab_x, subtab_y, subtab_w, subtab_h, subtab_bg_col, config.radius.md)
 			render_outline(subtab_x, subtab_y, subtab_w, subtab_h, subtab_border_col, 1, config.radius.md)
+			local label = name
+			if compact_subtabs then
+				local label_max_w = math.max(1, subtab_w - (subtab_text_pad_x * 2))
+				label = text_with_ellipsis(name, label_max_w, subtab_text_size)
+			end
 			render_text(
-				name,
-				subtab_x + config.space.x3,
-				subtab_y + config.space.x1,
-				config.font_scale_body,
+				label,
+				subtab_x + subtab_text_pad_x,
+				subtab_y + subtab_text_pad_y,
+				subtab_text_size,
 				subtab_text_col
 			)
 		end
@@ -1458,10 +1615,11 @@ ui.render = function()
 
 	local activeGroups = render_cache.active_groups
 	clear_array(activeGroups)
+	local selected_heist_key = nil
 	if ui.currentTab then
 		if ui.currentTab.id == "heist" then
 			-- Filter groups based on active heist subtab.
-			local selected_heist_key = HEIST_SUBTAB_KEYS[state.heist_subtab]
+			selected_heist_key = HEIST_SUBTAB_KEYS[state.heist_subtab]
 			for _, group in ipairs(ui.currentTab.groups) do
 				if selected_heist_key and group.heist_subtab == selected_heist_key then
 					table.insert(activeGroups, group)
@@ -1475,18 +1633,6 @@ ui.render = function()
 	end
 
 	if #activeGroups > 0 then
-		local layout_cfg = config.layout or {}
-		local column_gap = layout_cfg.column_gap or config.space.x4
-		local fixed_col_w = layout_cfg.fixed_column_w or math.max(1, math.floor((contentW - (2 * column_gap)) / 3))
-		local max_columns = layout_cfg.max_columns or 3
-		local column_count = math.floor((contentW + column_gap) / (fixed_col_w + column_gap))
-		if column_count < 1 then
-			column_count = 1
-		end
-		if column_count > max_columns then
-			column_count = max_columns
-		end
-
 		local col_w = fixed_col_w
 		local used_w = (column_count * col_w) + ((column_count - 1) * column_gap)
 		local start_x = contentX + math.max(0, math.floor((contentW - used_w) / 2))
@@ -1499,8 +1645,32 @@ ui.render = function()
 		end
 
 		local groups_by_column = render_cache.groups_by_column
-		local ordered = flatten_groups_by_order(activeGroups, state.heist_subtab)
-		distribute_groups_by_column(ordered, groups_by_column, column_count)
+		local layout_key = tostring(ui.currentTab and ui.currentTab.id or "")
+			.. ":"
+			.. tostring(selected_heist_key or "")
+			.. ":"
+			.. tostring(column_count)
+			.. ":"
+			.. tostring(layout_cache_revision)
+		if
+			render_cache.layout_dirty
+			or render_cache.layout_revision ~= layout_cache_revision
+			or render_cache.layout_key ~= layout_key
+		then
+			local ordered = flatten_groups_by_order(activeGroups, state.heist_subtab)
+			local group_heights = render_cache.group_heights
+			for key in pairs(group_heights) do
+				group_heights[key] = nil
+			end
+			for i = 1, #ordered do
+				local group = ordered[i].group
+				group_heights[group] = get_group_actual_height(group)
+			end
+			distribute_groups_by_column(ordered, groups_by_column, column_count, group_heights)
+			render_cache.layout_key = layout_key
+			render_cache.layout_revision = layout_cache_revision
+			render_cache.layout_dirty = false
+		end
 
 		local group_move_speed = animator.motion_speed(config.motion.group_move_speed, config.motion.speed_base or 0.16)
 		local intro_slide_dist = config.motion.subtab_switch_slide or config.space.x3
@@ -1512,7 +1682,7 @@ ui.render = function()
 			for _, entry in ipairs(groups_by_column[col]) do
 				local group = entry.group
 				local gY = col_y
-				local actual_h = get_group_actual_height(group)
+				local actual_h = entry.h or get_group_actual_height(group)
 				local subkey = HEIST_SUBTAB_KEYS[state.heist_subtab] or tostring(state.heist_subtab or 0)
 				local anim_key = "group:"
 					.. subkey
@@ -1560,7 +1730,7 @@ ui.render = function()
 
 					local itemY = drawY + config.item_height.header_padding + config.space.x3
 					for _, item in ipairs(group.items) do
-						local dd = nil
+						local dd
 						itemY, dd = render_group_item(item, drawX, itemY, col_w, pad_x)
 						if dd then
 							pendingDropdowns[#pendingDropdowns + 1] = dd
@@ -1678,12 +1848,12 @@ ui.render = function()
 	local wm_y = config.origin_y + config.space.x2
 	local wm_scale = config.font_scale_small or 1.0
 	local wm_col = { r = 0, g = 0, b = 0, a = 255 }
-	render_text("ShillenSilent v0.0.8", wm_x, wm_y, wm_scale, wm_col, "left")
+	render_text("ShillenSilent v0.0.9", wm_x, wm_y, wm_scale, wm_col, "left")
 
 	-- [INJECTED] Credits Watermark (Bottom Left)
 	local credits_x = config.origin_x + config.space.x2
 	local credits_y = config.origin_y + dynamicBodyH - (config.space.x2 * 2)
-	render_text("Thank you dustyideas. shillen000, & SilentSalo", credits_x, credits_y, wm_scale, wm_col, "left")
+	render_text("Thank you dustyideas, shillen000, & SilentSalo", credits_x, credits_y, wm_scale, wm_col, "left")
 end
 
 return ui

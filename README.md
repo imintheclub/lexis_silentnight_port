@@ -28,6 +28,22 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 3. Load the script in Lexis
 
 # Changelog
+## v0.0.9
+- major upgrade to doomsday heist tab
+- added presets, added teleports, added new instant finish to avoid that glitch of getting stuck in a session from before
+- Added v0 of new heists
+	- Thanks shillen and silentsalo for the code for this literally
+	- Agency
+	- Salvage Yard
+	- Auto Shop
+	- KnoWay
+
+## v0.0.8
+- thanks DustyIdeas for the patch
+- fixed game crash sometimes when loading script
+- fixed broken casino autograbber
+- fixed some doomsday heist issues 
+
 ## v0.0.7
 - changed from the dogshit custom ai slop bullshit loader code to real modules with proper scoping and requires
 - made notifications more consistent + present for every action which commits a state change of any kind + all missing error cases

@@ -60,6 +60,13 @@ local DOOMSDAY_FINISH_NEW_OFFSETS = {
 		step3 = 56223 + 1,
 	},
 }
+local apply_doomsday_cuts
+
+local doomsday_max_payout_cache = {
+	heist = nil,
+	difficulty = nil,
+	cut = nil,
+}
 
 local function doomsday_reload_board(show_missing_notice)
 	if safe_access.is_script_running("gb_gang_ops_planning") then
@@ -192,21 +199,9 @@ end
 local function hp_get_doomsday_max_payout_cut()
 	local p = GetMP()
 	local heist = safe_access.get_stat_int(p .. "GANGOPS_FLOW_MISSION_PROG", nil)
-	if not DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act] then
-		DoomsdayConfig.act = 1
-	end
-	if not heist or not (heist == 503 or heist == 240 or heist == 16368) then
-		heist = DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act].flow
-	end
-
-	local difficulty_raw = safe_access.get_global_int(4718592 + 3538, 0)
-	local difficulty = 1
-	if difficulty_raw ~= nil then
-		if difficulty_raw <= 1 then
-			difficulty = difficulty_raw + 1
-		else
-			difficulty = difficulty_raw
-		end
+	local difficulty = safe_access.get_global_int(4718592 + 3538, 1) or 1
+	if difficulty == 0 then
+		difficulty = 1
 	end
 	if difficulty < 1 then
 		difficulty = 1
@@ -221,13 +216,57 @@ local function hp_get_doomsday_max_payout_cut()
 		[16368] = { 1800000, 2250000 },
 	}
 
-	local payout_by_heist = payouts[heist] or payouts[503]
-	local payout = payout_by_heist[difficulty] or payout_by_heist[1]
+	local payout_by_heist = payouts[heist]
+	if not payout_by_heist then
+		return nil, heist, difficulty
+	end
+	local payout = payout_by_heist[difficulty]
+	if not payout then
+		return nil, heist, difficulty
+	end
 	local cut = math.floor(SAFE_PAYOUT_TARGETS.doomsday / (payout / 100))
-	return hp_clamp_doomsday_cut_percent(cut)
+	return hp_clamp_doomsday_cut_percent(cut), heist, difficulty
 end
 
-local function apply_doomsday_cuts(cuts)
+local function doomsday_refresh_max_payout(force_update, apply_now)
+	if not doomsday_flags.max_payout_enabled then
+		doomsday_max_payout_cache.heist = nil
+		doomsday_max_payout_cache.difficulty = nil
+		doomsday_max_payout_cache.cut = nil
+		return false
+	end
+
+	local cut, heist, difficulty = hp_get_doomsday_max_payout_cut()
+	if not cut then
+		return false
+	end
+
+	local changed = force_update
+		or doomsday_max_payout_cache.heist ~= heist
+		or doomsday_max_payout_cache.difficulty ~= difficulty
+		or doomsday_max_payout_cache.cut ~= cut
+
+	if changed then
+		hp_set_uniform_cuts(
+			DoomsdayCutsValues,
+			{ "player1", "player2", "player3", "player4" },
+			{ doomsday_refs.p1_slider, doomsday_refs.p2_slider, doomsday_refs.p3_slider, doomsday_refs.p4_slider },
+			cut
+		)
+
+		if apply_now then
+			apply_doomsday_cuts()
+		end
+
+		doomsday_max_payout_cache.heist = heist
+		doomsday_max_payout_cache.difficulty = difficulty
+		doomsday_max_payout_cache.cut = cut
+	end
+
+	return changed
+end
+
+apply_doomsday_cuts = function(cuts)
 	if type(cuts) == "table" then
 		DoomsdayCutsValues.player1 = hp_clamp_doomsday_cut_percent(cuts[1] or DoomsdayCutsValues.player1)
 		DoomsdayCutsValues.player2 = hp_clamp_doomsday_cut_percent(cuts[2] or DoomsdayCutsValues.player2)
@@ -237,12 +276,14 @@ local function apply_doomsday_cuts(cuts)
 
 	if doomsday_flags.max_payout_enabled then
 		local max_cut = hp_get_doomsday_max_payout_cut()
-		hp_set_uniform_cuts(
-			DoomsdayCutsValues,
-			{ "player1", "player2", "player3", "player4" },
-			{ doomsday_refs.p1_slider, doomsday_refs.p2_slider, doomsday_refs.p3_slider, doomsday_refs.p4_slider },
-			max_cut
-		)
+		if max_cut then
+			hp_set_uniform_cuts(
+				DoomsdayCutsValues,
+				{ "player1", "player2", "player3", "player4" },
+				{ doomsday_refs.p1_slider, doomsday_refs.p2_slider, doomsday_refs.p3_slider, doomsday_refs.p4_slider },
+				max_cut
+			)
+		end
 	end
 
 	local p1 = doomsday_cut_enabled.player1 and hp_clamp_doomsday_cut_percent(DoomsdayCutsValues.player1) or 0
@@ -271,7 +312,7 @@ local function apply_selected_doomsday_cut_preset(apply_now, silent)
 
 	local selected_cut = selected and selected.value or 100
 	if doomsday_flags.max_payout_enabled then
-		selected_cut = hp_get_doomsday_max_payout_cut()
+		selected_cut = hp_get_doomsday_max_payout_cut() or selected_cut
 	end
 
 	local apply_fn = nil
@@ -303,7 +344,7 @@ local function doomsday_set_max_payout(enable, silent)
 	end
 
 	if enabled then
-		apply_selected_doomsday_cut_preset(false, true)
+		doomsday_refresh_max_payout(true, false)
 	end
 
 	if changed and not silent and notify then
@@ -341,39 +382,6 @@ local function doomsday_doomsday_hack()
 		notify.push("Doomsday Tools", "Hack not active", 2000)
 	end
 	return false
-end
-
-local function doomsday_instant_finish_old()
-	return run_guarded_job("doomsday_instant_finish_old", function()
-		if not safe_access.is_script_running("fm_mission_controller") then
-			if notify then
-				notify.push("Doomsday Tools", "Old method requires fm_mission_controller", 2000)
-			end
-			return
-		end
-
-		if safe_access.force_host("fm_mission_controller") then
-			util.yield(1000)
-			local ok1 = safe_access.set_local_int("fm_mission_controller", 20395, 12)
-			local ok2 = safe_access.set_local_int("fm_mission_controller", 22136, 150)
-			local ok3 = safe_access.set_local_int("fm_mission_controller", 29017, 99999)
-			local ok4 = safe_access.set_local_int("fm_mission_controller", 32541, 99999)
-			local ok5 = safe_access.set_local_int("fm_mission_controller", 32569, 80)
-			if notify then
-				if ok1 and ok2 and ok3 and ok4 and ok5 then
-					notify.push("Doomsday Tools", "Instant finish triggered (Old)", 2000)
-				else
-					notify.push("Doomsday Tools", "Old finish write failed", 2200)
-				end
-			end
-		elseif notify then
-			notify.push("Doomsday Tools", "Could not force host", 2000)
-		end
-	end, function()
-		if notify then
-			notify.push("Doomsday Tools", "Old finish already running", 1500)
-		end
-	end)
 end
 
 local function doomsday_instant_finish_new()
@@ -578,27 +586,9 @@ local function register(heistTab)
 			)
 		end
 	)
-	ui.button_pair(
-		gDoomsdayCuts,
-		"doomsday_preset_apply",
-		"Apply Selected Preset",
-		function()
-			apply_selected_doomsday_cut_preset(false, false)
-		end,
-		"doomsday_preset_max_instant",
-		"Apply Preset (Max Payout)",
-		function()
-			hp_set_uniform_cuts(
-				DoomsdayCutsValues,
-				{ "player1", "player2", "player3", "player4" },
-				{ doomsday_refs.p1_slider, doomsday_refs.p2_slider, doomsday_refs.p3_slider, doomsday_refs.p4_slider },
-				hp_get_doomsday_max_payout_cut()
-			)
-			if notify then
-				notify.push("Doomsday Cuts", "Max payout cut preset loaded", 2000)
-			end
-		end
-	)
+	ui.button(gDoomsdayCuts, "doomsday_preset_apply", "Apply Selected Preset", function()
+		apply_selected_doomsday_cut_preset(false, false)
+	end)
 
 	doomsday_refs.p1_toggle = ui.toggle(
 		gDoomsdayCuts,
@@ -710,27 +700,21 @@ local function register(heistTab)
 			doomsday_doomsday_hack()
 		end
 	)
-	ui.button_pair(
-		gDoomsdayTools,
-		"doomsday_instant_finish_old",
-		"Instant Finish (Old)",
-		function()
-			doomsday_instant_finish_old()
-		end,
-		"doomsday_instant_finish_new",
-		"Instant Finish (New)",
-		function()
-			doomsday_instant_finish_new()
-		end
-	)
+	ui.button(gDoomsdayTools, "doomsday_instant_finish", "Instant Finish", function()
+		doomsday_instant_finish_new()
+	end)
 	ui.button(gDoomsdayTools, "doomsday_skip_cutscene", "Skip Cutscene", function()
 		heist_skip_cutscene("Doomsday")
 	end)
 
 	doomsday_callbacks.apply_cuts = apply_doomsday_cuts
 	doomsday_callbacks.set_max_payout = doomsday_set_max_payout
+	doomsday_callbacks.refresh_max_payout = doomsday_refresh_max_payout
 	doomsday_callbacks.apply_cut_preset = apply_selected_doomsday_cut_preset
 	doomsday_callbacks.set_selected_act = doomsday_set_selected_act
+	if doomsday_flags.max_payout_enabled then
+		doomsday_refresh_max_payout(true, false)
+	end
 
 	return heistTab
 end

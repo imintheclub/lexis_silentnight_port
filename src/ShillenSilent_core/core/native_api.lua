@@ -2,9 +2,15 @@
 -- 6. native api (Safe Input Filtering)
 -- ---------------------------------------------------------
 local CONTROL_ACTION_BLOCK_LIST = {
-	-- ONLY block weapon/attack/scroll inputs.
-	-- DO NOT block movement (0-6, 30-35) or vehicle inputs (59, 60, 71, 72, 75)
+	-- Block weapon/attack/scroll/camera inputs when menu is open.
+	-- DO NOT block movement (0, 30-35) or vehicle inputs (59, 60, 71, 72, 75)
 
+	1, -- INPUT_LOOK_LR (Camera Left/Right)
+	2, -- INPUT_LOOK_UD (Camera Up/Down)
+	3, -- INPUT_LOOK_UP_ONLY
+	4, -- INPUT_LOOK_DOWN_ONLY
+	5, -- INPUT_LOOK_LEFT_ONLY
+	6, -- INPUT_LOOK_RIGHT_ONLY
 	14, -- WEAPON_WHEEL_NEXT (Scroll Down)
 	15, -- WEAPON_WHEEL_PREV (Scroll Up)
 	16, -- SELECT_NEXT_WEAPON

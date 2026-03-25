@@ -6,9 +6,11 @@ local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local native_api = require("ShillenSilent_core.core.native_api")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
+local heist_state = require("ShillenSilent_core.shared.heist_state")
 local solo_launch = require("ShillenSilent_core.runtime.solo_launch")
 local cayo_logic = require("ShillenSilent_core.heists.cayo.logic")
 local casino_logic = require("ShillenSilent_core.heists.casino.logic")
+local salvageyard_logic = require("ShillenSilent_core.heists.salvageyard.logic")
 
 local state = core.state
 local config = core.config
@@ -79,15 +81,26 @@ local SOLO_LAUNCH_HANDLERS = {
 local HEIST_ENFORCE_INTERVAL_MS = 150
 local next_heist_enforce_tick = 0
 
+local function maybe_sync_max_payouts()
+	pcall(presets.hp_refresh_apartment_max_payout, false, false)
+	pcall(cayo_logic.cayo_refresh_max_payout, false, false)
+	pcall(casino_logic.casino_refresh_max_payout, false, false)
+
+	local doomsday_callbacks = heist_state.doomsday and heist_state.doomsday.callbacks or nil
+	if doomsday_callbacks and type(doomsday_callbacks.refresh_max_payout) == "function" then
+		pcall(doomsday_callbacks.refresh_max_payout, false, false)
+	end
+end
+
 local function maybe_enforce_heist_toggles()
 	local now_tick = (util and util.get_tick_count and util.get_tick_count()) or nil
 	if now_tick and now_tick < next_heist_enforce_tick then
 		return
 	end
 
-	pcall(presets.hp_refresh_apartment_max_payout, false, false)
 	pcall(cayo_logic.cayo_enforce_heist_toggles)
 	pcall(casino_logic.casino_enforce_heist_toggles)
+	pcall(salvageyard_logic.salvage_enforce_heist_toggles)
 
 	if now_tick then
 		next_heist_enforce_tick = now_tick + HEIST_ENFORCE_INTERVAL_MS
@@ -120,6 +133,7 @@ local function start_runtime_loop()
 				state.solo_launch_prev[key] = enabled
 			end
 
+			pcall(maybe_sync_max_payouts)
 			pcall(maybe_enforce_heist_toggles)
 
 			local t_pressed = false

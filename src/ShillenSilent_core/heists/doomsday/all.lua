@@ -343,39 +343,6 @@ local function doomsday_doomsday_hack()
 	return false
 end
 
-local function doomsday_instant_finish_old()
-	return run_guarded_job("doomsday_instant_finish_old", function()
-		if not safe_access.is_script_running("fm_mission_controller") then
-			if notify then
-				notify.push("Doomsday Tools", "Old method requires fm_mission_controller", 2000)
-			end
-			return
-		end
-
-		if safe_access.force_host("fm_mission_controller") then
-			util.yield(1000)
-			local ok1 = safe_access.set_local_int("fm_mission_controller", 20395, 12)
-			local ok2 = safe_access.set_local_int("fm_mission_controller", 22136, 150)
-			local ok3 = safe_access.set_local_int("fm_mission_controller", 29017, 99999)
-			local ok4 = safe_access.set_local_int("fm_mission_controller", 32541, 99999)
-			local ok5 = safe_access.set_local_int("fm_mission_controller", 32569, 80)
-			if notify then
-				if ok1 and ok2 and ok3 and ok4 and ok5 then
-					notify.push("Doomsday Tools", "Instant finish triggered (Old)", 2000)
-				else
-					notify.push("Doomsday Tools", "Old finish write failed", 2200)
-				end
-			end
-		elseif notify then
-			notify.push("Doomsday Tools", "Could not force host", 2000)
-		end
-	end, function()
-		if notify then
-			notify.push("Doomsday Tools", "Old finish already running", 1500)
-		end
-	end)
-end
-
 local function doomsday_instant_finish_new()
 	return run_guarded_job("doomsday_instant_finish_new", function()
 		local script_name = nil

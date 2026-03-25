@@ -40,13 +40,6 @@ local AGENCY_GLOBALS = {
 	SAFE_COLLECT_BOOL = 2708850,
 }
 
-local AGENCY_FINISH_OLD = {
-	script = "fm_mission_controller_2020",
-	step1_offset = 56223 + 1,
-	step2_offset = 56223 + 1776 + 1,
-	step1_value = 51338752,
-	step2_value = 50,
-}
 
 local AGENCY_FINISH_NEW = {
 	["fm_mission_controller"] = {
@@ -254,37 +247,6 @@ local function agency_find_new_finish_script()
 	return nil
 end
 
-local function agency_instant_finish_old()
-	return run_guarded_job("agency_instant_finish_old", function()
-		if not is_script_running(AGENCY_FINISH_OLD.script) then
-			if notify then
-				notify.push("Agency", "Old finish requires fm_mission_controller_2020", 2200)
-			end
-			return
-		end
-
-		if not force_script_host(AGENCY_FINISH_OLD.script) then
-			if notify then
-				notify.push("Agency", "Could not force host", 2200)
-			end
-			return
-		end
-		util.yield(1000)
-		local ok1 =
-			set_local_int(AGENCY_FINISH_OLD.script, AGENCY_FINISH_OLD.step1_offset, AGENCY_FINISH_OLD.step1_value)
-		local ok2 =
-			set_local_int(AGENCY_FINISH_OLD.script, AGENCY_FINISH_OLD.step2_offset, AGENCY_FINISH_OLD.step2_value)
-
-		if notify then
-			notify.push("Agency", (ok1 and ok2) and "Instant finish triggered (Old)" or "Old finish write failed", 2200)
-		end
-	end, function()
-		if notify then
-			notify.push("Agency", "Old finish already running", 1500)
-		end
-	end)
-end
-
 local function agency_instant_finish_new()
 	return run_guarded_job("agency_instant_finish_new", function()
 		local script_name = agency_find_new_finish_script()
@@ -360,7 +322,6 @@ local agency_logic = {
 	agency_teleport_mission = agency_teleport_mission,
 	agency_collect_safe = agency_collect_safe,
 	agency_instant_finish = agency_instant_finish_new,
-	agency_instant_finish_old = agency_instant_finish_old,
 	agency_instant_finish_new = agency_instant_finish_new,
 	agency_refresh_collect_safe_state = agency_refresh_collect_safe_state,
 }

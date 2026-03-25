@@ -28,23 +28,8 @@ end
 
 local function knoway_instant_finish()
 	return run_guarded_job("knoway_instant_finish", function()
-		local action_taken = false
-		local writes_ok = true
-
-		if safe_access.is_script_running("circuitblockhack") then
-			action_taken = true
-			writes_ok = safe_access.set_local_int("circuitblockhack", 62, 2) and writes_ok
-		end
-
-		if safe_access.is_script_running("word_hack") then
-			action_taken = true
-			writes_ok = safe_access.set_local_int("word_hack", 106, 5) and writes_ok
-		end
-
-		if safe_access.is_script_running(MISSION_CONTROLLER_SCRIPT) then
-			action_taken = true
-			writes_ok = apply_mission_controller_finish() and writes_ok
-		end
+		local action_taken = safe_access.is_script_running(MISSION_CONTROLLER_SCRIPT)
+		local writes_ok = action_taken and apply_mission_controller_finish() or true
 
 		if notify then
 			if not action_taken then

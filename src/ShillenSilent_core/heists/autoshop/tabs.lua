@@ -21,7 +21,6 @@ local autoshop_reset_preps = autoshop_logic.autoshop_reset_preps
 local autoshop_redraw_board = autoshop_logic.autoshop_redraw_board
 local autoshop_teleport_entrance = autoshop_logic.autoshop_teleport_entrance
 local autoshop_teleport_board = autoshop_logic.autoshop_teleport_board
-local autoshop_instant_finish_old = autoshop_logic.autoshop_instant_finish_old
 local autoshop_instant_finish_new = autoshop_logic.autoshop_instant_finish_new
 local autoshop_kill_cooldowns = autoshop_logic.autoshop_kill_cooldowns
 local autoshop_apply_payout = autoshop_logic.autoshop_apply_payout
@@ -86,19 +85,9 @@ local function register(heistTab)
 			autoshop_teleport_board()
 		end
 	)
-	ui.button_pair(
-		gAutoshopMisc,
-		"autoshop_instant_finish_old",
-		"Instant Finish (Old)",
-		function()
-			autoshop_instant_finish_old()
-		end,
-		"autoshop_instant_finish_new",
-		"Instant Finish (New)",
-		function()
-			autoshop_instant_finish_new()
-		end
-	)
+	ui.button(gAutoshopMisc, "autoshop_instant_finish", "Instant Finish", function()
+		autoshop_instant_finish_new()
+	end)
 
 	build_skip_cooldown_danger_group(heistTab, "autoshop", "autoshop_kill_cooldown", function()
 		autoshop_kill_cooldowns()

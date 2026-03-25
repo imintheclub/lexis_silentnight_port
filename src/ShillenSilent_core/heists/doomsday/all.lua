@@ -710,19 +710,9 @@ local function register(heistTab)
 			doomsday_doomsday_hack()
 		end
 	)
-	ui.button_pair(
-		gDoomsdayTools,
-		"doomsday_instant_finish_old",
-		"Instant Finish (Old)",
-		function()
-			doomsday_instant_finish_old()
-		end,
-		"doomsday_instant_finish_new",
-		"Instant Finish (New)",
-		function()
-			doomsday_instant_finish_new()
-		end
-	)
+	ui.button(gDoomsdayTools, "doomsday_instant_finish", "Instant Finish", function()
+		doomsday_instant_finish_new()
+	end)
 	ui.button(gDoomsdayTools, "doomsday_skip_cutscene", "Skip Cutscene", function()
 		heist_skip_cutscene("Doomsday")
 	end)

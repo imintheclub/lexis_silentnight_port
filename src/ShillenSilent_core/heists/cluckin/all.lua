@@ -42,17 +42,7 @@ end
 local function cluckin_instant_finish()
 	local action_taken = false
 
-	if safe_access.is_script_running("circuitblockhack") then
-		safe_access.set_local_int("circuitblockhack", 62, 2)
-		action_taken = true
-	end
-
-	if safe_access.is_script_running("word_hack") then
-		safe_access.set_local_int("word_hack", 106, 5)
-		action_taken = true
-	end
-
-	if not action_taken and safe_access.is_script_running("fm_mission_controller_2020") then
+	if safe_access.is_script_running("fm_mission_controller_2020") then
 		local base = 56223
 		local cash_take_offset = 55173
 		safe_access.set_local_int("fm_mission_controller_2020", cash_take_offset, 4000000)

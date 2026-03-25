@@ -344,7 +344,7 @@ end
 agency_callbacks.apply_preps = agency_apply_and_complete_preps
 agency_callbacks.kill_cooldowns = agency_kill_cooldowns
 agency_callbacks.apply_payout = agency_apply_payout
-agency_callbacks.instant_finish = agency_instant_finish_old
+agency_callbacks.instant_finish = agency_instant_finish_new
 
 local agency_logic = {
 	AgencyConfig = AgencyConfig,
@@ -359,7 +359,7 @@ local agency_logic = {
 	agency_teleport_computer = agency_teleport_computer,
 	agency_teleport_mission = agency_teleport_mission,
 	agency_collect_safe = agency_collect_safe,
-	agency_instant_finish = agency_instant_finish_old,
+	agency_instant_finish = agency_instant_finish_new,
 	agency_instant_finish_old = agency_instant_finish_old,
 	agency_instant_finish_new = agency_instant_finish_new,
 	agency_refresh_collect_safe_state = agency_refresh_collect_safe_state,

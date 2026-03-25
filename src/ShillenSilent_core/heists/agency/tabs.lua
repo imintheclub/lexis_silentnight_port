@@ -24,7 +24,6 @@ local agency_teleport_entrance = agency_logic.agency_teleport_entrance
 local agency_teleport_computer = agency_logic.agency_teleport_computer
 local agency_teleport_mission = agency_logic.agency_teleport_mission
 local agency_collect_safe = agency_logic.agency_collect_safe
-local agency_instant_finish_old = agency_logic.agency_instant_finish_old
 local agency_instant_finish_new = agency_logic.agency_instant_finish_new
 local agency_refresh_collect_safe_state = agency_logic.agency_refresh_collect_safe_state
 
@@ -83,19 +82,9 @@ local function register(heistTab)
 	)
 	agency_refs.collect_safe_button = gAgencyMisc.items[#gAgencyMisc.items].right
 
-	ui.button_pair(
-		gAgencyMisc,
-		"agency_instant_finish_old",
-		"Instant Finish (Old)",
-		function()
-			agency_instant_finish_old()
-		end,
-		"agency_instant_finish_new",
-		"Instant Finish (New)",
-		function()
-			agency_instant_finish_new()
-		end
-	)
+	ui.button(gAgencyMisc, "agency_instant_finish", "Instant Finish", function()
+		agency_instant_finish_new()
+	end)
 
 	build_skip_cooldown_danger_group(heistTab, "agency", "agency_kill_cooldowns", function()
 		agency_kill_cooldowns()

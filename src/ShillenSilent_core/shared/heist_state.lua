@@ -415,13 +415,14 @@ local heist_state = {
 		},
 		cuts = {
 			host = 100,
-			player2 = 100,
-			player3 = 100,
-			player4 = 100,
+			player2 = 0,
+			player3 = 0,
+			player4 = 0,
 		},
 		flags = {
 			womans_bag_enabled = false,
 			remove_crew_cuts_enabled = false,
+			max_payout_enabled = false,
 		},
 		refs = {
 			womans_bag_toggle = nil,
@@ -442,6 +443,7 @@ local heist_state = {
 			art_value_slider = nil,
 			presets_group = nil,
 			remove_crew_cuts_toggle = nil,
+			max_payout_toggle = nil,
 			host_slider = nil,
 			p2_slider = nil,
 			p3_slider = nil,
@@ -450,6 +452,8 @@ local heist_state = {
 		callbacks = {
 			set_womans_bag = nil,
 			set_remove_crew_cuts = nil,
+			set_max_payout = nil,
+			refresh_max_payout = nil,
 		},
 	},
 	casino = {
@@ -490,6 +494,7 @@ local heist_state = {
 		flags = {
 			remove_crew_cuts_enabled = false,
 			autograbber_enabled = false,
+			max_payout_enabled = false,
 		},
 		refs = {
 			manual_approach_dropdown = nil,
@@ -506,6 +511,7 @@ local heist_state = {
 			manual_unlock_poi_toggle = nil,
 			solo_launch_toggle = nil,
 			remove_crew_cuts_toggle = nil,
+			max_payout_toggle = nil,
 			autograbber_toggle = nil,
 			host_slider = nil,
 			p2_slider = nil,
@@ -516,6 +522,8 @@ local heist_state = {
 		callbacks = {
 			set_remove_crew_cuts = nil,
 			set_autograbber = nil,
+			set_max_payout = nil,
+			refresh_max_payout = nil,
 			update_loadout_dropdown = nil,
 			update_vehicle_dropdown = nil,
 		},
@@ -558,6 +566,7 @@ local heist_state = {
 		callbacks = {
 			apply_cuts = nil,
 			set_max_payout = nil,
+			refresh_max_payout = nil,
 			apply_cut_preset = nil,
 			set_selected_act = nil,
 		},

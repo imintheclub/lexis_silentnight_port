@@ -974,7 +974,8 @@ end
 local function draw_toggle_item(item, x, y, w, original_y)
 	local pad_x = config.space.x5
 	local hitbox_h = config.item_height.toggle - config.space.x1
-	local hovered = (not state.active_dropdown) and is_hovered_content(x, original_y, w, hitbox_h)
+	local disabled = item.disabled and true or false
+	local hovered = (not disabled) and not state.active_dropdown and is_hovered_content(x, original_y, w, hitbox_h)
 
 	if hovered and state.mouse.clicked and not state.active_dropdown then
 		item.state = not item.state
@@ -996,7 +997,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
 	local switchX = x + w - switchW - pad_x
 	local switchY = y + config.space.x3
 
-	local activeCol = config.colors.accent
+	local activeCol = disabled and TOGGLE_INACTIVE_COLOR or config.colors.accent
 
 	local trackR = math.floor(TOGGLE_INACTIVE_COLOR.r + (activeCol.r - TOGGLE_INACTIVE_COLOR.r) * item.anim)
 	local trackG = math.floor(TOGGLE_INACTIVE_COLOR.g + (activeCol.g - TOGGLE_INACTIVE_COLOR.g) * item.anim)
@@ -1011,7 +1012,7 @@ local function draw_toggle_item(item, x, y, w, original_y)
 		switchY,
 		switchW,
 		switchH,
-		config.colors.border_strong,
+		disabled and config.colors.border or config.colors.border_strong,
 		config.control.toggle_track_border_thickness,
 		config.radius.full
 	)
@@ -1023,20 +1024,33 @@ local function draw_toggle_item(item, x, y, w, original_y)
 	local thumbX = lerp(minX, maxX, item.anim)
 	local thumbY = switchY + (switchH - thumbSize) / 2
 
-	render_rect(thumbX, thumbY, thumbSize, thumbSize, config.colors.white, config.radius.full)
+	render_rect(
+		thumbX,
+		thumbY,
+		thumbSize,
+		thumbSize,
+		disabled and config.colors.bg_panel or config.colors.white,
+		config.radius.full
+	)
 	render_outline(
 		thumbX,
 		thumbY,
 		thumbSize,
 		thumbSize,
-		config.colors.accent_hover,
+		disabled and config.colors.border or config.colors.accent_hover,
 		config.control.toggle_thumb_border_thickness,
 		config.radius.full
 	)
 
 	-- Center text vertically with switch
 	local textY = switchY + (switchH - config.font_scale_body) / 2
-	render_text(item.label, x + pad_x, textY, config.font_scale_body, config.colors.text_main)
+	render_text(
+		item.label,
+		x + pad_x,
+		textY,
+		config.font_scale_body,
+		disabled and config.colors.border or config.colors.text_main
+	)
 end
 
 local function is_button_hovered(btnX, btnY, btnW, btnH)

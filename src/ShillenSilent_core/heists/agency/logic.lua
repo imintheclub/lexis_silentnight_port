@@ -40,7 +40,6 @@ local AGENCY_GLOBALS = {
 	SAFE_COLLECT_BOOL = 2708850,
 }
 
-
 local AGENCY_FINISH_NEW = {
 	["fm_mission_controller"] = {
 		step1_offset = 20395 + 1062,

@@ -401,8 +401,10 @@ local function register(heistTab)
 
 		-- Apply Apartment Cuts
 		local function apply_apartment_cuts()
-			local base_global = 1936013
-			local base_local = 1937981
+			local base_pairs = {
+				{ global_base = 1936013, local_base = 1937981 }, -- current script offsets
+				{ global_base = 1935536, local_base = 1937504 }, -- SilentNight legacy offsets
+			}
 			local total_cut = ApartmentCutsValues.player1
 				+ ApartmentCutsValues.player2
 				+ ApartmentCutsValues.player3
@@ -410,23 +412,31 @@ local function register(heistTab)
 
 			-- Calculate over_cap - if total > 100, we need to compensate
 			local over_cap = total_cut - 100
-			local ok = true
-			if over_cap > 0 then
-				ok = set_global_int(base_global + 1 + 1, -over_cap) and ok
-			else
-				ok = set_global_int(base_global + 1 + 1, 0) and ok
+			local any_pair_ok = false
+
+			for i = 1, #base_pairs do
+				local pair = base_pairs[i]
+				local pair_ok = true
+				if over_cap > 0 then
+					pair_ok = set_global_int(pair.global_base + 1 + 1, -over_cap) and pair_ok
+				else
+					pair_ok = set_global_int(pair.global_base + 1 + 1, 0) and pair_ok
+				end
+
+				-- Set globals for players 2, 3, 4
+				pair_ok = set_global_int(pair.global_base + 1 + 2, ApartmentCutsValues.player2) and pair_ok
+				pair_ok = set_global_int(pair.global_base + 1 + 3, ApartmentCutsValues.player3) and pair_ok
+				pair_ok = set_global_int(pair.global_base + 1 + 4, ApartmentCutsValues.player4) and pair_ok
+
+				-- "Local" cut entries are exposed as global offsets in SN tables.
+				pair_ok = set_global_int(pair.local_base + 3008 + 1, ApartmentCutsValues.player1) and pair_ok
+				pair_ok = set_global_int(pair.local_base + 3008 + 2, ApartmentCutsValues.player2) and pair_ok
+				pair_ok = set_global_int(pair.local_base + 3008 + 3, ApartmentCutsValues.player3) and pair_ok
+				pair_ok = set_global_int(pair.local_base + 3008 + 4, ApartmentCutsValues.player4) and pair_ok
+
+				any_pair_ok = any_pair_ok or pair_ok
 			end
-
-			-- Set globals for players 2, 3, 4
-			ok = set_global_int(base_global + 1 + 2, ApartmentCutsValues.player2) and ok
-			ok = set_global_int(base_global + 1 + 3, ApartmentCutsValues.player3) and ok
-			ok = set_global_int(base_global + 1 + 4, ApartmentCutsValues.player4) and ok
-
-			-- Set locals for ALL players (critical fix!)
-			ok = set_global_int(base_local + 3008 + 1, ApartmentCutsValues.player1) and ok
-			ok = set_global_int(base_local + 3008 + 2, ApartmentCutsValues.player2) and ok
-			ok = set_global_int(base_local + 3008 + 3, ApartmentCutsValues.player3) and ok
-			ok = set_global_int(base_local + 3008 + 4, ApartmentCutsValues.player4) and ok
+			local ok = any_pair_ok
 
 			if notify then
 				notify.push("Apartment Cuts", ok and "Cuts applied" or "Cut write failed", 2000)
@@ -538,26 +548,9 @@ local function register(heistTab)
 			end
 		)
 
-		ui.button_pair(
-			gApartmentCuts,
-			"apartment_apply_selected_preset",
-			"Apply Selected Preset",
-			function()
-				hp_apply_selected_apartment_cut_preset(true)
-			end,
-			"apartment_cuts_max_instant",
-			"Apply Preset (Max Payout)",
-			function()
-				local cut = hp_get_apartment_max_payout_cut(apartment_flags.double_rewards_week)
-				if not cut then
-					if notify then
-						notify.push("Apartment Cuts", "Unknown heist. Load an Apartment finale first.", 2400)
-					end
-					return
-				end
-				hp_set_apartment_uniform_cuts(cut, true)
-			end
-		)
+		ui.button(gApartmentCuts, "apartment_apply_selected_preset", "Apply Selected Preset", function()
+			hp_apply_selected_apartment_cut_preset(true)
+		end)
 		ui.button(gApartmentCuts, "apartment_cuts_apply", "Apply Cuts", function()
 			apply_apartment_cuts()
 		end)

@@ -25,8 +25,9 @@ local reset_heist_preps = casino_logic.reset_heist_preps
 local casino_set_autograbber = casino_logic.casino_set_autograbber
 local casino_force_ready = casino_logic.casino_force_ready
 local apply_casino_cuts = casino_logic.apply_casino_cuts
-local hp_get_casino_max_payout_cut = casino_logic.hp_get_casino_max_payout_cut
 local casino_set_remove_crew_cuts = casino_logic.casino_set_remove_crew_cuts
+local casino_set_max_payout = casino_logic.casino_set_max_payout
+local casino_refresh_max_payout = casino_logic.casino_refresh_max_payout
 local casino_fingerprint_hack = casino_logic.casino_fingerprint_hack
 local casino_instant_keypad_hack = casino_logic.casino_instant_keypad_hack
 local casino_instant_vault_drill = casino_logic.casino_instant_vault_drill
@@ -402,6 +403,15 @@ local function register(heistTab)
 			casino_set_remove_crew_cuts(val)
 		end
 	)
+	casino_refs.max_payout_toggle = ui.toggle(
+		gCuts,
+		"casino_max_payout",
+		"3.619mil Payout (Max)",
+		casino_flags.max_payout_enabled,
+		function(val)
+			casino_set_max_payout(val)
+		end
+	)
 	casino_refs.host_slider = ui.slider(gCuts, "cut_host", "Host Cut %", 0, 300, 100, function(val)
 		CutsValues.host = math.floor(val)
 	end, nil, 5)
@@ -414,34 +424,23 @@ local function register(heistTab)
 	casino_refs.p4_slider = ui.slider(gCuts, "cut_p4", "Player 4 Cut %", 0, 300, 0, function(val)
 		CutsValues.player4 = math.floor(val)
 	end, nil, 5)
-	ui.button_pair(
-		gCuts,
-		"cuts_max",
-		"Apply Preset (100%)",
-		function()
-			hp_set_uniform_cuts(
-				CutsValues,
-				{ "host", "player2", "player3", "player4" },
-				{ casino_refs.host_slider, casino_refs.p2_slider, casino_refs.p3_slider, casino_refs.p4_slider },
-				100,
-				apply_casino_cuts
-			)
-		end,
-		"cuts_max_instant",
-		"Apply Preset (Max Payout)",
-		function()
-			hp_set_uniform_cuts(
-				CutsValues,
-				{ "host", "player2", "player3", "player4" },
-				{ casino_refs.host_slider, casino_refs.p2_slider, casino_refs.p3_slider, casino_refs.p4_slider },
-				hp_get_casino_max_payout_cut(),
-				apply_casino_cuts
-			)
-		end
-	)
+	ui.button(gCuts, "cuts_max", "Apply Preset (100%)", function()
+		hp_set_uniform_cuts(
+			CutsValues,
+			{ "host", "player2", "player3", "player4" },
+			{ casino_refs.host_slider, casino_refs.p2_slider, casino_refs.p3_slider, casino_refs.p4_slider },
+			100,
+			apply_casino_cuts
+		)
+	end)
 	ui.button(gCuts, "cuts_apply", "Apply Cuts", function()
 		apply_casino_cuts()
 	end)
+	if casino_flags.max_payout_enabled then
+		casino_refresh_max_payout(true, false)
+	else
+		casino_set_remove_crew_cuts(casino_flags.remove_crew_cuts_enabled, true)
+	end
 
 	-- Casino Teleport functions
 	local function casino_teleport_tunnel()

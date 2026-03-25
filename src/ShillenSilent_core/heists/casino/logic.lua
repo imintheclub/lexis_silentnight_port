@@ -3,6 +3,7 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local run_guarded_job = core.run_guarded_job
+local state = core.state
 local GetMP = presets.GetMP
 local CasinoGlobals = presets.CasinoGlobals
 local CutsValues = presets.CutsValues
@@ -37,8 +38,24 @@ local CASINO_CREW_CUT_TUNABLES = {
 -- Enhanced Edition local offsets.
 local CASINO_AUTOGRABBER_GRAB_LOCAL = 10295
 local CASINO_AUTOGRABBER_SPEED_LOCAL = CASINO_AUTOGRABBER_GRAB_LOCAL + 14
+local CASINO_BUYER_MULT_TUNABLES = {
+	"CH_BUYER_MOD_SHORT",
+	"CH_BUYER_MOD_MED",
+	"CH_BUYER_MOD_LONG",
+}
 
 local casino_crew_cut_backup = {}
+local casino_max_payout_cache = {
+	target = nil,
+	difficulty = nil,
+	buyer = nil,
+	gunman = nil,
+	driver = nil,
+	hacker = nil,
+	solo = nil,
+	host_cut = nil,
+	crew_cut = nil,
+}
 
 local function hp_tunable_int(name)
 	return script.tunables(name).int32
@@ -48,7 +65,30 @@ local function hp_set_tunable_int(name, value)
 	script.tunables(name).int32 = value
 end
 
-local function hp_get_casino_max_payout_cut()
+local function hp_set_tunable_float(name, value)
+	script.tunables(name).float = value
+end
+
+local function casino_sync_crew_cut_ui_lock()
+	local toggle = casino_refs.remove_crew_cuts_toggle
+	if not toggle then
+		return
+	end
+	if casino_flags.max_payout_enabled then
+		toggle.label = "Remove Crew Cuts (Locked by Max Payout)"
+		toggle.state = true
+		toggle.disabled = true
+	else
+		toggle.label = "Remove Crew Cuts"
+		toggle.disabled = false
+	end
+end
+
+local function hp_get_casino_max_payout_cut_details()
+	for i = 1, #CASINO_BUYER_MULT_TUNABLES do
+		hp_set_tunable_float(CASINO_BUYER_MULT_TUNABLES[i], 1.0)
+	end
+
 	local p = GetMP()
 	local approach = safe_access.get_stat_int(p .. "H3OPT_APPROACH", 1)
 	local hard_approach = safe_access.get_stat_int(p .. "H3_HARD_APPROACH", 0)
@@ -64,12 +104,23 @@ local function hp_get_casino_max_payout_cut()
 
 	local payout_by_target = payouts[target]
 	if not payout_by_target then
-		return 100
+		return nil
 	end
 
 	local max_payout = SAFE_PAYOUT_TARGETS.casino
 	local payout = (payout_by_target[difficulty] or payout_by_target[1]) + 819000
-	local cut = math.floor(max_payout / (payout / 100))
+	local host_cut = math.floor(max_payout / (payout / 100))
+	local clamped_host_cut = hp_clamp_cut_percent(host_cut)
+	local solo = state.solo_launch.casino and true or false
+	if solo then
+		return {
+			target = target,
+			difficulty = difficulty,
+			solo = true,
+			host_cut = clamped_host_cut,
+			crew_cut = nil,
+		}
+	end
 
 	local buyer = safe_access.get_global_int(1975747, 0) -- DiamondCasino.Board.Buyer
 	local gunman = safe_access.get_stat_int(p .. "H3OPT_CREWWEAP", 1)
@@ -107,12 +158,42 @@ local function hp_get_casino_max_payout_cut()
 		local fee_payout = payout - (payout * buyer_fees[buyer])
 		local crew_ratio = 0.05 + gunman_cuts[gunman] + driver_cuts[driver] + hacker_cuts[hacker] -- + Lester
 		local payout_after_crew = fee_payout - (fee_payout * crew_ratio)
+		local crew_cut = clamped_host_cut
 		if payout_after_crew > 0 then
-			cut = math.floor(max_payout / (payout_after_crew / 100))
+			crew_cut = hp_clamp_cut_percent(math.floor(max_payout / (payout_after_crew / 100)))
 		end
+		return {
+			target = target,
+			difficulty = difficulty,
+			buyer = buyer,
+			gunman = gunman,
+			driver = driver,
+			hacker = hacker,
+			solo = false,
+			host_cut = clamped_host_cut,
+			crew_cut = crew_cut,
+		}
 	end
 
-	return hp_clamp_cut_percent(cut)
+	return {
+		target = target,
+		difficulty = difficulty,
+		buyer = buyer,
+		gunman = gunman,
+		driver = driver,
+		hacker = hacker,
+		solo = false,
+		host_cut = clamped_host_cut,
+		crew_cut = nil,
+	}
+end
+
+local function hp_get_casino_max_payout_cut()
+	local details = hp_get_casino_max_payout_cut_details()
+	if not details then
+		return 100
+	end
+	return details.host_cut
 end
 
 local function apply_casino_cuts()
@@ -127,6 +208,9 @@ end
 
 local function casino_set_remove_crew_cuts(enable, silent)
 	local enabled = enable and true or false
+	if casino_flags.max_payout_enabled and not enabled then
+		enabled = true
+	end
 	local changed = (casino_flags.remove_crew_cuts_enabled ~= enabled)
 
 	for i = 1, #CASINO_CREW_CUT_TUNABLES do
@@ -149,6 +233,7 @@ local function casino_set_remove_crew_cuts(enable, silent)
 	if casino_refs.remove_crew_cuts_toggle then
 		casino_refs.remove_crew_cuts_toggle.state = enabled
 	end
+	casino_sync_crew_cut_ui_lock()
 	if changed and not silent and notify then
 		notify.push("Casino", enabled and "Crew cuts removed" or "Crew cuts restored", 2000)
 	end
@@ -164,6 +249,98 @@ local function casino_set_autograbber(enable, silent)
 
 	if changed and not silent and notify then
 		notify.push("Casino", enabled and "Autograbber enabled" or "Autograbber disabled", 2000)
+	end
+end
+
+local function casino_refresh_max_payout(force_update, apply_now)
+	if not casino_flags.max_payout_enabled then
+		casino_max_payout_cache.target = nil
+		casino_max_payout_cache.difficulty = nil
+		casino_max_payout_cache.buyer = nil
+		casino_max_payout_cache.gunman = nil
+		casino_max_payout_cache.driver = nil
+		casino_max_payout_cache.hacker = nil
+		casino_max_payout_cache.solo = nil
+		casino_max_payout_cache.host_cut = nil
+		casino_max_payout_cache.crew_cut = nil
+		casino_sync_crew_cut_ui_lock()
+		return false
+	end
+
+	casino_set_remove_crew_cuts(true, true)
+	casino_sync_crew_cut_ui_lock()
+
+	local details = hp_get_casino_max_payout_cut_details()
+	if not details then
+		return false
+	end
+
+	local changed = force_update
+		or casino_max_payout_cache.target ~= details.target
+		or casino_max_payout_cache.difficulty ~= details.difficulty
+		or casino_max_payout_cache.buyer ~= details.buyer
+		or casino_max_payout_cache.gunman ~= details.gunman
+		or casino_max_payout_cache.driver ~= details.driver
+		or casino_max_payout_cache.hacker ~= details.hacker
+		or casino_max_payout_cache.solo ~= details.solo
+		or casino_max_payout_cache.host_cut ~= details.host_cut
+		or casino_max_payout_cache.crew_cut ~= details.crew_cut
+
+	if changed then
+		CutsValues.host = details.host_cut
+		if casino_refs.host_slider then
+			casino_refs.host_slider.value = details.host_cut
+		end
+
+		if not details.solo and details.crew_cut ~= nil then
+			CutsValues.player2 = details.crew_cut
+			CutsValues.player3 = details.crew_cut
+			CutsValues.player4 = details.crew_cut
+			if casino_refs.p2_slider then
+				casino_refs.p2_slider.value = details.crew_cut
+			end
+			if casino_refs.p3_slider then
+				casino_refs.p3_slider.value = details.crew_cut
+			end
+			if casino_refs.p4_slider then
+				casino_refs.p4_slider.value = details.crew_cut
+			end
+		end
+
+		if apply_now then
+			apply_casino_cuts()
+		end
+
+		casino_max_payout_cache.target = details.target
+		casino_max_payout_cache.difficulty = details.difficulty
+		casino_max_payout_cache.buyer = details.buyer
+		casino_max_payout_cache.gunman = details.gunman
+		casino_max_payout_cache.driver = details.driver
+		casino_max_payout_cache.hacker = details.hacker
+		casino_max_payout_cache.solo = details.solo
+		casino_max_payout_cache.host_cut = details.host_cut
+		casino_max_payout_cache.crew_cut = details.crew_cut
+	end
+
+	return changed
+end
+
+local function casino_set_max_payout(enable, silent)
+	local enabled = enable and true or false
+	local changed = (casino_flags.max_payout_enabled ~= enabled)
+	casino_flags.max_payout_enabled = enabled
+	if casino_refs.max_payout_toggle then
+		casino_refs.max_payout_toggle.state = enabled
+	end
+
+	if enabled then
+		casino_set_remove_crew_cuts(true, true)
+		casino_refresh_max_payout(true, false)
+	end
+	casino_sync_crew_cut_ui_lock()
+
+	if changed and not silent and notify then
+		notify.push("Casino Cuts", enabled and "Max payout enabled" or "Max payout disabled", 2000)
 	end
 end
 
@@ -184,12 +361,16 @@ local function casino_autograbber_tick()
 end
 
 local function casino_enforce_heist_toggles()
+	if casino_flags.max_payout_enabled and not casino_flags.remove_crew_cuts_enabled then
+		casino_set_remove_crew_cuts(true, true)
+	end
 	if casino_flags.remove_crew_cuts_enabled then
 		for i = 1, #CASINO_CREW_CUT_TUNABLES do
 			hp_set_tunable_int(CASINO_CREW_CUT_TUNABLES[i].name, 0)
 		end
 	end
 
+	casino_sync_crew_cut_ui_lock()
 	casino_autograbber_tick()
 end
 
@@ -380,6 +561,8 @@ end
 
 casino_callbacks.set_remove_crew_cuts = casino_set_remove_crew_cuts
 casino_callbacks.set_autograbber = casino_set_autograbber
+casino_callbacks.set_max_payout = casino_set_max_payout
+casino_callbacks.refresh_max_payout = casino_refresh_max_payout
 
 local casino_logic = {
 	casino_flags = casino_flags,
@@ -388,6 +571,8 @@ local casino_logic = {
 	apply_casino_cuts = apply_casino_cuts,
 	casino_set_remove_crew_cuts = casino_set_remove_crew_cuts,
 	casino_set_autograbber = casino_set_autograbber,
+	casino_set_max_payout = casino_set_max_payout,
+	casino_refresh_max_payout = casino_refresh_max_payout,
 	casino_enforce_heist_toggles = casino_enforce_heist_toggles,
 	casino_skip_arcade_setup = casino_skip_arcade_setup,
 	casino_fix_stuck_keycards = casino_fix_stuck_keycards,

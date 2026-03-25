@@ -448,10 +448,10 @@ local function hp_read_player_enabled(preps, player_key, legacy_key, fallback)
 end
 
 local SAFE_PAYOUT_TARGETS = {
-	apartment = 2995999,
-	cayo = 2500000,
-	casino = 3550000,
-	doomsday = 2500000,
+	apartment = 3000000,
+	cayo = 2550000,
+	casino = 3619000,
+	doomsday = 2550000,
 }
 
 local AGENCY_PAYOUT_MAX = 2500000
@@ -773,6 +773,7 @@ local function hp_collect_cayo_preset_data()
 		arts_value = CayoConfig.val_art,
 		womans_bag = cayo_flags.womans_bag_enabled and true or false,
 		remove_crew_cuts = cayo_flags.remove_crew_cuts_enabled and true or false,
+		max_payout = cayo_flags.max_payout_enabled and true or false,
 		unlock_all_poi = CayoConfig.unlock_all_poi and true or false,
 		player1 = { enabled = true, cut = CayoCutsValues.host },
 		player2 = { enabled = (CayoCutsValues.player2 > 0), cut = CayoCutsValues.player2 },
@@ -816,6 +817,13 @@ local function hp_apply_cayo_preset_data(preps)
 			cayo_callbacks.set_remove_crew_cuts(preps.remove_crew_cuts, true)
 		else
 			cayo_flags.remove_crew_cuts_enabled = preps.remove_crew_cuts
+		end
+	end
+	if type(preps.max_payout) == "boolean" then
+		if type(cayo_callbacks.set_max_payout) == "function" then
+			cayo_callbacks.set_max_payout(preps.max_payout, true)
+		else
+			cayo_flags.max_payout_enabled = preps.max_payout
 		end
 	end
 
@@ -900,6 +908,9 @@ local function hp_apply_cayo_preset_data(preps)
 	if cayo_refs.remove_crew_cuts_toggle then
 		cayo_refs.remove_crew_cuts_toggle.state = cayo_flags.remove_crew_cuts_enabled
 	end
+	if cayo_refs.max_payout_toggle then
+		cayo_refs.max_payout_toggle.state = cayo_flags.max_payout_enabled
+	end
 	if cayo_refs.host_slider then
 		cayo_refs.host_slider.value = CayoCutsValues.host
 	end
@@ -911,6 +922,9 @@ local function hp_apply_cayo_preset_data(preps)
 	end
 	if cayo_refs.p4_slider then
 		cayo_refs.p4_slider.value = CayoCutsValues.player4
+	end
+	if cayo_flags.max_payout_enabled and type(cayo_callbacks.refresh_max_payout) == "function" then
+		cayo_callbacks.refresh_max_payout(true, false)
 	end
 
 	return true
@@ -935,6 +949,7 @@ local function hp_collect_casino_preset_data()
 		solo_launch = state.solo_launch.casino and true or false,
 		remove_crew_cuts = casino_flags.remove_crew_cuts_enabled and true or false,
 		autograbber = casino_flags.autograbber_enabled and true or false,
+		max_payout = casino_flags.max_payout_enabled and true or false,
 		player1 = { enabled = true, cut = CutsValues.host },
 		player2 = { enabled = (CutsValues.player2 > 0), cut = CutsValues.player2 },
 		player3 = { enabled = (CutsValues.player3 > 0), cut = CutsValues.player3 },
@@ -995,6 +1010,13 @@ local function hp_apply_casino_preset_data(preps)
 			casino_flags.autograbber_enabled = preps.autograbber
 		end
 	end
+	if type(preps.max_payout) == "boolean" then
+		if type(casino_callbacks.set_max_payout) == "function" then
+			casino_callbacks.set_max_payout(preps.max_payout, true)
+		else
+			casino_flags.max_payout_enabled = preps.max_payout
+		end
+	end
 
 	CutsValues.host = hp_read_player_cut(preps, "player1", "host_cut", CutsValues.host, hp_clamp_cut_percent)
 	CutsValues.player2 = hp_read_player_cut(preps, "player2", "player2_cut", CutsValues.player2, hp_clamp_cut_percent)
@@ -1046,6 +1068,9 @@ local function hp_apply_casino_preset_data(preps)
 	if casino_refs.remove_crew_cuts_toggle then
 		casino_refs.remove_crew_cuts_toggle.state = casino_flags.remove_crew_cuts_enabled
 	end
+	if casino_refs.max_payout_toggle then
+		casino_refs.max_payout_toggle.state = casino_flags.max_payout_enabled
+	end
 	if casino_refs.autograbber_toggle then
 		casino_refs.autograbber_toggle.state = casino_flags.autograbber_enabled
 	end
@@ -1082,6 +1107,9 @@ local function hp_apply_casino_preset_data(preps)
 	end
 	if casino_refs.p4_slider then
 		casino_refs.p4_slider.value = CutsValues.player4
+	end
+	if casino_flags.max_payout_enabled and type(casino_callbacks.refresh_max_payout) == "function" then
+		casino_callbacks.refresh_max_payout(true, false)
 	end
 
 	return true

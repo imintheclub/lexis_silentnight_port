@@ -25,6 +25,7 @@ local cayo_teleport_kosatka = cayo_logic.cayo_teleport_kosatka
 local cayo_unlock_all_poi = cayo_logic.cayo_unlock_all_poi
 local cayo_set_womans_bag = cayo_logic.cayo_set_womans_bag
 local cayo_set_remove_crew_cuts = cayo_logic.cayo_set_remove_crew_cuts
+local cayo_set_max_payout = cayo_logic.cayo_set_max_payout
 local cayo_apply_preps = cayo_logic.cayo_apply_preps
 local cayo_force_ready = cayo_logic.cayo_force_ready
 local cayo_instant_voltlab_hack = cayo_logic.cayo_instant_voltlab_hack
@@ -37,7 +38,7 @@ local cayo_remove_cooldown_team = cayo_logic.cayo_remove_cooldown_team
 local cayo_reset_preps = cayo_logic.cayo_reset_preps
 local cayo_instant_finish = cayo_logic.cayo_instant_finish
 local cayo_apply_cuts = cayo_logic.cayo_apply_cuts
-local hp_get_cayo_max_payout_cut = cayo_logic.hp_get_cayo_max_payout_cut
+local cayo_refresh_max_payout = cayo_logic.cayo_refresh_max_payout
 local cayo_teleport_main_target = cayo_logic.cayo_teleport_main_target
 local cayo_teleport_gate = cayo_logic.cayo_teleport_gate
 local cayo_teleport_residence = cayo_logic.cayo_teleport_residence
@@ -49,20 +50,10 @@ local cayo_teleport_gate_outside = cayo_logic.cayo_teleport_gate_outside
 local cayo_teleport_airport = cayo_logic.cayo_teleport_airport
 local cayo_teleport_escape = cayo_logic.cayo_teleport_escape
 
-local function cayo_init_default_cuts()
-	CayoCutsValues.host = 100
-	CayoCutsValues.player2 = 100
-	CayoCutsValues.player3 = 100
-	CayoCutsValues.player4 = 100
-end
-
 local function register(heistTab)
 	if type(heistTab) ~= "table" then
 		return nil
 	end
-
-	-- Ensure first render and first apply use the same defaults.
-	cayo_init_default_cuts()
 
 	local gCayoInfo = ui.group(heistTab, "Info", nil, nil, nil, 140, "cayo")
 	ui.label(gCayoInfo, "Cayo Perico Heist", config.colors.accent)
@@ -438,6 +429,15 @@ local function register(heistTab)
 			cayo_set_remove_crew_cuts(val)
 		end
 	)
+	cayo_refs.max_payout_toggle = ui.toggle(
+		gCayoCuts,
+		"cayo_max_payout",
+		"2.55mil Payout (Max)",
+		cayo_flags.max_payout_enabled,
+		function(val)
+			cayo_set_max_payout(val)
+		end
+	)
 	cayo_refs.host_slider = ui.slider(
 		gCayoCuts,
 		"cayo_cut_host",
@@ -490,34 +490,23 @@ local function register(heistTab)
 		nil,
 		5
 	)
-	ui.button_pair(
-		gCayoCuts,
-		"cayo_cuts_max",
-		"Apply Preset (100%)",
-		function()
-			hp_set_uniform_cuts(
-				CayoCutsValues,
-				{ "host", "player2", "player3", "player4" },
-				{ cayo_refs.host_slider, cayo_refs.p2_slider, cayo_refs.p3_slider, cayo_refs.p4_slider },
-				100,
-				cayo_apply_cuts
-			)
-		end,
-		"cayo_cuts_max_instant",
-		"Apply Preset (Max Payout)",
-		function()
-			hp_set_uniform_cuts(
-				CayoCutsValues,
-				{ "host", "player2", "player3", "player4" },
-				{ cayo_refs.host_slider, cayo_refs.p2_slider, cayo_refs.p3_slider, cayo_refs.p4_slider },
-				hp_get_cayo_max_payout_cut(),
-				cayo_apply_cuts
-			)
-		end
-	)
+	ui.button(gCayoCuts, "cayo_cuts_max", "Apply Preset (100%)", function()
+		hp_set_uniform_cuts(
+			CayoCutsValues,
+			{ "host", "player2", "player3", "player4" },
+			{ cayo_refs.host_slider, cayo_refs.p2_slider, cayo_refs.p3_slider, cayo_refs.p4_slider },
+			100,
+			cayo_apply_cuts
+		)
+	end)
 	ui.button(gCayoCuts, "cayo_cuts_apply", "Apply Cuts", function()
 		cayo_apply_cuts()
 	end)
+	if cayo_flags.max_payout_enabled then
+		cayo_refresh_max_payout(true, false)
+	else
+		cayo_set_remove_crew_cuts(cayo_flags.remove_crew_cuts_enabled, true)
+	end
 	return heistTab
 end
 

@@ -168,9 +168,39 @@ local function measure_text_width(value, draw_size)
 		return nil
 	end
 
-	local size = gui.text_size(value, draw_size, { font = state.fonts.regular })
+	local text_width_cache = state._text_width_cache
+	if not text_width_cache then
+		text_width_cache = { by_font = {}, count = 0 }
+		state._text_width_cache = text_width_cache
+	end
+
+	local font_key = tostring(state.fonts.regular or "nil")
+	local font_bucket = text_width_cache.by_font[font_key]
+	if not font_bucket then
+		font_bucket = {}
+		text_width_cache.by_font[font_key] = font_bucket
+	end
+
+	local value_key = tostring(value)
+	local cache_key = value_key .. "\31" .. tostring(draw_size or 1.0)
+	local cached = font_bucket[cache_key]
+	if cached ~= nil then
+		if cached == false then
+			return nil
+		end
+		return cached
+	end
+
+	local size = gui.text_size(value_key, draw_size, { font = state.fonts.regular })
 	if not size then
+		font_bucket[cache_key] = false
 		return nil
+	end
+	font_bucket[cache_key] = size.x
+	text_width_cache.count = text_width_cache.count + 1
+	if text_width_cache.count > 4096 then
+		text_width_cache.by_font = {}
+		text_width_cache.count = 0
 	end
 	return size.x
 end
@@ -184,14 +214,37 @@ local function text_with_ellipsis(value, max_width, draw_size)
 		return ""
 	end
 
+	local ellipsis_cache = state._ellipsis_text_cache
+	if not ellipsis_cache then
+		ellipsis_cache = { by_font = {}, count = 0 }
+		state._ellipsis_text_cache = ellipsis_cache
+	end
+
+	local font_key = tostring(state.fonts.regular or "nil")
+	local font_bucket = ellipsis_cache.by_font[font_key]
+	if not font_bucket then
+		font_bucket = {}
+		ellipsis_cache.by_font[font_key] = font_bucket
+	end
+
+	local cache_key = text .. "\31" .. tostring(max_width) .. "\31" .. tostring(draw_size or 1.0)
+	local cached = font_bucket[cache_key]
+	if cached ~= nil then
+		return cached
+	end
+
 	local width = measure_text_width(text, draw_size)
 	if width and width <= max_width then
+		font_bucket[cache_key] = text
+		ellipsis_cache.count = ellipsis_cache.count + 1
 		return text
 	end
 
 	local ellipsis = "..."
 	local ellipsis_width = measure_text_width(ellipsis, draw_size) or (draw_size * 3.0)
 	if ellipsis_width >= max_width then
+		font_bucket[cache_key] = ""
+		ellipsis_cache.count = ellipsis_cache.count + 1
 		return ""
 	end
 
@@ -207,7 +260,14 @@ local function text_with_ellipsis(value, max_width, draw_size)
 		end
 	end
 
-	return text:sub(1, low) .. ellipsis
+	local output = text:sub(1, low) .. ellipsis
+	font_bucket[cache_key] = output
+	ellipsis_cache.count = ellipsis_cache.count + 1
+	if ellipsis_cache.count > 4096 then
+		ellipsis_cache.by_font = {}
+		ellipsis_cache.count = 0
+	end
+	return output
 end
 
 local function lerp(a, b, t)
@@ -343,11 +403,17 @@ end
 -- ---------------------------------------------------------
 ui.tabs = {}
 ui.currentTab = nil
+local layout_cache_revision = 0
+
+local function mark_layout_dirty()
+	layout_cache_revision = layout_cache_revision + 1
+end
 
 ui.tab = function(id, label, icon_path, hidden)
 	local icon = icon_path and load_tab_icon(icon_path) or nil
 	local tab = { id = id, label = label, icon = icon, icon_path = icon_path, groups = {}, hidden = hidden or false }
 	table.insert(ui.tabs, tab)
+	mark_layout_dirty()
 	if #ui.tabs == 1 and not tab.hidden then
 		ui.currentTab = tab
 	end
@@ -358,6 +424,7 @@ ui.group = function(tabRef, label, x, y, w, min_h, heist_subtab)
 	local group =
 		{ label = label, items = {}, rect = { x = x, y = y, w = w, h = min_h or 100 }, heist_subtab = heist_subtab }
 	table.insert(tabRef.groups, group)
+	mark_layout_dirty()
 	return group
 end
 
@@ -373,6 +440,7 @@ ui.toggle = function(groupRef, configKey, label, defaultState, onChange, tooltip
 		anim = defaultState and 1.0 or 0.0,
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -395,6 +463,7 @@ ui.slider = function(groupRef, configKey, label, min, max, defaultVal, onChange,
 		step = step,
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -409,6 +478,7 @@ ui.button = function(groupRef, id, label, onClick, tooltip, disabled, color)
 		color = color,
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -447,6 +517,7 @@ ui.button_pair = function(
 		},
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -462,12 +533,14 @@ ui.dropdown = function(groupRef, configKey, label, options, defaultIdx, onChange
 		tooltip = tooltip,
 	}
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
 ui.label = function(groupRef, text, color)
 	local item = { type = "label", text = text, color = color }
 	table.insert(groupRef.items, item)
+	mark_layout_dirty()
 	return item
 end
 
@@ -475,7 +548,9 @@ local function render_card(x, y, w, h, bg_col, border_col, rounding)
 	local r = rounding or config.radius.md
 	local shadow_y = config.space.x1
 	render_rect(x, y + (shadow_y * 2), w, h, { r = 0, g = 0, b = 0, a = 8 }, r)
-	render_rect(x, y + shadow_y, w, h, config.colors.card_shadow, r)
+	if (config.colors.card_shadow.a or 255) > 0 then
+		render_rect(x, y + shadow_y, w, h, config.colors.card_shadow, r)
+	end
 	render_rect(x, y, w, h, bg_col or config.colors.bg_panel, r)
 	render_outline(x, y, w, h, border_col or config.colors.border, 1, r)
 	render_rect(x + 1, y + 1, math.max(1, w - 2), 1, { r = 255, g = 255, b = 255, a = 10 }, config.radius.full)
@@ -702,6 +777,10 @@ local render_cache = {
 	groups_by_column = { {}, {}, {} },
 	ordered_groups = {},
 	pending_dropdowns = {},
+	layout_key = nil,
+	layout_revision = -1,
+	layout_dirty = true,
+	group_heights = {},
 }
 render_cache.subtab_bg_col = { r = 255, g = 255, b = 255, a = 255 }
 render_cache.subtab_border_col = { r = 255, g = 255, b = 255, a = 255 }
@@ -760,7 +839,7 @@ local function get_group_actual_height(group)
 	return h
 end
 
-local function distribute_groups_by_column(flattened, groups_by_column, column_count)
+local function distribute_groups_by_column(flattened, groups_by_column, column_count, group_heights)
 	for col = 1, column_count do
 		clear_array(groups_by_column[col])
 	end
@@ -776,7 +855,11 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 	if cols == 1 then
 		for i = 1, total do
 			local entry = flattened[i]
-			groups_by_column[1][#groups_by_column[1] + 1] = { group = entry.group, order = i }
+			groups_by_column[1][#groups_by_column[1] + 1] = {
+				group = entry.group,
+				order = i,
+				h = group_heights[entry.group],
+			}
 		end
 		return
 	end
@@ -784,7 +867,7 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 	local weights = {}
 	local prefix = { [0] = 0 }
 	for i = 1, total do
-		local group_h = get_group_actual_height(flattened[i].group)
+		local group_h = group_heights[flattened[i].group] or get_group_actual_height(flattened[i].group)
 		weights[i] = group_h + gap
 		prefix[i] = prefix[i - 1] + weights[i]
 	end
@@ -838,7 +921,11 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 		if range then
 			for idx = range.s, range.e do
 				local entry = flattened[idx]
-				groups_by_column[col][#groups_by_column[col] + 1] = { group = entry.group, order = idx }
+				groups_by_column[col][#groups_by_column[col] + 1] = {
+					group = entry.group,
+					order = idx,
+					h = group_heights[entry.group],
+				}
 			end
 		end
 	end
@@ -1087,16 +1174,21 @@ local function draw_slider_item(item, x, y, w, original_y)
 		local relative_mx = mx - ox
 		local ratio = math.max(0, math.min(1, (relative_mx - barX) / barW))
 		local rawValue = item.min + ratio * (item.max - item.min)
+		local prev_value = item.value
+		local next_value
 
 		-- Round to step if specified (e.g., 5 for cuts sliders)
 		if item.step and item.step > 0 then
-			item.value = math.floor((rawValue + item.step / 2) / item.step) * item.step
+			next_value = math.floor((rawValue + item.step / 2) / item.step) * item.step
 		else
-			item.value = rawValue
+			next_value = rawValue
 		end
 
-		if item.onChange then
-			safe_call_ui_handler("slider", item.id, item.onChange, item.value)
+		if next_value ~= prev_value then
+			item.value = next_value
+			if item.onChange then
+				safe_call_ui_handler("slider", item.id, item.onChange, item.value)
+			end
 		end
 	end
 
@@ -1509,10 +1601,11 @@ ui.render = function()
 
 	local activeGroups = render_cache.active_groups
 	clear_array(activeGroups)
+	local selected_heist_key = nil
 	if ui.currentTab then
 		if ui.currentTab.id == "heist" then
 			-- Filter groups based on active heist subtab.
-			local selected_heist_key = HEIST_SUBTAB_KEYS[state.heist_subtab]
+			selected_heist_key = HEIST_SUBTAB_KEYS[state.heist_subtab]
 			for _, group in ipairs(ui.currentTab.groups) do
 				if selected_heist_key and group.heist_subtab == selected_heist_key then
 					table.insert(activeGroups, group)
@@ -1538,8 +1631,32 @@ ui.render = function()
 		end
 
 		local groups_by_column = render_cache.groups_by_column
-		local ordered = flatten_groups_by_order(activeGroups, state.heist_subtab)
-		distribute_groups_by_column(ordered, groups_by_column, column_count)
+		local layout_key = tostring(ui.currentTab and ui.currentTab.id or "")
+			.. ":"
+			.. tostring(selected_heist_key or "")
+			.. ":"
+			.. tostring(column_count)
+			.. ":"
+			.. tostring(layout_cache_revision)
+		if
+			render_cache.layout_dirty
+			or render_cache.layout_revision ~= layout_cache_revision
+			or render_cache.layout_key ~= layout_key
+		then
+			local ordered = flatten_groups_by_order(activeGroups, state.heist_subtab)
+			local group_heights = render_cache.group_heights
+			for key in pairs(group_heights) do
+				group_heights[key] = nil
+			end
+			for i = 1, #ordered do
+				local group = ordered[i].group
+				group_heights[group] = get_group_actual_height(group)
+			end
+			distribute_groups_by_column(ordered, groups_by_column, column_count, group_heights)
+			render_cache.layout_key = layout_key
+			render_cache.layout_revision = layout_cache_revision
+			render_cache.layout_dirty = false
+		end
 
 		local group_move_speed = animator.motion_speed(config.motion.group_move_speed, config.motion.speed_base or 0.16)
 		local intro_slide_dist = config.motion.subtab_switch_slide or config.space.x3
@@ -1551,7 +1668,7 @@ ui.render = function()
 			for _, entry in ipairs(groups_by_column[col]) do
 				local group = entry.group
 				local gY = col_y
-				local actual_h = get_group_actual_height(group)
+				local actual_h = entry.h or get_group_actual_height(group)
 				local subkey = HEIST_SUBTAB_KEYS[state.heist_subtab] or tostring(state.heist_subtab or 0)
 				local anim_key = "group:"
 					.. subkey

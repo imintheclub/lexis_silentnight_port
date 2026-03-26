@@ -425,7 +425,7 @@ local function hp_clamp_number(value, min_value, max_value)
 end
 
 local function hp_clamp_cut_percent(value)
-	return math.floor(hp_clamp_number(value, 0, 300))
+	return math.floor(hp_clamp_number(value, 0, 999))
 end
 
 local function hp_clamp_doomsday_cut_percent(value)

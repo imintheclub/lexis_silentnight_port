@@ -85,11 +85,9 @@ local function casino_sync_crew_cut_ui_lock()
 end
 
 local function hp_get_casino_max_payout_cut_details()
-	local p = GetMP()
-	local approach = safe_access.get_stat_int(p .. "H3OPT_APPROACH", 1)
-	local hard_approach = safe_access.get_stat_int(p .. "H3_HARD_APPROACH", 0)
-	local difficulty = (approach ~= 0 and approach == hard_approach) and 2 or 1
-	local target = safe_access.get_stat_int(p .. "H3OPT_TARGET", 0)
+	local ManualPreps = casino_state.manual_preps
+	local difficulty = (ManualPreps.difficulty == 1) and 2 or 1
+	local target = ManualPreps.target
 
 	local payouts = {
 		[0] = { 2115000, 2326500 }, -- Cash
@@ -119,9 +117,9 @@ local function hp_get_casino_max_payout_cut_details()
 	end
 
 	local buyer = safe_access.get_global_int(1975747, 0) -- DiamondCasino.Board.Buyer
-	local gunman = safe_access.get_stat_int(p .. "H3OPT_CREWWEAP", 1)
-	local driver = safe_access.get_stat_int(p .. "H3OPT_CREWDRIVER", 1)
-	local hacker = safe_access.get_stat_int(p .. "H3OPT_CREWHACKER", 1)
+	local gunman = ManualPreps.crew_weapon
+	local driver = ManualPreps.crew_driver
+	local hacker = ManualPreps.crew_hacker
 
 	local buyer_fees = {
 		[0] = 0.10,
@@ -331,7 +329,7 @@ local function casino_set_max_payout(enable, silent)
 
 	if enabled then
 		casino_set_remove_crew_cuts(true, true)
-		casino_refresh_max_payout(true, false)
+		casino_refresh_max_payout(true, true)
 	end
 	casino_sync_crew_cut_ui_lock()
 

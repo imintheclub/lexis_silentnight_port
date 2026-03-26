@@ -503,7 +503,7 @@ local function register(heistTab)
 		cayo_apply_cuts()
 	end)
 	if cayo_flags.max_payout_enabled then
-		cayo_refresh_max_payout(true, false)
+		cayo_refresh_max_payout(true, true)
 	else
 		cayo_set_remove_crew_cuts(cayo_flags.remove_crew_cuts_enabled, true)
 	end

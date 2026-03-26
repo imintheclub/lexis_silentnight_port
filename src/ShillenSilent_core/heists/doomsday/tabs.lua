@@ -272,7 +272,7 @@ local function register(heistTab)
 	)
 
 	if doomsday_flags.max_payout_enabled then
-		doomsday_module.doomsday_refresh_max_payout(true, false)
+		doomsday_module.doomsday_refresh_max_payout(true, true)
 	end
 
 	return heistTab

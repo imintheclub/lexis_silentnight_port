@@ -44,14 +44,14 @@ local function maybe_sync_max_payouts()
 	end
 	runtime_services.next_payout_sync_tick = now + PAYOUT_SYNC_INTERVAL_MS
 
-	pcall(presets.hp_refresh_apartment_max_payout, false, false)
-	pcall(cayo_logic.cayo_refresh_max_payout, false, false)
-	pcall(casino_logic.casino_refresh_max_payout, false, false)
+	pcall(presets.hp_refresh_apartment_max_payout, false, true)
+	pcall(cayo_logic.cayo_refresh_max_payout, false, true)
+	pcall(casino_logic.casino_refresh_max_payout, false, true)
 	pcall(agency_logic.agency_refresh_tp_computer_state)
 
 	local doomsday_callbacks = heist_state.doomsday and heist_state.doomsday.callbacks or nil
 	if doomsday_callbacks and type(doomsday_callbacks.refresh_max_payout) == "function" then
-		pcall(doomsday_callbacks.refresh_max_payout, false, false)
+		pcall(doomsday_callbacks.refresh_max_payout, false, true)
 	end
 end
 

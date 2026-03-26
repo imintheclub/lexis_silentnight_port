@@ -293,7 +293,7 @@ local function register(heistTab)
 			function(val)
 				apartment_flags.max_payout_enabled = val
 				if val then
-					if not hp_refresh_apartment_max_payout(true, false) then
+					if not hp_refresh_apartment_max_payout(true, true) then
 						if notify then
 							notify.push("Apartment Cuts", "Unknown heist. Load an Apartment finale first.", 2400)
 						end
@@ -314,7 +314,7 @@ local function register(heistTab)
 			function(val)
 				apartment_flags.double_rewards_week = val
 				if apartment_flags.max_payout_enabled then
-					hp_refresh_apartment_max_payout(true, false)
+					hp_refresh_apartment_max_payout(true, true)
 				end
 				if notify then
 					notify.push("Apartment Cuts", val and "Double rewards enabled" or "Double rewards disabled", 2000)

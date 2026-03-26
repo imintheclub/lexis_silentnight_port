@@ -11,7 +11,6 @@ local solo_launch_runtime = require("ShillenSilent_core.runtime.solo_launch")
 
 local state = core.state
 local run_guarded_job = core.run_guarded_job
-local GetMP = presets.GetMP
 local SAFE_PAYOUT_TARGETS = presets.SAFE_PAYOUT_TARGETS
 local hp_set_stat_for_all_characters = presets.hp_set_stat_for_all_characters
 local hp_set_uniform_cuts = presets.hp_set_uniform_cuts
@@ -209,8 +208,8 @@ local function doomsday_teleport_to_screen()
 end
 
 local function hp_get_doomsday_max_payout_cut()
-	local p = GetMP()
-	local heist = safe_access.get_stat_int(p .. "GANGOPS_FLOW_MISSION_PROG", nil)
+	local act_preset = DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act]
+	local heist = act_preset and act_preset.flow or nil
 	local difficulty = safe_access.get_global_int(4718592 + 3538, 1) or 1
 	if difficulty == 0 then
 		difficulty = 1
@@ -356,7 +355,7 @@ local function doomsday_set_max_payout(enable, silent)
 	end
 
 	if enabled then
-		doomsday_refresh_max_payout(true, false)
+		doomsday_refresh_max_payout(true, true)
 	end
 
 	if changed and not silent and notify then
@@ -486,7 +485,7 @@ end
 
 bind_doomsday_callbacks()
 if doomsday_flags.max_payout_enabled then
-	doomsday_refresh_max_payout(true, false)
+	doomsday_refresh_max_payout(true, true)
 end
 
 local doomsday_module = {

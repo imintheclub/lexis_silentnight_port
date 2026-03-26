@@ -403,7 +403,7 @@ local function register(heistTab)
 		apply_casino_cuts()
 	end)
 	if casino_flags.max_payout_enabled then
-		casino_refresh_max_payout(true, false)
+		casino_refresh_max_payout(true, true)
 	else
 		casino_set_remove_crew_cuts(casino_flags.remove_crew_cuts_enabled, true)
 	end

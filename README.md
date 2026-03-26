@@ -42,6 +42,16 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 - Added missing `Skip Cutscene` actions across newer heists and modes:
   - Agency, Auto Shop, Salvage Yard, Cluckin, KnoWay
 - Reorganized/paired several heist action buttons for cleaner, more consistent tab layout
+- Added Business Manager v0 — new Businesses section with tabs for:
+  - **Acid Lab**: Production tick, refill supplies, instant sell, fast production toggle
+  - **Bunker**: Production tick, refill supplies, instant sell, disable raids/reminders toggles, teleport
+  - **Hangar**: Fill cargo (max), teleport
+  - **Moto Club**: Refill all supplies, instant sell, fast production/disable reminders toggles; per-sub-business production tick and refill supplies (teleports temporarily removed until working)
+  - **Nightclub**: Production tick (all), fill all products, collect safe, fill safe ($250K), set popularity max, disable raids/reminders toggles, teleport
+  - **Special Cargo**: Instant sell, fill cargo (max 111), disable raids/reminders toggles, teleport with location dropdown
+  - **Misc**: Grouped teleports for Money Fronts (with location dropdown), Garment Factory, and Bail Office
+- Added `Unlock GTA+` button to Intensity Settings tab (temporarily unlocks GTA+ for the session)
+- Fix maximum payout not auto-applying. 
 
 ## v0.1.0
 - Added no-click menu mode (controller/keyboard-friendly alternative UI) 

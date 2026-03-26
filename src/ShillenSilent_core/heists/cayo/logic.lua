@@ -223,10 +223,8 @@ end
 
 -- Apply Cayo Cuts
 local function hp_get_cayo_max_payout_cut()
-	local p = GetMP()
-	local target = safe_access.get_stat_int(p .. "H4CNF_TARGET", 0)
-	local progress = safe_access.get_stat_int(p .. "H4_PROGRESS", 0)
-	local difficulty = ((progress & 4096) ~= 0) and 2 or 1
+	local target = CayoConfig.tgt
+	local difficulty = ((CayoConfig.diff & 4096) ~= 0) and 2 or 1
 
 	local payouts = {
 		[0] = { 630000, 693000 }, -- Tequila
@@ -334,7 +332,7 @@ local function cayo_set_max_payout(enable, silent)
 
 	if enabled then
 		cayo_set_remove_crew_cuts(false, true)
-		cayo_refresh_max_payout(true, false)
+		cayo_refresh_max_payout(true, true)
 	end
 	cayo_sync_crew_cut_ui_lock()
 

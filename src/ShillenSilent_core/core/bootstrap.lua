@@ -343,7 +343,6 @@ local function init_config()
 		},
 
 		scale = scale,
-		enable_particles = false,
 		theme_mode = DEFAULT_THEME_MODE,
 
 		colors = build_dark_palette(),
@@ -415,7 +414,6 @@ local state = {
 	render_alpha_mul = 1.0,
 	content_transition = { subtab = 1, progress = 1.0 },
 	active_tab_y = nil,
-	particles = {},
 	mouse = { x = 0, y = 0, down = false, clicked = false },
 	heist_subtab = 2, -- default Cayo
 	solo_launch = {

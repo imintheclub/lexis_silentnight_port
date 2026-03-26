@@ -1,5 +1,6 @@
 local cluckin_module = require("ShillenSilent_core.heists.cluckin.all")
 local common = require("ShillenSilent_core.menu.common")
+local native_api = require("ShillenSilent_core.core.native_api")
 
 local cluckin_menu = {}
 
@@ -25,6 +26,9 @@ function cluckin_menu.register(parent_menu)
 	end)
 	common.add_button(tools, "Instant Finish", function()
 		cluckin_module.cluckin_instant_finish()
+	end)
+	common.add_button(tools, "Skip Cutscene", function()
+		native_api.heist_skip_cutscene("Cluckin Bell")
 	end)
 
 	local danger = root:submenu("Danger")

@@ -5,6 +5,7 @@ local solo_launch = require("ShillenSilent_core.runtime.solo_launch")
 local cayo_logic = require("ShillenSilent_core.heists.cayo.logic")
 local casino_logic = require("ShillenSilent_core.heists.casino.logic")
 local salvageyard_logic = require("ShillenSilent_core.heists.salvageyard.logic")
+local agency_logic = require("ShillenSilent_core.heists.agency.logic")
 
 local state = core.state
 
@@ -46,6 +47,7 @@ local function maybe_sync_max_payouts()
 	pcall(presets.hp_refresh_apartment_max_payout, false, false)
 	pcall(cayo_logic.cayo_refresh_max_payout, false, false)
 	pcall(casino_logic.casino_refresh_max_payout, false, false)
+	pcall(agency_logic.agency_refresh_tp_computer_state)
 
 	local doomsday_callbacks = heist_state.doomsday and heist_state.doomsday.callbacks or nil
 	if doomsday_callbacks and type(doomsday_callbacks.refresh_max_payout) == "function" then

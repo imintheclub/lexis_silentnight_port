@@ -1,5 +1,6 @@
 local knoway_module = require("ShillenSilent_core.heists.knoway.all")
 local common = require("ShillenSilent_core.menu.common")
+local native_api = require("ShillenSilent_core.core.native_api")
 
 local knoway_menu = {}
 
@@ -16,6 +17,9 @@ function knoway_menu.register(parent_menu)
 	local tools = root:submenu("Tools")
 	common.add_button(tools, "Instant Finish", function()
 		knoway_module.knoway_instant_finish()
+	end)
+	common.add_button(tools, "Skip Cutscene", function()
+		native_api.heist_skip_cutscene("KnoWay")
 	end)
 	return root
 end

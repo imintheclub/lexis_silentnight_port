@@ -4,6 +4,7 @@ local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 local salvageyard_logic = require("ShillenSilent_core.heists.salvageyard.logic")
+local native_api = require("ShillenSilent_core.core.native_api")
 
 local config = core.config
 local hp_build_heist_preset_group = presets.hp_build_heist_preset_group
@@ -11,6 +12,7 @@ local hp_options_to_names = presets.hp_options_to_names
 local hp_option_index_by_value = presets.hp_option_index_by_value
 local hp_option_value_by_name = presets.hp_option_value_by_name
 local build_skip_cooldown_danger_group = danger_groups.build_skip_cooldown_danger_group
+local heist_skip_cutscene = native_api.heist_skip_cutscene
 
 local salvage_state = heist_state.salvageyard
 local SalvagePrepOptions = salvage_state.prep_options
@@ -207,6 +209,9 @@ local function register(heistTab)
 			salvage_collect_safe()
 		end
 	)
+	ui.button(gSalvageMisc, "salvage_skip_cutscene", "Skip Cutscene", function()
+		heist_skip_cutscene("Salvage Yard")
+	end)
 	salvage_refs.collect_safe_button = gSalvageMisc.items[#gSalvageMisc.items].right
 
 	build_skip_cooldown_danger_group(heistTab, "salvageyard", "salvage_skip_weekly_cooldown", function()

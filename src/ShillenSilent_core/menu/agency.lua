@@ -2,6 +2,7 @@ local agency_logic = require("ShillenSilent_core.heists.agency.logic")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local common = require("ShillenSilent_core.menu.common")
+local native_api = require("ShillenSilent_core.core.native_api")
 
 local agency_state = heist_state.agency
 local AgencyConfig = agency_state.config
@@ -64,6 +65,9 @@ function agency_menu.register(parent_menu)
 	end)
 	common.add_button(misc, "Instant Finish", function()
 		agency_logic.agency_instant_finish_new()
+	end)
+	common.add_button(misc, "Skip Cutscene", function()
+		native_api.heist_skip_cutscene("Agency")
 	end)
 
 	local danger = root:submenu("Danger")

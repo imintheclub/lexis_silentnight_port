@@ -786,6 +786,9 @@ local function flatten_groups_by_order(activeGroups, heist_subtab)
 end
 
 local function get_item_height(item)
+	if item.hidden then
+		return 0
+	end
 	if item.type == "toggle" then
 		return config.item_height.toggle
 	elseif item.type == "button" or item.type == "button_pair" then
@@ -1722,6 +1725,7 @@ ui.render = function()
 					local itemY = drawY + config.item_height.header_padding + config.space.x3
 					local clip_bottom = clip_start + available_height
 					for _, item in ipairs(group.items) do
+						if item.hidden then goto continue_item end
 						local item_h = get_item_height(item)
 						if (itemY + item_h) < clip_start or itemY > clip_bottom then
 							-- Item fully outside visible area, skip rendering
@@ -1733,6 +1737,7 @@ ui.render = function()
 								pendingDropdowns[#pendingDropdowns + 1] = dd
 							end
 						end
+						::continue_item::
 					end
 					state.render_alpha_mul = 1.0
 				end

@@ -294,6 +294,14 @@ local function agency_instant_finish_new()
 	end)
 end
 
+local function agency_refresh_tp_computer_state()
+	local me = players and players.me and players.me() or nil
+	local in_interior = me and me.in_interior or false
+	if agency_refs.tp_computer_button then
+		agency_refs.tp_computer_button.hidden = not in_interior
+	end
+end
+
 local function agency_refresh_collect_safe_state()
 	agency_flags.collect_safe_ee_only = global_bool_supported(AGENCY_GLOBALS.SAFE_COLLECT_BOOL)
 	if agency_refs.collect_safe_button then
@@ -323,6 +331,7 @@ local agency_logic = {
 	agency_instant_finish = agency_instant_finish_new,
 	agency_instant_finish_new = agency_instant_finish_new,
 	agency_refresh_collect_safe_state = agency_refresh_collect_safe_state,
+	agency_refresh_tp_computer_state = agency_refresh_tp_computer_state,
 }
 
 return agency_logic

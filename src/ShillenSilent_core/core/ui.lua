@@ -684,14 +684,37 @@ local BUTTON_COLOR_STYLES = {
 	},
 }
 
-local HEIST_SUBTAB_NAMES =
-	{ "Cayo", "Casino", "Doomsday", "Apartment", "Agency", "Auto Shop", "Salvage Yard", "Cluckin", "KnoWay" }
-local HEIST_SUBTAB_KEYS =
-	{ "cayo", "casino", "doomsday", "apartment", "agency", "autoshop", "salvageyard", "cluckin", "knoway" }
+local HEIST_SUBTAB_NAMES = {
+	"Info",
+	"Cayo",
+	"Casino",
+	"Doomsday",
+	"Apartment",
+	"Agency",
+	"Auto Shop",
+	"Salvage Yard",
+	"Cluckin",
+	"KnoWay",
+}
+local HEIST_SUBTAB_KEYS = {
+	"info",
+	"cayo",
+	"casino",
+	"doomsday",
+	"apartment",
+	"agency",
+	"autoshop",
+	"salvageyard",
+	"cluckin",
+	"knoway",
+}
 
 -- Legacy visual order hints. Used only to flatten groups into a stable sequence.
 local HEIST_GROUP_LAYOUTS = {
-	[1] = { -- Cayo
+	[1] = { -- Info
+		["Info"] = { col = 1, order = 1 },
+	},
+	[2] = { -- Cayo
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
 		["Preps"] = { col = 2, order = 1 },
@@ -701,7 +724,7 @@ local HEIST_GROUP_LAYOUTS = {
 		["Teleport - In Residence"] = { col = 3, order = 3 },
 		["DANGER"] = { col = 3, order = 4 },
 	},
-	[2] = { -- Casino
+	[3] = { -- Casino
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
 		["Preps"] = { col = 2, order = 1 },
@@ -712,7 +735,7 @@ local HEIST_GROUP_LAYOUTS = {
 		["Teleport - In Casino"] = { col = 3, order = 3 },
 		["DANGER"] = { col = 3, order = 4 },
 	},
-	[3] = { -- Doomsday
+	[4] = { -- Doomsday
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
 		["Prep Presets"] = { col = 2, order = 1 },
@@ -721,7 +744,7 @@ local HEIST_GROUP_LAYOUTS = {
 		["Tools"] = { col = 3, order = 1 },
 		["Teleport"] = { col = 3, order = 2 },
 	},
-	[4] = { -- Apartment
+	[5] = { -- Apartment
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
 		["Cuts"] = { col = 1, order = 3 },
@@ -733,20 +756,20 @@ local HEIST_GROUP_LAYOUTS = {
 		["Teleport"] = { col = 3, order = 3 },
 		["DANGER"] = { col = 3, order = 4 },
 	},
-	[5] = { -- Agency
+	[6] = { -- Agency
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
 		["Preps"] = { col = 2, order = 1 },
 		["Payout"] = { col = 2, order = 2 },
 		["Misc"] = { col = 3, order = 1 },
 	},
-	[6] = { -- Auto Shop
+	[7] = { -- Auto Shop
 		["Info"] = { col = 1, order = 1 },
 		["Preps"] = { col = 2, order = 1 },
 		["Payout"] = { col = 2, order = 2 },
 		["Misc"] = { col = 3, order = 1 },
 	},
-	[7] = { -- Salvage Yard
+	[8] = { -- Salvage Yard
 		["Info"] = { col = 1, order = 1 },
 		["Slot 1"] = { col = 1, order = 2 },
 		["Slot 2"] = { col = 2, order = 1 },
@@ -755,12 +778,12 @@ local HEIST_GROUP_LAYOUTS = {
 		["Misc"] = { col = 3, order = 2 },
 		["Payout"] = { col = 1, order = 3 },
 	},
-	[8] = { -- Cluckin
+	[9] = { -- Cluckin
 		["Info"] = { col = 1, order = 1 },
 		["Preps"] = { col = 2, order = 1 },
 		["Tools"] = { col = 3, order = 1 },
 	},
-	[9] = { -- KnoWay
+	[10] = { -- KnoWay
 		["Tools"] = { col = 3, order = 1 },
 	},
 }

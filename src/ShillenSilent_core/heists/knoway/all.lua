@@ -1,5 +1,4 @@
 local core = require("ShillenSilent_core.core.bootstrap")
-local ui = require("ShillenSilent_core.core.ui")
 local safe_access = require("ShillenSilent_core.core.safe_access")
 
 local run_guarded_job = core.run_guarded_job
@@ -47,22 +46,8 @@ local function knoway_instant_finish()
 	end)
 end
 
-local function register(heistTab)
-	if type(heistTab) ~= "table" then
-		return nil
-	end
-
-	local tools_group = ui.group(heistTab, "Tools", nil, nil, nil, nil, "knoway")
-	ui.button(tools_group, "knoway_instant_finish", "Instant Finish", function()
-		knoway_instant_finish()
-	end)
-
-	return heistTab
-end
-
 local knoway_module = {
 	knoway_instant_finish = knoway_instant_finish,
-	register = register,
 }
 
 return knoway_module

@@ -1,7 +1,6 @@
 local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local native_api = require("ShillenSilent_core.core.native_api")
-local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local danger_groups = require("ShillenSilent_core.shared.danger_groups")
@@ -12,7 +11,7 @@ local config = core.config
 local state = core.state
 local heist_skip_cutscene = native_api.heist_skip_cutscene
 local hp_set_uniform_cuts = presets.hp_set_uniform_cuts
-local hp_set_stat_for_all_characters = presets.hp_set_stat_for_all_characters
+local hp_apply_casino_manual_preps = presets.hp_apply_casino_manual_preps
 local hp_build_heist_preset_group = presets.hp_build_heist_preset_group
 local hp_option_names_range = presets.hp_option_names_range
 local hp_options_to_names = presets.hp_options_to_names
@@ -91,47 +90,12 @@ local function hp_update_casino_vehicle_dropdown(reset_selection)
 	end
 end
 
-local function hp_reload_casino_planning_board()
-	safe_access.set_local_int("gb_casino_heist_planning", 210, 2)
-	safe_access.set_local_int("gb_casino_heist_planning", 212, 2)
-end
-
 casino_callbacks.update_loadout_dropdown = hp_update_casino_loadout_dropdown
 casino_callbacks.update_vehicle_dropdown = hp_update_casino_vehicle_dropdown
 
 -- Function to apply manual preps
 local function apply_casino_manual_preps()
-	if CasinoManualPreps.unlock_all_poi then
-		hp_set_stat_for_all_characters("H3OPT_POI", -1)
-		hp_set_stat_for_all_characters("H3OPT_ACCESSPOINTS", -1)
-		hp_set_stat_for_all_characters("CAS_HEIST_NOTS", -1)
-		hp_set_stat_for_all_characters("CAS_HEIST_FLOW", -1)
-	end
-
-	hp_set_stat_for_all_characters("H3_LAST_APPROACH", 0)
-	hp_set_stat_for_all_characters(
-		"H3_HARD_APPROACH",
-		(CasinoManualPreps.difficulty == 0) and 0 or CasinoManualPreps.approach
-	)
-	hp_set_stat_for_all_characters("H3OPT_APPROACH", CasinoManualPreps.approach)
-	hp_set_stat_for_all_characters("H3OPT_CREWWEAP", CasinoManualPreps.crew_weapon)
-	hp_set_stat_for_all_characters("H3OPT_WEAPS", CasinoManualPreps.loadout_slot - 1)
-	hp_set_stat_for_all_characters("H3OPT_CREWDRIVER", CasinoManualPreps.crew_driver)
-	hp_set_stat_for_all_characters("H3OPT_VEHS", CasinoManualPreps.vehicle_slot - 1)
-	hp_set_stat_for_all_characters("H3OPT_CREWHACKER", CasinoManualPreps.crew_hacker)
-	hp_set_stat_for_all_characters("H3OPT_TARGET", CasinoManualPreps.target)
-	hp_set_stat_for_all_characters("H3OPT_MASKS", CasinoManualPreps.masks)
-	hp_set_stat_for_all_characters("H3OPT_DISRUPTSHIP", CasinoManualPreps.disrupt_shipments)
-	hp_set_stat_for_all_characters("H3OPT_KEYLEVELS", CasinoManualPreps.key_levels)
-	hp_set_stat_for_all_characters("H3OPT_BODYARMORLVL", -1)
-	hp_set_stat_for_all_characters("H3OPT_BITSET0", -1)
-	hp_set_stat_for_all_characters("H3OPT_BITSET1", -1)
-	hp_set_stat_for_all_characters("H3OPT_COMPLETEDPOSIX", -1)
-
-	hp_reload_casino_planning_board()
-	if notify then
-		notify.push("Casino Manual Preps", "Preps applied", 2000)
-	end
+	hp_apply_casino_manual_preps(CasinoManualPreps)
 end
 
 local function register(heistTab)

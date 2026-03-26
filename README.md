@@ -28,6 +28,13 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 3. Load the script in Lexis
 
 # Changelog
+## v0.1.0
+- Added no-click menu mode (controller/keyboard-friendly alternative UI) 
+- Added dark mode (on by default, hot refresh)
+- Fixed Cayo and Casino logic bugs
+- Performance improvements: UI rendering refactor, improved services runtime, reduced overhead in bootstrap, fix apartment modularization
+
+
 ## v0.0.9
 - major upgrade to doomsday heist tab
 - added presets, added teleports, added new instant finish to avoid that glitch of getting stuck in a session from before

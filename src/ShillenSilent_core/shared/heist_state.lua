@@ -584,6 +584,7 @@ local heist_state = {
 			contract_dropdown = nil,
 			payout_slider = nil,
 			collect_safe_button = nil,
+			tp_computer_button = nil,
 			presets_group = nil,
 		},
 		callbacks = {

@@ -4,6 +4,7 @@ local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 local salvageyard_logic = require("ShillenSilent_core.heists.salvageyard.logic")
+local native_api = require("ShillenSilent_core.core.native_api")
 
 local config = core.config
 local hp_build_heist_preset_group = presets.hp_build_heist_preset_group
@@ -11,6 +12,7 @@ local hp_options_to_names = presets.hp_options_to_names
 local hp_option_index_by_value = presets.hp_option_index_by_value
 local hp_option_value_by_name = presets.hp_option_value_by_name
 local build_skip_cooldown_danger_group = danger_groups.build_skip_cooldown_danger_group
+local heist_skip_cutscene = native_api.heist_skip_cutscene
 
 local salvage_state = heist_state.salvageyard
 local SalvagePrepOptions = salvage_state.prep_options
@@ -104,13 +106,20 @@ end
 
 local function salvage_build_slot_group(heistTab, slot)
 	local group = ui.group(heistTab, "Slot " .. tostring(slot), nil, nil, nil, nil, "salvageyard")
-	ui.button(group, "salvage_slot" .. tostring(slot) .. "_available", "Make Available", function()
-		salvage_make_slot_available(slot)
-	end)
 	salvage_bind_slot_dropdowns(group, slot)
-	ui.button(group, "salvage_slot" .. tostring(slot) .. "_apply", "Apply Changes", function()
-		salvage_apply_slot(slot)
-	end)
+	ui.button_pair(
+		group,
+		"salvage_slot" .. tostring(slot) .. "_available",
+		"Make Available",
+		function()
+			salvage_make_slot_available(slot)
+		end,
+		"salvage_slot" .. tostring(slot) .. "_apply",
+		"Apply Changes",
+		function()
+			salvage_apply_slot(slot)
+		end
+	)
 end
 
 local function register(heistTab)
@@ -129,9 +138,19 @@ local function register(heistTab)
 	salvage_build_slot_group(heistTab, 3)
 
 	local gSalvagePreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "salvageyard")
-	ui.button(gSalvagePreps, "salvage_apply_all_changes", "Apply All Changes", function()
-		salvage_apply_all_changes()
-	end)
+	ui.button_pair(
+		gSalvagePreps,
+		"salvage_apply_all_changes",
+		"Apply All Changes",
+		function()
+			salvage_apply_all_changes()
+		end,
+		"salvage_reload_screen",
+		"Reload Screen",
+		function()
+			salvage_reload_screen()
+		end
+	)
 	ui.button_pair(
 		gSalvagePreps,
 		"salvage_complete_preps",
@@ -145,9 +164,6 @@ local function register(heistTab)
 			salvage_reset_preps()
 		end
 	)
-	ui.button(gSalvagePreps, "salvage_reload_screen", "Reload Screen", function()
-		salvage_reload_screen()
-	end)
 	salvage_refs.free_setup_toggle = ui.toggle(
 		gSalvagePreps,
 		"salvage_free_setup",
@@ -208,6 +224,9 @@ local function register(heistTab)
 		end
 	)
 	salvage_refs.collect_safe_button = gSalvageMisc.items[#gSalvageMisc.items].right
+	ui.button(gSalvageMisc, "salvage_skip_cutscene", "Skip Cutscene", function()
+		heist_skip_cutscene("Salvage Yard")
+	end)
 
 	build_skip_cooldown_danger_group(heistTab, "salvageyard", "salvage_skip_weekly_cooldown", function()
 		salvage_skip_weekly_cooldown()

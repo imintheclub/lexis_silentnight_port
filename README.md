@@ -28,6 +28,21 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 3. Load the script in Lexis
 
 # Changelog
+## v0.1.1
+- Added missing teleports:
+  - Casino: `Teleport to Arcade` (click UI + controller menu)
+- Added strict interior-gating for board/computer/screen teleports so they only work in the correct property interior:
+  - Agency: `Teleport to Computer` now requires Agency interior
+  - Auto Shop: `Teleport to Board` now requires Auto Shop interior
+  - Salvage Yard: `Teleport to Screen & Board` now requires Salvage Yard interior
+  - Doomsday: `Teleport to Screen` now requires Facility interior
+  - Apartment: `Teleport to Heist Board` now requires Apartment interior context (excludes Kosatka/Arcade/Facility/Agency/Auto Shop/Salvage Yard interiors)
+- Improved Agency computer teleport behavior:
+  - Added stronger interior detection logic and periodic refresh for its UI visibility state
+- Added missing `Skip Cutscene` actions across newer heists and modes:
+  - Agency, Auto Shop, Salvage Yard, Cluckin, KnoWay
+- Reorganized/paired several heist action buttons for cleaner, more consistent tab layout
+
 ## v0.1.0
 - Added no-click menu mode (controller/keyboard-friendly alternative UI) 
 - Added dark mode (on by default, hot refresh)

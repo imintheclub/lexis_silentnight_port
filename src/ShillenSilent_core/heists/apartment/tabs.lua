@@ -42,6 +42,20 @@ local apartment_flags = apartment_state.flags
 local apartment_refs = apartment_state.refs
 local apartment_callbacks = apartment_state.callbacks
 
+local function is_in_apartment_interior()
+	local me = players and players.me and players.me() or nil
+	if not (me and me.in_interior) then
+		return false
+	end
+	local in_kosatka = script and script.running and script.running("am_mp_submarine") or false
+	local in_arcade = script and script.running and script.running("am_mp_arcade") or false
+	local in_facility = script and script.running and script.running("am_mp_defunct_base") or false
+	local in_agency = script and script.running and script.running("am_mp_fixer_hq") or false
+	local in_autoshop = script and script.running and script.running("am_mp_auto_shop") or false
+	local in_salvage = script and script.running and script.running("am_mp_salvage_yard") or false
+	return not in_kosatka and not in_arcade and not in_facility and not in_agency and not in_autoshop and not in_salvage
+end
+
 local function register(heistTab)
 	if type(heistTab) ~= "table" then
 		return nil
@@ -66,20 +80,34 @@ local function register(heistTab)
 				state.solo_launch.apartment = val
 			end
 		)
-		ui.button(gApartmentLaunch, "apartment_force_ready", "Force Ready", function()
-			apartment_force_ready()
-		end)
-		ui.button(gApartmentLaunch, "apartment_redraw_board", "Redraw Board", function()
-			apartment_redraw_board()
-		end)
+		ui.button_pair(
+			gApartmentLaunch,
+			"apartment_force_ready",
+			"Force Ready",
+			function()
+				apartment_force_ready()
+			end,
+			"apartment_redraw_board",
+			"Redraw Board",
+			function()
+				apartment_redraw_board()
+			end
+		)
 
 		local gApartmentPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "apartment")
-		ui.button(gApartmentPreps, "apartment_complete_preps", "Complete Preps", function()
-			apartment_complete_preps()
-		end)
-		ui.button(gApartmentPreps, "apartment_change_session", "Change Session", function()
-			apartment_change_session()
-		end)
+		ui.button_pair(
+			gApartmentPreps,
+			"apartment_complete_preps",
+			"Complete Preps",
+			function()
+				apartment_complete_preps()
+			end,
+			"apartment_change_session",
+			"Change Session",
+			function()
+				apartment_change_session()
+			end
+		)
 
 		hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
 
@@ -94,6 +122,13 @@ local function register(heistTab)
 		end
 
 		local function apartment_teleport_to_heist_board()
+			if not is_in_apartment_interior() then
+				if notify then
+					notify.push("Teleport", "You must be inside an Apartment interior", 2200)
+				end
+				return false
+			end
+
 			return teleport_to_blip_with_job(
 				BLIP_SPRITES_HEIST,
 				"Teleport",
@@ -145,25 +180,34 @@ local function register(heistTab)
 		)
 
 		local gApartmentInstantFinish = ui.group(heistTab, "Instant Finish", nil, nil, nil, nil, "apartment")
-		ui.button(
+		ui.button_pair(
 			gApartmentInstantFinish,
 			"apartment_instant_finish_pacific",
-			"Instant Finish (Pacific Standard)",
+			"Instant Finish (Pacific)",
 			function()
 				apartment_instant_finish_pacific()
+			end,
+			"apartment_instant_finish_other",
+			"Instant Finish (Other)",
+			function()
+				apartment_instant_finish_other()
 			end
 		)
-		ui.button(gApartmentInstantFinish, "apartment_instant_finish_other", "Instant Finish (Other)", function()
-			apartment_instant_finish_other()
-		end)
 
 		local gApartmentTeleport = ui.group(heistTab, "Teleport", nil, nil, nil, nil, "apartment")
-		ui.button(gApartmentTeleport, "apartment_tp_entrance", "Teleport to Entrance", function()
-			apartment_teleport_to_entrance()
-		end)
-		ui.button(gApartmentTeleport, "apartment_tp_heist_board", "Teleport to Heist Board", function()
-			apartment_teleport_to_heist_board()
-		end)
+		ui.button_pair(
+			gApartmentTeleport,
+			"apartment_tp_entrance",
+			"Teleport to Entrance",
+			function()
+				apartment_teleport_to_entrance()
+			end,
+			"apartment_tp_heist_board",
+			"Teleport to Heist Board",
+			function()
+				apartment_teleport_to_heist_board()
+			end
+		)
 
 		build_skip_cooldown_danger_group(heistTab, "apartment", "apartment_skip_heist_cooldown", function()
 			apartment_kill_cooldown()
@@ -278,12 +322,19 @@ local function register(heistTab)
 			end
 		)
 
-		ui.button(gApartmentCuts, "apartment_apply_selected_preset", "Apply Selected Preset", function()
-			hp_apply_selected_apartment_cut_preset(true)
-		end)
-		ui.button(gApartmentCuts, "apartment_cuts_apply", "Apply Cuts", function()
-			apply_apartment_cuts()
-		end)
+		ui.button_pair(
+			gApartmentCuts,
+			"apartment_apply_selected_preset",
+			"Apply Selected Preset",
+			function()
+				hp_apply_selected_apartment_cut_preset(true)
+			end,
+			"apartment_cuts_apply",
+			"Apply Cuts",
+			function()
+				apply_apartment_cuts()
+			end
+		)
 
 		-- 12M Bonus Function
 		local function apartment_12mil_bonus(enable, silent)

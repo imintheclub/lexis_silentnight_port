@@ -19,6 +19,8 @@ local agency_callbacks = agency_state.callbacks
 local AGENCY_BLIP_ENTRANCE = 826
 local AGENCY_BLIP_FRANKLIN = 88
 local AGENCY_COMPUTER_COORDS = { x = -578.981, y = -711.381, z = 116.805, heading = 123.687 }
+local AGENCY_COMPUTER_INTERIOR_ID = nil
+local AGENCY_INTERIOR_FALLBACK_RADIUS = 35.0
 
 local AGENCY_TUNABLES = {
 	PAYOUT = "FIXER_FINALE_LEADER_CASH_REWARD",
@@ -99,6 +101,68 @@ local function set_tunable_int(name, value)
 		script.tunables(name).int32 = value
 	end)
 	return ok
+end
+
+local function get_entity_coords(entity)
+	if not (entity and entity ~= 0 and invoker and invoker.call) then
+		return nil
+	end
+	local result = invoker.call(0x3FEF770D40960D5A, entity, false) -- GET_ENTITY_COORDS
+	if result and result.scr_vec3 then
+		return result.scr_vec3
+	end
+	return nil
+end
+
+local function get_interior_from_entity(entity)
+	if not (entity and entity ~= 0 and invoker and invoker.call) then
+		return 0
+	end
+	local result = invoker.call(0x2107BA504071A6BB, entity) -- GET_INTERIOR_FROM_ENTITY
+	if result and result.int then
+		return result.int
+	end
+	return 0
+end
+
+local function resolve_agency_computer_interior_id()
+	if AGENCY_COMPUTER_INTERIOR_ID and AGENCY_COMPUTER_INTERIOR_ID ~= 0 then
+		return AGENCY_COMPUTER_INTERIOR_ID
+	end
+	if not (invoker and invoker.call) then
+		return 0
+	end
+	local computer = AGENCY_COMPUTER_COORDS
+	local result = invoker.call(0xB0F7F8663821D9C3, computer.x, computer.y, computer.z) -- GET_INTERIOR_AT_COORDS
+	if result and result.int and result.int ~= 0 then
+		AGENCY_COMPUTER_INTERIOR_ID = result.int
+		return AGENCY_COMPUTER_INTERIOR_ID
+	end
+	return 0
+end
+
+local function is_in_agency_interior()
+	local me = players and players.me and players.me() or nil
+	if not (me and me.in_interior and me.ped and me.ped ~= 0) then
+		return false
+	end
+
+	local player_interior = get_interior_from_entity(me.ped)
+	local agency_interior = resolve_agency_computer_interior_id()
+	if player_interior ~= 0 and agency_interior ~= 0 then
+		return player_interior == agency_interior
+	end
+
+	-- Fallback: compare player coords with known Agency computer coords.
+	local coords = get_entity_coords(me.ped)
+	if not coords then
+		return false
+	end
+	local dx = (coords.x or 0.0) - AGENCY_COMPUTER_COORDS.x
+	local dy = (coords.y or 0.0) - AGENCY_COMPUTER_COORDS.y
+	local dz = (coords.z or 0.0) - AGENCY_COMPUTER_COORDS.z
+	local radius_sq = AGENCY_INTERIOR_FALLBACK_RADIUS * AGENCY_INTERIOR_FALLBACK_RADIUS
+	return ((dx * dx) + (dy * dy) + (dz * dz)) <= radius_sq
 end
 
 local function set_stat_int(stat_name, value)
@@ -186,6 +250,13 @@ local function agency_teleport_entrance()
 end
 
 local function agency_teleport_computer()
+	if not is_in_agency_interior() then
+		if notify then
+			notify.push("Agency Teleport", "You must be inside the Agency interior", 2200)
+		end
+		return false
+	end
+
 	return run_coords_teleport(
 		"Agency Teleport",
 		"Teleported to Computer",
@@ -294,6 +365,13 @@ local function agency_instant_finish_new()
 	end)
 end
 
+local function agency_refresh_tp_computer_state()
+	local enabled = is_in_agency_interior()
+	if agency_refs.tp_computer_button then
+		agency_refs.tp_computer_button.hidden = not enabled
+	end
+end
+
 local function agency_refresh_collect_safe_state()
 	agency_flags.collect_safe_ee_only = global_bool_supported(AGENCY_GLOBALS.SAFE_COLLECT_BOOL)
 	if agency_refs.collect_safe_button then
@@ -323,6 +401,7 @@ local agency_logic = {
 	agency_instant_finish = agency_instant_finish_new,
 	agency_instant_finish_new = agency_instant_finish_new,
 	agency_refresh_collect_safe_state = agency_refresh_collect_safe_state,
+	agency_refresh_tp_computer_state = agency_refresh_tp_computer_state,
 }
 
 return agency_logic

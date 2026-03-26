@@ -9,6 +9,13 @@ local salvageyard_tabs = require("ShillenSilent_core.heists.salvageyard.tabs")
 local doomsday_tabs = require("ShillenSilent_core.heists.doomsday.tabs")
 local cluckin_tabs = require("ShillenSilent_core.heists.cluckin.tabs")
 local knoway_tabs = require("ShillenSilent_core.heists.knoway.tabs")
+local bunker_tabs = require("ShillenSilent_core.businesses.bunker.tabs")
+local mc_tabs = require("ShillenSilent_core.businesses.mc.tabs")
+local acidlab_tabs = require("ShillenSilent_core.businesses.acidlab.tabs")
+local hangar_tabs = require("ShillenSilent_core.businesses.hangar.tabs")
+local speccargo_tabs = require("ShillenSilent_core.businesses.speccargo.tabs")
+local nightclub_tabs = require("ShillenSilent_core.businesses.nightclub.tabs")
+local misc_tabs = require("ShillenSilent_core.businesses.misc.tabs")
 local runtime_main_loop = require("ShillenSilent_core.runtime.main_loop")
 
 local app_main = {
@@ -58,6 +65,28 @@ local function register_heist_tabs(heistTab)
 	end
 	if knoway_tabs.register then
 		knoway_tabs.register(heistTab)
+	end
+
+	if bunker_tabs.register then
+		bunker_tabs.register(heistTab)
+	end
+	if mc_tabs.register then
+		mc_tabs.register(heistTab)
+	end
+	if acidlab_tabs.register then
+		acidlab_tabs.register(heistTab)
+	end
+	if hangar_tabs.register then
+		hangar_tabs.register(heistTab)
+	end
+	if speccargo_tabs.register then
+		speccargo_tabs.register(heistTab)
+	end
+	if nightclub_tabs.register then
+		nightclub_tabs.register(heistTab)
+	end
+	if misc_tabs.register then
+		misc_tabs.register(heistTab)
 	end
 end
 

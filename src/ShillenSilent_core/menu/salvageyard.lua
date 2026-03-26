@@ -2,6 +2,7 @@ local salvageyard_logic = require("ShillenSilent_core.heists.salvageyard.logic")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local common = require("ShillenSilent_core.menu.common")
+local native_api = require("ShillenSilent_core.core.native_api")
 
 local salvage_state = heist_state.salvageyard
 local SalvageConfig = salvage_state.config
@@ -204,6 +205,9 @@ function salvageyard_menu.register(parent_menu)
 	end)
 	common.add_button(misc, "Collect Safe", function()
 		salvageyard_logic.salvage_collect_safe()
+	end)
+	common.add_button(misc, "Skip Cutscene", function()
+		native_api.heist_skip_cutscene("Salvage Yard")
 	end)
 
 	local danger = root:submenu("Danger")

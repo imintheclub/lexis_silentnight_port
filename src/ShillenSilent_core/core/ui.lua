@@ -659,6 +659,33 @@ local HEIST_SUBTAB_KEYS = {
 	"knoway",
 }
 
+local HEIST_ROW1_COUNT = 10
+
+local BIZ_SUBTAB_NAMES = {
+	"Bunker",
+	"Moto Club",
+	"Acid Lab",
+	"Hangar",
+	"Spec Cargo",
+	"Nightclub",
+	"Misc",
+}
+local BIZ_SUBTAB_KEYS = {
+	"bunker",
+	"mc",
+	"acidlab",
+	"hangar",
+	"speccargo",
+	"nightclub",
+	"misc",
+}
+for _, v in ipairs(BIZ_SUBTAB_NAMES) do
+	HEIST_SUBTAB_NAMES[#HEIST_SUBTAB_NAMES + 1] = v
+end
+for _, v in ipairs(BIZ_SUBTAB_KEYS) do
+	HEIST_SUBTAB_KEYS[#HEIST_SUBTAB_KEYS + 1] = v
+end
+
 -- Legacy visual order hints. Used only to flatten groups into a stable sequence.
 local HEIST_GROUP_LAYOUTS = {
 	[1] = { -- Info
@@ -1542,60 +1569,71 @@ ui.render = function()
 		local subtab_bg_col = render_cache.subtab_bg_col
 		local subtab_border_col = render_cache.subtab_border_col
 		local subtab_text_col = render_cache.subtab_text_col
-		local subtab_names = HEIST_SUBTAB_NAMES
-		local subtab_count = #subtab_names
 		local compact_subtabs = (column_count == 1)
 		local subtab_h = compact_subtabs and config.space.x8 or config.space.x9
 		local subtab_gap = config.space.x2
-		local subtab_w = (contentW - (subtab_count - 1) * subtab_gap) / subtab_count
-		local subtab_y = contentY
 		local subtab_text_size = compact_subtabs and config.font_scale_small or config.font_scale_body
 		local subtab_text_pad_x = compact_subtabs and config.space.x2 or config.space.x3
 		local subtab_text_pad_y = compact_subtabs and config.space.x1_5 or config.space.x1
 
-		for i, name in ipairs(subtab_names) do
-			local subtab_x = contentX + (i - 1) * (subtab_w + subtab_gap)
-			local is_active = (state.heist_subtab == i)
-			local hovered = (not state.active_dropdown) and is_hovered(subtab_x, subtab_y, subtab_w, subtab_h)
-			local active_t = animator.to(
-				"subtab_active:" .. i,
-				is_active and 1.0 or 0.0,
-				animator.motion_speed(config.motion.subtab_active_speed, config.motion.speed_fast or 0.24)
-			)
+		local row_defs = {
+			{ count = HEIST_ROW1_COUNT, y = contentY, idx_offset = 0 },
+			{
+				count = #HEIST_SUBTAB_NAMES - HEIST_ROW1_COUNT,
+				y = contentY + subtab_h + subtab_gap,
+				idx_offset = HEIST_ROW1_COUNT,
+			},
+		}
 
-			if hovered and state.mouse.clicked and not state.active_dropdown then
-				state.heist_subtab = i
-				state.content_transition.subtab = i
-				state.content_transition.progress = 0.0
-				animator.values["content_transition"] = { v = 0.0, seen = animator.frame }
-				state.scroll.y = 0
-				state.window.is_dragging = false
-			end
+		for _, row in ipairs(row_defs) do
+			local row_subtab_w = (contentW - (row.count - 1) * subtab_gap) / row.count
+			for j = 1, row.count do
+				local i = row.idx_offset + j
+				local name = HEIST_SUBTAB_NAMES[i]
+				local subtab_x = contentX + (j - 1) * (row_subtab_w + subtab_gap)
+				local subtab_y = row.y
+				local is_active = (state.heist_subtab == i)
+				local hovered = (not state.active_dropdown) and is_hovered(subtab_x, subtab_y, row_subtab_w, subtab_h)
+				local active_t = animator.to(
+					"subtab_active:" .. i,
+					is_active and 1.0 or 0.0,
+					animator.motion_speed(config.motion.subtab_active_speed, config.motion.speed_fast or 0.24)
+				)
 
-			animator.blend_color(config.colors.bg_control, config.colors.accent, active_t, subtab_bg_col)
-			if hovered and active_t < 0.99 then
-				animator.blend_color(subtab_bg_col, config.colors.bg_control_hover, 0.7, subtab_bg_col)
-			end
-			animator.blend_color(config.colors.border, config.colors.accent_hover, active_t, subtab_border_col)
-			animator.blend_color(config.colors.text_main, config.colors.text_on_accent, active_t, subtab_text_col)
+				if hovered and state.mouse.clicked and not state.active_dropdown then
+					state.heist_subtab = i
+					state.content_transition.subtab = i
+					state.content_transition.progress = 0.0
+					animator.values["content_transition"] = { v = 0.0, seen = animator.frame }
+					state.scroll.y = 0
+					state.window.is_dragging = false
+				end
 
-			render_rect(subtab_x, subtab_y, subtab_w, subtab_h, subtab_bg_col, config.radius.md)
-			render_outline(subtab_x, subtab_y, subtab_w, subtab_h, subtab_border_col, 1, config.radius.md)
-			local label = name
-			if compact_subtabs then
-				local label_max_w = math.max(1, subtab_w - (subtab_text_pad_x * 2))
-				label = text_with_ellipsis(name, label_max_w, subtab_text_size)
+				animator.blend_color(config.colors.bg_control, config.colors.accent, active_t, subtab_bg_col)
+				if hovered and active_t < 0.99 then
+					animator.blend_color(subtab_bg_col, config.colors.bg_control_hover, 0.7, subtab_bg_col)
+				end
+				animator.blend_color(config.colors.border, config.colors.accent_hover, active_t, subtab_border_col)
+				animator.blend_color(config.colors.text_main, config.colors.text_on_accent, active_t, subtab_text_col)
+
+				render_rect(subtab_x, subtab_y, row_subtab_w, subtab_h, subtab_bg_col, config.radius.md)
+				render_outline(subtab_x, subtab_y, row_subtab_w, subtab_h, subtab_border_col, 1, config.radius.md)
+				local label = name
+				if compact_subtabs then
+					local label_max_w = math.max(1, row_subtab_w - (subtab_text_pad_x * 2))
+					label = text_with_ellipsis(name, label_max_w, subtab_text_size)
+				end
+				render_text(
+					label,
+					subtab_x + subtab_text_pad_x,
+					subtab_y + subtab_text_pad_y,
+					subtab_text_size,
+					subtab_text_col
+				)
 			end
-			render_text(
-				label,
-				subtab_x + subtab_text_pad_x,
-				subtab_y + subtab_text_pad_y,
-				subtab_text_size,
-				subtab_text_col
-			)
 		end
 
-		subtab_bar_height = subtab_h + config.space.x2
+		subtab_bar_height = 2 * (subtab_h + subtab_gap)
 		groups_start_y = contentY + subtab_bar_height
 	end
 
@@ -1853,7 +1891,7 @@ ui.render = function()
 	local wm_y = config.origin_y + config.space.x2
 	local wm_scale = config.font_scale_small or 1.0
 	local wm_col = config.colors.text_main
-	render_text("ShillenSilent v0.0.9", wm_x, wm_y, wm_scale, wm_col, "left")
+	render_text("ShillenSilent v0.1.1", wm_x, wm_y, wm_scale, wm_col, "left")
 
 	-- [INJECTED] Credits Watermark (Bottom Left)
 	local credits_x = config.origin_x + config.space.x2

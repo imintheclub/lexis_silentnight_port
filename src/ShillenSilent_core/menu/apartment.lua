@@ -50,12 +50,7 @@ local function is_in_apartment_interior()
 	local in_agency = script and script.running and script.running("am_mp_fixer_hq") or false
 	local in_autoshop = script and script.running and script.running("am_mp_auto_shop") or false
 	local in_salvage = script and script.running and script.running("am_mp_salvage_yard") or false
-	return not in_kosatka
-		and not in_arcade
-		and not in_facility
-		and not in_agency
-		and not in_autoshop
-		and not in_salvage
+	return not in_kosatka and not in_arcade and not in_facility and not in_agency and not in_autoshop and not in_salvage
 end
 
 local function apartment_teleport_to_entrance()

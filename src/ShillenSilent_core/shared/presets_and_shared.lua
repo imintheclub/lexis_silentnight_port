@@ -4,6 +4,7 @@
 
 local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
+local safe_access = require("ShillenSilent_core.core.safe_access")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local native = core.native
 local config = core.config
@@ -120,6 +121,50 @@ end
 local function hp_set_stat_for_all_characters(stat_name, value)
 	account.stats("MP0_" .. stat_name).int32 = value
 	account.stats("MP1_" .. stat_name).int32 = value
+end
+
+local function hp_apply_casino_manual_preps(preps, opts)
+	if type(preps) ~= "table" then
+		return false
+	end
+
+	local options = (type(opts) == "table") and opts or {}
+	local should_notify = (options.notify == nil) and true or (options.notify and true or false)
+	local notify_title = options.notify_title or "Casino Manual Preps"
+	local notify_message = options.notify_message or "Preps applied"
+	local notify_duration = tonumber(options.notify_duration) or 2000
+
+	if preps.unlock_all_poi then
+		hp_set_stat_for_all_characters("H3OPT_POI", -1)
+		hp_set_stat_for_all_characters("H3OPT_ACCESSPOINTS", -1)
+		hp_set_stat_for_all_characters("CAS_HEIST_NOTS", -1)
+		hp_set_stat_for_all_characters("CAS_HEIST_FLOW", -1)
+	end
+
+	hp_set_stat_for_all_characters("H3_LAST_APPROACH", 0)
+	hp_set_stat_for_all_characters("H3_HARD_APPROACH", (preps.difficulty == 0) and 0 or preps.approach)
+	hp_set_stat_for_all_characters("H3OPT_APPROACH", preps.approach)
+	hp_set_stat_for_all_characters("H3OPT_CREWWEAP", preps.crew_weapon)
+	hp_set_stat_for_all_characters("H3OPT_WEAPS", (tonumber(preps.loadout_slot) or 1) - 1)
+	hp_set_stat_for_all_characters("H3OPT_CREWDRIVER", preps.crew_driver)
+	hp_set_stat_for_all_characters("H3OPT_VEHS", (tonumber(preps.vehicle_slot) or 1) - 1)
+	hp_set_stat_for_all_characters("H3OPT_CREWHACKER", preps.crew_hacker)
+	hp_set_stat_for_all_characters("H3OPT_TARGET", preps.target)
+	hp_set_stat_for_all_characters("H3OPT_MASKS", preps.masks)
+	hp_set_stat_for_all_characters("H3OPT_DISRUPTSHIP", preps.disrupt_shipments)
+	hp_set_stat_for_all_characters("H3OPT_KEYLEVELS", preps.key_levels)
+	hp_set_stat_for_all_characters("H3OPT_BODYARMORLVL", -1)
+	hp_set_stat_for_all_characters("H3OPT_BITSET0", -1)
+	hp_set_stat_for_all_characters("H3OPT_BITSET1", -1)
+	hp_set_stat_for_all_characters("H3OPT_COMPLETEDPOSIX", -1)
+
+	safe_access.set_local_int("gb_casino_heist_planning", 210, 2)
+	safe_access.set_local_int("gb_casino_heist_planning", 212, 2)
+
+	if should_notify and notify then
+		notify.push(notify_title, notify_message, notify_duration)
+	end
+	return true
 end
 
 local hp_keyboard_guard = nil
@@ -456,6 +501,7 @@ local SAFE_PAYOUT_TARGETS = {
 
 local AGENCY_PAYOUT_MAX = 2500000
 local AUTOSHOP_PAYOUT_MAX = 2200000
+local AUTOSHOP_TRANSACTION_MAX = 2000000
 local SALVAGE_MULTIPLIER_MIN = 0.0
 local SALVAGE_MULTIPLIER_MAX = 5.0
 local SALVAGE_SELL_VALUE_MAX = 2100000
@@ -1816,6 +1862,12 @@ local presets = {
 	CasinoGlobals = CasinoGlobals,
 	CutsValues = CutsValues,
 	SAFE_PAYOUT_TARGETS = SAFE_PAYOUT_TARGETS,
+	AGENCY_PAYOUT_MAX = AGENCY_PAYOUT_MAX,
+	AUTOSHOP_PAYOUT_MAX = AUTOSHOP_PAYOUT_MAX,
+	AUTOSHOP_TRANSACTION_MAX = AUTOSHOP_TRANSACTION_MAX,
+	SALVAGE_SELL_VALUE_MAX = SALVAGE_SELL_VALUE_MAX,
+	SALVAGE_MULTIPLIER_MIN = SALVAGE_MULTIPLIER_MIN,
+	SALVAGE_MULTIPLIER_MAX = SALVAGE_MULTIPLIER_MAX,
 	APARTMENT_CUT_PRESET_OPTIONS = APARTMENT_CUT_PRESET_OPTIONS,
 	GetMP = GetMP,
 	hp_options_to_names = hp_options_to_names,
@@ -1824,6 +1876,7 @@ local presets = {
 	hp_option_value_by_name = hp_option_value_by_name,
 	hp_option_names_range = hp_option_names_range,
 	hp_set_stat_for_all_characters = hp_set_stat_for_all_characters,
+	hp_apply_casino_manual_preps = hp_apply_casino_manual_preps,
 	hp_build_heist_preset_group = hp_build_heist_preset_group,
 	hp_set_uniform_cuts = hp_set_uniform_cuts,
 	hp_set_apartment_uniform_cuts = hp_set_apartment_uniform_cuts,

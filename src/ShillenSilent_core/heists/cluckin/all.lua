@@ -2,15 +2,10 @@
 -- [Cluckin Bell Farm Raid] - 1:1 from HeistTool.lua
 -- -------------------------------------------------------------------------
 
-local core = require("ShillenSilent_core.core.bootstrap")
-local ui = require("ShillenSilent_core.core.ui")
 local safe_access = require("ShillenSilent_core.core.safe_access")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
-local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 
-local config = core.config
 local hp_set_stat_for_all_characters = presets.hp_set_stat_for_all_characters
-local build_skip_cooldown_danger_group = danger_groups.build_skip_cooldown_danger_group
 
 -- Cluckin Bell Functions
 local function cluckin_skip_to_finale()
@@ -65,46 +60,11 @@ local function cluckin_instant_finish()
 	end
 end
 
-local function register(heistTab)
-	if type(heistTab) ~= "table" then
-		return nil
-	end
-
-	-- Cluckin Bell Tab Content
-	local gCluckinInfo = ui.group(heistTab, "Info", nil, nil, nil, 140, "cluckin")
-	ui.label(gCluckinInfo, "Cluckin Bell Farm Raid", config.colors.accent)
-	ui.label(gCluckinInfo, "Farm Raid Heist", config.colors.text_main)
-
-	local gCluckinTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "cluckin")
-	ui.button(gCluckinTools, "cluckin_skip_finale", "Skip to Finale", function()
-		cluckin_skip_to_finale()
-	end)
-	ui.button_pair(
-		gCluckinTools,
-		"cluckin_reset_progress",
-		"Reset Progress",
-		function()
-			cluckin_reset_progress()
-		end,
-		"cluckin_instant_finish",
-		"Instant Finish",
-		function()
-			cluckin_instant_finish()
-		end
-	)
-
-	build_skip_cooldown_danger_group(heistTab, "cluckin", "cluckin_remove_cooldown", function()
-		cluckin_remove_cooldown()
-	end)
-	return heistTab
-end
-
 local cluckin_module = {
 	cluckin_skip_to_finale = cluckin_skip_to_finale,
 	cluckin_remove_cooldown = cluckin_remove_cooldown,
 	cluckin_reset_progress = cluckin_reset_progress,
 	cluckin_instant_finish = cluckin_instant_finish,
-	register = register,
 }
 
 return cluckin_module

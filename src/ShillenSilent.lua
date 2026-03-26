@@ -20,4 +20,4 @@ end
 
 prepend_package_pattern(script_root .. "/?.lua")
 
-require("ShillenSilent_core.app.main")
+require("ShillenSilent_core.app.router")

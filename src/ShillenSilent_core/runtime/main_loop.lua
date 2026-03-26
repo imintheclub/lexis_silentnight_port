@@ -5,24 +5,13 @@
 local core = require("ShillenSilent_core.core.bootstrap")
 local ui = require("ShillenSilent_core.core.ui")
 local native_api = require("ShillenSilent_core.core.native_api")
-local presets = require("ShillenSilent_core.shared.presets_and_shared")
-local heist_state = require("ShillenSilent_core.shared.heist_state")
-local solo_launch = require("ShillenSilent_core.runtime.solo_launch")
-local cayo_logic = require("ShillenSilent_core.heists.cayo.logic")
-local casino_logic = require("ShillenSilent_core.heists.casino.logic")
-local salvageyard_logic = require("ShillenSilent_core.heists.salvageyard.logic")
+local runtime_services = require("ShillenSilent_core.runtime.services")
 
 local state = core.state
 local config = core.config
 local native = core.native
 local CONTROL_ACTION_BLOCK_LIST = native_api.CONTROL_ACTION_BLOCK_LIST
 local disable_control_action = native_api.disable_control_action
-
-local solo_launch_generic = solo_launch.solo_launch_generic
-local solo_launch_casino_setup = solo_launch.solo_launch_casino_setup
-local solo_launch_reset_casino = solo_launch.solo_launch_reset_casino
-local solo_launch_reset_doomsday = solo_launch.solo_launch_reset_doomsday
-local solo_launch_reset_apartment = solo_launch.solo_launch_reset_apartment
 
 local runtime_main_loop = {
 	started = false,
@@ -72,69 +61,12 @@ local function subscribe_scroll_handler()
 	end)
 end
 
-local SOLO_LAUNCH_HANDLERS = {
-	{ key = "casino", setup = solo_launch_casino_setup, reset = solo_launch_reset_casino },
-	{ key = "apartment", setup = nil, reset = solo_launch_reset_apartment },
-	{ key = "doomsday", setup = nil, reset = solo_launch_reset_doomsday },
-}
-
-local HEIST_ENFORCE_INTERVAL_MS = 150
-local next_heist_enforce_tick = 0
-
-local function maybe_sync_max_payouts()
-	pcall(presets.hp_refresh_apartment_max_payout, false, false)
-	pcall(cayo_logic.cayo_refresh_max_payout, false, false)
-	pcall(casino_logic.casino_refresh_max_payout, false, false)
-
-	local doomsday_callbacks = heist_state.doomsday and heist_state.doomsday.callbacks or nil
-	if doomsday_callbacks and type(doomsday_callbacks.refresh_max_payout) == "function" then
-		pcall(doomsday_callbacks.refresh_max_payout, false, false)
-	end
-end
-
-local function maybe_enforce_heist_toggles()
-	local now_tick = (util and util.get_tick_count and util.get_tick_count()) or nil
-	if now_tick and now_tick < next_heist_enforce_tick then
-		return
-	end
-
-	pcall(cayo_logic.cayo_enforce_heist_toggles)
-	pcall(casino_logic.casino_enforce_heist_toggles)
-	pcall(salvageyard_logic.salvage_enforce_heist_toggles)
-
-	if now_tick then
-		next_heist_enforce_tick = now_tick + HEIST_ENFORCE_INTERVAL_MS
-	end
-end
-
 local function start_runtime_loop()
 	util.create_thread(function()
 		while true do
 			if _G.ShillenSilent_ForceStop then
 				return
 			end
-
-			for i = 1, #SOLO_LAUNCH_HANDLERS do
-				local handler = SOLO_LAUNCH_HANDLERS[i]
-				local key = handler.key
-
-				local enabled = state.solo_launch[key]
-				local was_enabled = state.solo_launch_prev[key]
-
-				if enabled then
-					pcall(solo_launch_generic)
-					if handler.setup then
-						pcall(handler.setup)
-					end
-				elseif was_enabled and handler.reset then
-					pcall(handler.reset)
-				end
-
-				state.solo_launch_prev[key] = enabled
-			end
-
-			pcall(maybe_sync_max_payouts)
-			pcall(maybe_enforce_heist_toggles)
 
 			local t_pressed = false
 			pcall(function()
@@ -191,6 +123,7 @@ function runtime_main_loop.start()
 	end
 	runtime_main_loop.started = true
 
+	pcall(runtime_services.start)
 	pcall(subscribe_scroll_handler)
 	start_runtime_loop()
 	return true

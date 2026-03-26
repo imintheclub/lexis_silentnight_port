@@ -1,0 +1,320 @@
+-- Core bootstrap: shared config, paths, runtime state, and guarded jobs.
+
+local ui = {}
+local native = require("natives")
+
+local function get_path(path)
+	local base = paths.script
+	local drive, rest = base:match("^([A-Z]:)(.*)")
+	if drive then
+		base = drive:lower() .. rest
+	end
+	return base .. path
+end
+
+local ShillenSilent_noclick_core_DIR = get_path("\\ShillenSilent_noclick_core")
+local SHILLENSILENT_HEIST_PRESETS_DIR = get_path("\\ShillenSilent_HeistPresets")
+
+local function ensure_core_dirs()
+	if not dirs.exists(ShillenSilent_noclick_core_DIR) then
+		dirs.create(ShillenSilent_noclick_core_DIR)
+	end
+	if not dirs.exists(SHILLENSILENT_HEIST_PRESETS_DIR) then
+		dirs.create(SHILLENSILENT_HEIST_PRESETS_DIR)
+	end
+end
+
+-- ---------------------------------------------------------
+-- 1. Configuration & Assets
+-- ---------------------------------------------------------
+
+local BASE_WIDTH = 1920
+local BASE_HEIGHT = 1080
+
+local function get_screen_scale()
+	local res = game.resolution()
+	local scale_x = res.x / BASE_WIDTH
+	local scale_y = res.y / BASE_HEIGHT
+	return math.min(scale_x, scale_y)
+end
+
+local function load_tab_icon(path)
+	if not path or path == "" then
+		return nil
+	end
+
+	local full_path = path
+
+	local status, img = pcall(gui.load_image, full_path)
+	if status and img then
+		return img
+	end
+
+	if not path:match("^[A-Za-z]:") then
+		full_path = get_path(path:match("ui/components/.*") or path)
+		status, img = pcall(gui.load_image, full_path)
+		if status and img then
+			return img
+		end
+	end
+
+	return nil
+end
+
+local function init_config()
+	local scale = get_screen_scale()
+	local function s(px)
+		return math.max(1, math.floor(px * scale))
+	end
+	local function tw(units)
+		return s(units * 4)
+	end
+
+	local menu_width = tw(356)
+	local menu_height = tw(150)
+	local content_margin = tw(6)
+	local column_gap = tw(4)
+	local default_content_w = menu_width - (content_margin * 2)
+	local fixed_column_w = math.floor((default_content_w - (2 * column_gap)) / 3)
+	local min_column_side_pad = tw(6)
+	local subtab_count = 9
+	local min_subtab_w = tw(18)
+	local subtab_gap = tw(2)
+	local min_w_from_subtabs = (content_margin * 2) + (subtab_count * min_subtab_w) + ((subtab_count - 1) * subtab_gap)
+	local min_w_from_columns = (content_margin * 2) + fixed_column_w + (min_column_side_pad * 2)
+	local min_h_from_content = (content_margin * 2) + tw(9) + tw(2) + tw(10) + tw(3) + tw(12) + tw(4)
+
+	return {
+		origin_x = math.floor((game.resolution().x - menu_width) / 2),
+		origin_y = math.floor((game.resolution().y - menu_height) / 2),
+		menu_width = menu_width,
+		menu_height = menu_height,
+
+		sidebar_width = tw(25),
+		sidebar_gap = tw(4),
+
+		content_margin = content_margin,
+
+		layout = {
+			fixed_column_w = fixed_column_w,
+			column_gap = column_gap,
+			max_columns = 3,
+		},
+
+		resize = {
+			edge_hit_w = tw(3),
+			edge_hit_h = tw(6),
+			min_menu_width = math.max(min_w_from_subtabs, min_w_from_columns),
+			max_menu_width = menu_width,
+			min_menu_height = min_h_from_content,
+			max_menu_height = menu_height * 2,
+			max_screen_margin = tw(10),
+		},
+
+		content_area = {
+			x = 0,
+			y = 0,
+			w = 0,
+			h = 0,
+		},
+
+		item_height = {
+			toggle = tw(12),
+			button = tw(12),
+			slider = tw(15),
+			dropdown = tw(12),
+			header_padding = tw(10),
+		},
+
+		space = {
+			x1 = tw(1), -- 4px
+			x1_5 = tw(1.5), -- 6px
+			x2 = tw(2), -- 8px
+			x2_5 = tw(2.5), -- 10px
+			x3 = tw(3), -- 12px
+			x3_5 = tw(3.5), -- 14px
+			x4 = tw(4), -- 16px
+			x5 = tw(5), -- 20px
+			x6 = tw(6), -- 24px
+			x7 = tw(7), -- 28px
+			x8 = tw(8), -- 32px
+			x9 = tw(9), -- 36px
+			x10 = tw(10), -- 40px
+			x11 = tw(11), -- 44px
+			x12 = tw(12), -- 48px
+			x15 = tw(15), -- 60px
+		},
+
+		radius = {
+			none = 0,
+			sm = s(2),
+			md = s(4),
+			lg = s(6),
+			xl = s(8),
+			full = s(999),
+		},
+
+		control = {
+			dropdown_w = tw(45), -- 180px
+			slider_thumb_base = tw(4), -- 16px
+			slider_thumb_grow = tw(2), -- 8px
+			scrollbar_min_thumb = tw(8),
+			scrollbar_grab_pad = tw(1),
+			toggle_track_border_thickness = s(2),
+			toggle_thumb_border_thickness = s(1.25),
+		},
+
+		motion = {
+			-- Global motion tokens for consistent easing/timing.
+			reduced_motion = false,
+			open_y_offset = tw(7.5), -- 30px
+			speed_fast = 0.24,
+			speed_base = 0.16,
+			speed_slow = 0.11,
+			open_speed = 0.15,
+			subtab_switch_speed = 0.18,
+			subtab_switch_slide = tw(3),
+			subtab_active_speed = 0.2,
+			group_move_speed = 0.2,
+			dropdown_speed = 0.22,
+		},
+
+		scale = scale,
+		enable_particles = false,
+
+		-- Light theme palette: white surfaces with dark primary actions.
+		colors = {
+			bg_main = { r = 255, g = 255, b = 255, a = 255 }, -- white
+			bg_panel = { r = 255, g = 255, b = 255, a = 255 }, -- white
+			bg_control = { r = 255, g = 255, b = 255, a = 255 }, -- white
+			bg_control_hover = { r = 226, g = 232, b = 240, a = 255 }, -- slate-200
+			bg_ghost_hover = { r = 226, g = 232, b = 240, a = 255 }, -- slate-200
+
+			accent = { r = 15, g = 23, b = 42, a = 255 }, -- slate-900
+			accent_hover = { r = 2, g = 6, b = 23, a = 255 }, -- slate-950
+
+			text_main = { r = 15, g = 23, b = 42, a = 255 }, -- slate-900
+			text_sec = { r = 51, g = 65, b = 85, a = 255 }, -- slate-700
+			text_dim = { r = 100, g = 116, b = 139, a = 240 }, -- slate-500
+			text_on_accent = { r = 248, g = 250, b = 252, a = 255 }, -- slate-50
+
+			white = { r = 255, g = 255, b = 255, a = 255 }, -- white
+			border = { r = 226, g = 232, b = 240, a = 255 }, -- slate-200
+			border_strong = { r = 203, g = 213, b = 225, a = 255 }, -- slate-300
+			scroll_track = { r = 226, g = 232, b = 240, a = 220 }, -- slate-200
+			card_shadow = { r = 2, g = 6, b = 23, a = 0 }, -- disabled to keep cards pure white
+			transparent = { r = 255, g = 255, b = 255, a = 0 },
+
+			danger = { r = 220, g = 38, b = 38, a = 255 }, -- red-600
+			danger_hover = { r = 185, g = 28, b = 28, a = 255 }, -- red-700
+			danger_soft = { r = 254, g = 242, b = 242, a = 255 }, -- red-50
+			danger_text = { r = 153, g = 27, b = 27, a = 255 }, -- red-800
+			success = { r = 5, g = 150, b = 105, a = 255 }, -- emerald-600
+			success_hover = { r = 4, g = 120, b = 87, a = 255 }, -- emerald-700
+		},
+	}
+end
+
+local config = init_config()
+
+-- Heist-only mode: no sidebar tab navigation.
+config.sidebar_width = 0
+config.sidebar_gap = 0
+
+local body_offset = config.sidebar_gap
+config.content_area.x = config.origin_x + config.sidebar_width + config.sidebar_gap
+config.content_area.y = config.origin_y + body_offset
+config.content_area.w = config.menu_width - config.sidebar_width - config.sidebar_gap
+config.content_area.h = config.menu_height - body_offset
+config.scrollbar = {
+	x = config.origin_x + config.menu_width - config.space.x2,
+	y = config.content_area.y + config.content_margin,
+	w = config.space.x1,
+	h = config.content_area.h - (config.content_margin * 2),
+}
+
+-- State
+local state = {
+	logo = nil,
+	active_dropdown = nil,
+	dropdown_just_opened = false,
+	dragging_slider = nil,
+	scroll = { y = 0, max_y = 0, is_dragging = false },
+	window = {
+		x = config.origin_x,
+		y = config.origin_y,
+		is_dragging = false,
+		is_resizing = false,
+		drag_offset = { x = 0, y = 0 },
+		resize_start = { x = 0, y = 0, width = config.menu_width, height = config.menu_height },
+	},
+	animation = { open = false, progress = 0.0, target = 1.0, speed = config.motion.open_speed or 0.15 },
+	render_alpha_mul = 1.0,
+	content_transition = { subtab = 1, progress = 1.0 },
+	active_tab_y = nil,
+	particles = {},
+	mouse = { x = 0, y = 0, down = false, clicked = false },
+	heist_subtab = 1, -- default Cayo
+	solo_launch = {
+		casino = false,
+		apartment = false,
+		doomsday = false,
+	},
+	solo_launch_prev = {
+		casino = false,
+		apartment = false,
+		doomsday = false,
+	},
+}
+
+local guarded_jobs = {}
+
+local function run_guarded_job(job_key, job_fn, on_busy)
+	if type(job_fn) ~= "function" then
+		return false
+	end
+
+	local key = tostring(job_key or "")
+	if key == "" then
+		return false
+	end
+
+	if guarded_jobs[key] then
+		if type(on_busy) == "function" then
+			pcall(on_busy)
+		end
+		return false
+	end
+
+	guarded_jobs[key] = true
+	local ok_spawn, spawn_err = pcall(util.create_job, function()
+		local ok_job, job_err = pcall(job_fn)
+		guarded_jobs[key] = nil
+		if not ok_job and notify then
+			notify.push("Async Job Error", key .. ": " .. tostring(job_err), 3000)
+		end
+	end)
+
+	if not ok_spawn then
+		guarded_jobs[key] = nil
+		if notify then
+			notify.push("Async Job Error", key .. ": " .. tostring(spawn_err), 3000)
+		end
+		return false
+	end
+
+	return true
+end
+
+local bootstrap = {
+	ui = ui,
+	native = native,
+	config = config,
+	state = state,
+	ensure_core_dirs = ensure_core_dirs,
+	load_tab_icon = load_tab_icon,
+	SHILLENSILENT_HEIST_PRESETS_DIR = SHILLENSILENT_HEIST_PRESETS_DIR,
+	run_guarded_job = run_guarded_job,
+}
+
+return bootstrap

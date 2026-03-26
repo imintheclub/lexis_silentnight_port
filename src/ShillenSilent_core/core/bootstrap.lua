@@ -15,6 +15,27 @@ end
 local SHILLENSILENT_CORE_DIR = get_path("\\ShillenSilent_core")
 local SHILLENSILENT_CORE_FONTS_DIR = SHILLENSILENT_CORE_DIR .. "\\fonts"
 local SHILLENSILENT_HEIST_PRESETS_DIR = get_path("\\ShillenSilent_HeistPresets")
+local SHILLENSILENT_THEME_MODE_PATH = SHILLENSILENT_CORE_DIR .. "\\theme_mode.txt"
+
+local DEFAULT_THEME_MODE = "dark"
+local VALID_THEME_MODES = {
+	dark = true,
+	light = true,
+}
+
+local SLATE = {
+	[50] = { 248, 250, 252 },
+	[100] = { 241, 245, 249 },
+	[200] = { 226, 232, 240 },
+	[300] = { 203, 213, 225 },
+	[400] = { 148, 163, 184 },
+	[500] = { 100, 116, 139 },
+	[600] = { 71, 85, 105 },
+	[700] = { 51, 65, 85 },
+	[800] = { 30, 41, 59 },
+	[900] = { 15, 23, 42 },
+	[950] = { 2, 6, 23 },
+}
 
 local function ensure_core_dirs()
 	if not dirs.exists(SHILLENSILENT_CORE_DIR) then
@@ -26,6 +47,136 @@ local function ensure_core_dirs()
 	if not dirs.exists(SHILLENSILENT_HEIST_PRESETS_DIR) then
 		dirs.create(SHILLENSILENT_HEIST_PRESETS_DIR)
 	end
+end
+
+local function normalize_theme_mode(mode)
+	if type(mode) ~= "string" then
+		return nil
+	end
+	local normalized = mode:lower():gsub("^%s+", ""):gsub("%s+$", "")
+	if VALID_THEME_MODES[normalized] then
+		return normalized
+	end
+	return nil
+end
+
+local function slate(level, alpha)
+	local rgb = SLATE[level]
+	if not rgb then
+		return { r = 255, g = 255, b = 255, a = alpha or 255 }
+	end
+	return {
+		r = rgb[1],
+		g = rgb[2],
+		b = rgb[3],
+		a = alpha or 255,
+	}
+end
+
+local function build_light_palette()
+	return {
+		bg_main = slate(50),
+		bg_panel = slate(50),
+		bg_control = slate(100),
+		bg_control_hover = slate(200),
+		bg_ghost_hover = slate(200),
+
+		accent = slate(900),
+		accent_hover = slate(950),
+
+		text_main = slate(900),
+		text_sec = slate(700),
+		text_dim = slate(500, 240),
+		text_on_accent = slate(50),
+
+		white = slate(50),
+		border = slate(200),
+		border_strong = slate(300),
+		scroll_track = slate(200, 220),
+		card_shadow = slate(950, 0),
+		transparent = slate(50, 0),
+
+		neutral_muted = slate(400),
+		chrome_shadow_soft = slate(950),
+		chrome_highlight_soft = slate(50),
+
+		danger = { r = 220, g = 38, b = 38, a = 255 }, -- red-600
+		danger_hover = { r = 185, g = 28, b = 28, a = 255 }, -- red-700
+		danger_soft = { r = 254, g = 242, b = 242, a = 255 }, -- red-50
+		danger_text = { r = 153, g = 27, b = 27, a = 255 }, -- red-800
+		success = { r = 5, g = 150, b = 105, a = 255 }, -- emerald-600
+		success_hover = { r = 4, g = 120, b = 87, a = 255 }, -- emerald-700
+	}
+end
+
+local function build_dark_palette()
+	return {
+		bg_main = slate(950),
+		bg_panel = slate(900),
+		bg_control = slate(800),
+		bg_control_hover = slate(700),
+		bg_ghost_hover = slate(800),
+
+		accent = slate(100),
+		accent_hover = slate(200),
+
+		text_main = slate(50),
+		text_sec = slate(200),
+		text_dim = slate(400, 240),
+		text_on_accent = slate(900),
+
+		white = slate(50),
+		border = slate(700),
+		border_strong = slate(600),
+		scroll_track = slate(700, 220),
+		card_shadow = slate(950, 120),
+		transparent = slate(900, 0),
+
+		neutral_muted = slate(600),
+		chrome_shadow_soft = slate(950),
+		chrome_highlight_soft = slate(100),
+
+		danger = { r = 220, g = 38, b = 38, a = 255 }, -- red-600
+		danger_hover = { r = 185, g = 28, b = 28, a = 255 }, -- red-700
+		danger_soft = { r = 254, g = 242, b = 242, a = 255 }, -- red-50
+		danger_text = { r = 153, g = 27, b = 27, a = 255 }, -- red-800
+		success = { r = 5, g = 150, b = 105, a = 255 }, -- emerald-600
+		success_hover = { r = 4, g = 120, b = 87, a = 255 }, -- emerald-700
+	}
+end
+
+local function read_theme_mode()
+	local ok, result = pcall(function()
+		local handle = file.open(SHILLENSILENT_THEME_MODE_PATH, { append = false, create_if_not_exists = false })
+		if not handle or not handle.valid then
+			return nil
+		end
+		return handle.text
+	end)
+
+	if not ok then
+		return DEFAULT_THEME_MODE
+	end
+
+	return normalize_theme_mode(result) or DEFAULT_THEME_MODE
+end
+
+local function write_theme_mode(mode)
+	local normalized = normalize_theme_mode(mode)
+	if not normalized then
+		return false
+	end
+
+	ensure_core_dirs()
+	local ok = pcall(function()
+		local handle = file.open(SHILLENSILENT_THEME_MODE_PATH, { create_if_not_exists = true })
+		if not handle or not handle.valid then
+			error("Invalid theme mode file handle")
+		end
+		handle.text = normalized
+	end)
+
+	return ok and true or false
 end
 
 -- ---------------------------------------------------------
@@ -193,41 +344,39 @@ local function init_config()
 
 		scale = scale,
 		enable_particles = false,
+		theme_mode = DEFAULT_THEME_MODE,
 
-		-- Light theme palette: white surfaces with dark primary actions.
-		colors = {
-			bg_main = { r = 255, g = 255, b = 255, a = 255 }, -- white
-			bg_panel = { r = 255, g = 255, b = 255, a = 255 }, -- white
-			bg_control = { r = 255, g = 255, b = 255, a = 255 }, -- white
-			bg_control_hover = { r = 226, g = 232, b = 240, a = 255 }, -- slate-200
-			bg_ghost_hover = { r = 226, g = 232, b = 240, a = 255 }, -- slate-200
-
-			accent = { r = 15, g = 23, b = 42, a = 255 }, -- slate-900
-			accent_hover = { r = 2, g = 6, b = 23, a = 255 }, -- slate-950
-
-			text_main = { r = 15, g = 23, b = 42, a = 255 }, -- slate-900
-			text_sec = { r = 51, g = 65, b = 85, a = 255 }, -- slate-700
-			text_dim = { r = 100, g = 116, b = 139, a = 240 }, -- slate-500
-			text_on_accent = { r = 248, g = 250, b = 252, a = 255 }, -- slate-50
-
-			white = { r = 255, g = 255, b = 255, a = 255 }, -- white
-			border = { r = 226, g = 232, b = 240, a = 255 }, -- slate-200
-			border_strong = { r = 203, g = 213, b = 225, a = 255 }, -- slate-300
-			scroll_track = { r = 226, g = 232, b = 240, a = 220 }, -- slate-200
-			card_shadow = { r = 2, g = 6, b = 23, a = 0 }, -- disabled to keep cards pure white
-			transparent = { r = 255, g = 255, b = 255, a = 0 },
-
-			danger = { r = 220, g = 38, b = 38, a = 255 }, -- red-600
-			danger_hover = { r = 185, g = 28, b = 28, a = 255 }, -- red-700
-			danger_soft = { r = 254, g = 242, b = 242, a = 255 }, -- red-50
-			danger_text = { r = 153, g = 27, b = 27, a = 255 }, -- red-800
-			success = { r = 5, g = 150, b = 105, a = 255 }, -- emerald-600
-			success_hover = { r = 4, g = 120, b = 87, a = 255 }, -- emerald-700
-		},
+		colors = build_dark_palette(),
 	}
 end
 
 local config = init_config()
+
+local function apply_theme(mode)
+	local applied_mode = normalize_theme_mode(mode) or DEFAULT_THEME_MODE
+	local palette = (applied_mode == "light") and build_light_palette() or build_dark_palette()
+	local target_colors = config.colors or {}
+	config.colors = target_colors
+
+	for key, src_color in pairs(palette) do
+		local dst_color = target_colors[key]
+		if type(dst_color) ~= "table" then
+			dst_color = {}
+			target_colors[key] = dst_color
+		end
+
+		dst_color.r = src_color.r or 255
+		dst_color.g = src_color.g or 255
+		dst_color.b = src_color.b or 255
+		dst_color.a = src_color.a or 255
+	end
+
+	config.theme_mode = applied_mode
+	return applied_mode
+end
+
+local startup_theme_mode = read_theme_mode()
+apply_theme(startup_theme_mode)
 
 -- Heist-only mode: no sidebar tab navigation.
 config.sidebar_width = 0
@@ -327,6 +476,9 @@ local bootstrap = {
 	state = state,
 	ensure_core_dirs = ensure_core_dirs,
 	load_tab_icon = load_tab_icon,
+	read_theme_mode = read_theme_mode,
+	write_theme_mode = write_theme_mode,
+	apply_theme = apply_theme,
 	SHILLENSILENT_HEIST_PRESETS_DIR = SHILLENSILENT_HEIST_PRESETS_DIR,
 	run_guarded_job = run_guarded_job,
 }

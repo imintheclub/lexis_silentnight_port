@@ -28,6 +28,35 @@ local function register(heistTab)
 	ui.button(gInfo, "info_ui_mode_toggle", "Toggle UI Mode", function()
 		toggle_mode_with_notice()
 	end)
+	local current_theme_label = ui.label(gInfo, "", config.colors.text_sec)
+	local theme_toggle_button = nil
+
+	local function sync_theme_ui_state()
+		local active_mode = tostring(config.theme_mode or core.read_theme_mode())
+		local next_mode = (active_mode == "dark") and "light" or "dark"
+		current_theme_label.text = "Current theme: " .. active_mode
+		if theme_toggle_button then
+			local title_mode = next_mode:gsub("^%l", string.upper)
+			theme_toggle_button.label = "Switch to " .. title_mode
+		end
+	end
+
+	theme_toggle_button = ui.button(gInfo, "info_theme_mode_toggle", "Switch to Light", function()
+		local current_mode = tostring(config.theme_mode or core.read_theme_mode())
+		local next_mode = (current_mode == "dark") and "light" or "dark"
+		local applied_mode = core.apply_theme(next_mode)
+		local wrote = core.write_theme_mode(applied_mode)
+		sync_theme_ui_state()
+
+		if notify then
+			if wrote then
+				notify.push("Theme", "Theme set to " .. tostring(applied_mode) .. " (saved for next reload)", 2600)
+			else
+				notify.push("Theme", "Theme set to " .. tostring(applied_mode) .. " (save failed)", 3200)
+			end
+		end
+	end)
+	sync_theme_ui_state()
 
 	return heistTab
 end

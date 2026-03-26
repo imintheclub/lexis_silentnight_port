@@ -547,13 +547,22 @@ end
 local function render_card(x, y, w, h, bg_col, border_col, rounding)
 	local r = rounding or config.radius.md
 	local shadow_y = config.space.x1
-	render_rect(x, y + (shadow_y * 2), w, h, { r = 0, g = 0, b = 0, a = 8 }, r)
+	local shadow_col = config.colors.chrome_shadow_soft or config.colors.card_shadow
+	render_rect(x, y + (shadow_y * 2), w, h, { r = shadow_col.r, g = shadow_col.g, b = shadow_col.b, a = 8 }, r)
 	if (config.colors.card_shadow.a or 255) > 0 then
 		render_rect(x, y + shadow_y, w, h, config.colors.card_shadow, r)
 	end
 	render_rect(x, y, w, h, bg_col or config.colors.bg_panel, r)
 	render_outline(x, y, w, h, border_col or config.colors.border, 1, r)
-	render_rect(x + 1, y + 1, math.max(1, w - 2), 1, { r = 255, g = 255, b = 255, a = 10 }, config.radius.full)
+	local highlight_col = config.colors.chrome_highlight_soft or config.colors.text_on_accent
+	render_rect(
+		x + 1,
+		y + 1,
+		math.max(1, w - 2),
+		1,
+		{ r = highlight_col.r, g = highlight_col.g, b = highlight_col.b, a = 10 },
+		config.radius.full
+	)
 end
 
 local function button_variant_for(btn)
@@ -954,7 +963,6 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 	end
 end
 
-local TOGGLE_INACTIVE_COLOR = { r = 148, g = 163, b = 184, a = 255 }
 local toggle_track_color = { r = 148, g = 163, b = 184, a = 255 }
 local slider_glow_color = { r = 255, g = 255, b = 255, a = 0 }
 
@@ -1020,14 +1028,16 @@ local function draw_toggle_item(item, x, y, w, original_y)
 	local switchX = x + w - switchW - pad_x
 	local switchY = y + config.space.x3
 
-	local activeCol = disabled and TOGGLE_INACTIVE_COLOR or config.colors.accent
+	local inactiveCol = config.colors.neutral_muted or config.colors.text_dim
+	local activeCol = disabled and inactiveCol or config.colors.accent
 
-	local trackR = math.floor(TOGGLE_INACTIVE_COLOR.r + (activeCol.r - TOGGLE_INACTIVE_COLOR.r) * item.anim)
-	local trackG = math.floor(TOGGLE_INACTIVE_COLOR.g + (activeCol.g - TOGGLE_INACTIVE_COLOR.g) * item.anim)
-	local trackB = math.floor(TOGGLE_INACTIVE_COLOR.b + (activeCol.b - TOGGLE_INACTIVE_COLOR.b) * item.anim)
+	local trackR = math.floor(inactiveCol.r + (activeCol.r - inactiveCol.r) * item.anim)
+	local trackG = math.floor(inactiveCol.g + (activeCol.g - inactiveCol.g) * item.anim)
+	local trackB = math.floor(inactiveCol.b + (activeCol.b - inactiveCol.b) * item.anim)
 	toggle_track_color.r = trackR
 	toggle_track_color.g = trackG
 	toggle_track_color.b = trackB
+	toggle_track_color.a = inactiveCol.a or 255
 
 	render_rect(switchX, switchY, switchW, switchH, toggle_track_color, config.radius.full)
 	render_outline(
@@ -1092,7 +1102,15 @@ end
 local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message)
 	local hovered = is_button_hovered(btnX, btnY, btnW, btnH)
 	local shadow_alpha = hovered and 20 or 10
-	render_rect(btnX, btnY + config.space.x1, btnW, btnH, { r = 0, g = 0, b = 0, a = shadow_alpha }, config.radius.md)
+	local shadow_col = config.colors.chrome_shadow_soft or config.colors.card_shadow
+	render_rect(
+		btnX,
+		btnY + config.space.x1,
+		btnW,
+		btnH,
+		{ r = shadow_col.r, g = shadow_col.g, b = shadow_col.b, a = shadow_alpha },
+		config.radius.md
+	)
 
 	if hovered and state.mouse.clicked and not state.active_dropdown then
 		if btn.disabled then
@@ -1110,14 +1128,12 @@ local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message
 	if style.border.a and style.border.a > 0 then
 		render_outline(btnX, btnY, btnW, btnH, style.border, 1, config.radius.md)
 	end
-	render_rect(
-		btnX + 1,
-		btnY + 1,
-		math.max(1, btnW - 2),
-		1,
-		{ r = 255, g = 255, b = 255, a = hovered and 16 or 8 },
-		config.radius.full
-	)
+	render_rect(btnX + 1, btnY + 1, math.max(1, btnW - 2), 1, {
+		r = (config.colors.chrome_highlight_soft or config.colors.text_on_accent).r,
+		g = (config.colors.chrome_highlight_soft or config.colors.text_on_accent).g,
+		b = (config.colors.chrome_highlight_soft or config.colors.text_on_accent).b,
+		a = hovered and 16 or 8,
+	}, config.radius.full)
 
 	return style
 end
@@ -1320,7 +1336,15 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	local boxBorder = box_active and config.colors.accent_hover or config.colors.border
 	local boxText = box_active and config.colors.text_on_accent or config.colors.text_sec
 	local boxArrow = box_active and config.colors.text_on_accent or config.colors.text_dim
-	render_rect(boxX, boxY + config.space.x1, boxW, boxH, { r = 0, g = 0, b = 0, a = 8 }, config.radius.md)
+	local shadow_col = config.colors.chrome_shadow_soft or config.colors.card_shadow
+	render_rect(
+		boxX,
+		boxY + config.space.x1,
+		boxW,
+		boxH,
+		{ r = shadow_col.r, g = shadow_col.g, b = shadow_col.b, a = 8 },
+		config.radius.md
+	)
 	render_rect(boxX, boxY, boxW, boxH, boxBg, config.radius.md)
 	render_outline(boxX, boxY, boxW, boxH, boxBorder, 1, config.radius.md)
 	local selected = item.options[item.value] or ""
@@ -1870,7 +1894,7 @@ ui.render = function()
 	local wm_x = config.origin_x + config.space.x2
 	local wm_y = config.origin_y + config.space.x2
 	local wm_scale = config.font_scale_small or 1.0
-	local wm_col = { r = 0, g = 0, b = 0, a = 255 }
+	local wm_col = config.colors.text_main
 	render_text("ShillenSilent v0.0.9", wm_x, wm_y, wm_scale, wm_col, "left")
 
 	-- [INJECTED] Credits Watermark (Bottom Left)

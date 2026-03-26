@@ -20,14 +20,29 @@ local SOLO_LAUNCH_HANDLERS = {
 	{ key = "doomsday", setup = nil, reset = solo_launch_reset_doomsday },
 }
 
-local HEIST_ENFORCE_INTERVAL_MS = 150
+-- Cadence intervals (ms) — split services into fast/medium/slow buckets.
+local SOLO_LAUNCH_INTERVAL_MS = 150
+local PAYOUT_SYNC_INTERVAL_MS = 1000
+local HEIST_ENFORCE_INTERVAL_MS = 250
 
 local runtime_services = {
 	started = false,
+	next_solo_launch_tick = 0,
+	next_payout_sync_tick = 0,
 	next_heist_enforce_tick = 0,
 }
 
+local function get_tick()
+	return (util and util.get_tick_count and util.get_tick_count()) or 0
+end
+
 local function maybe_sync_max_payouts()
+	local now = get_tick()
+	if now < runtime_services.next_payout_sync_tick then
+		return
+	end
+	runtime_services.next_payout_sync_tick = now + PAYOUT_SYNC_INTERVAL_MS
+
 	pcall(presets.hp_refresh_apartment_max_payout, false, false)
 	pcall(cayo_logic.cayo_refresh_max_payout, false, false)
 	pcall(casino_logic.casino_refresh_max_payout, false, false)
@@ -39,38 +54,55 @@ local function maybe_sync_max_payouts()
 end
 
 local function maybe_enforce_heist_toggles()
-	local now_tick = (util and util.get_tick_count and util.get_tick_count()) or nil
-	if now_tick and now_tick < runtime_services.next_heist_enforce_tick then
+	local now = get_tick()
+	if now < runtime_services.next_heist_enforce_tick then
 		return
 	end
+	runtime_services.next_heist_enforce_tick = now + HEIST_ENFORCE_INTERVAL_MS
 
 	pcall(cayo_logic.cayo_enforce_heist_toggles)
 	pcall(casino_logic.casino_enforce_heist_toggles)
 	pcall(salvageyard_logic.salvage_enforce_heist_toggles)
-
-	if now_tick then
-		runtime_services.next_heist_enforce_tick = now_tick + HEIST_ENFORCE_INTERVAL_MS
-	end
 end
 
 local function maybe_maintain_solo_launch()
+	-- Resets must run immediately on toggle-off (not gated), so check
+	-- transitions every tick but gate the maintenance writes.
+	local any_active = false
 	for i = 1, #SOLO_LAUNCH_HANDLERS do
 		local handler = SOLO_LAUNCH_HANDLERS[i]
 		local key = handler.key
-
 		local enabled = state.solo_launch[key]
 		local was_enabled = state.solo_launch_prev[key]
 
-		if enabled then
-			pcall(solo_launch_generic)
-			if handler.setup then
-				pcall(handler.setup)
-			end
-		elseif was_enabled and handler.reset then
+		if not enabled and was_enabled and handler.reset then
 			pcall(handler.reset)
 		end
 
 		state.solo_launch_prev[key] = enabled
+		if enabled then
+			any_active = true
+		end
+	end
+
+	if not any_active then
+		return
+	end
+
+	local now = get_tick()
+	if now < runtime_services.next_solo_launch_tick then
+		return
+	end
+	runtime_services.next_solo_launch_tick = now + SOLO_LAUNCH_INTERVAL_MS
+
+	for i = 1, #SOLO_LAUNCH_HANDLERS do
+		local handler = SOLO_LAUNCH_HANDLERS[i]
+		if state.solo_launch[handler.key] then
+			pcall(solo_launch_generic)
+			if handler.setup then
+				pcall(handler.setup)
+			end
+		end
 	end
 end
 

@@ -92,28 +92,18 @@ local function update_input()
 	end
 end
 
-local _scratch_color = color(255, 255, 255, 255)
-
 local function to_gui_color(c, use_anim)
 	if not c then
-		_scratch_color.r = 255
-		_scratch_color.g = 255
-		_scratch_color.b = 255
-		_scratch_color.a = 255
-		return _scratch_color
+		return color(255, 255, 255, 255)
 	end
-	local a = c.a or 255
+	local r, g, b, a = c.r or 255, c.g or 255, c.b or 255, c.a or 255
 	if use_anim and state.animation then
 		a = math.floor(a * state.animation.progress)
 	end
 	if state.render_alpha_mul and state.render_alpha_mul < 0.999 then
 		a = math.floor(a * state.render_alpha_mul)
 	end
-	_scratch_color.r = c.r or 255
-	_scratch_color.g = c.g or 255
-	_scratch_color.b = c.b or 255
-	_scratch_color.a = a
-	return _scratch_color
+	return color(r, g, b, a)
 end
 
 local function render_rect(x, y, w, h, col, rounding)

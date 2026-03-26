@@ -85,10 +85,6 @@ local function casino_sync_crew_cut_ui_lock()
 end
 
 local function hp_get_casino_max_payout_cut_details()
-	for i = 1, #CASINO_BUYER_MULT_TUNABLES do
-		hp_set_tunable_float(CASINO_BUYER_MULT_TUNABLES[i], 1.0)
-	end
-
 	local p = GetMP()
 	local approach = safe_access.get_stat_int(p .. "H3OPT_APPROACH", 1)
 	local hard_approach = safe_access.get_stat_int(p .. "H3_HARD_APPROACH", 0)
@@ -361,8 +357,13 @@ local function casino_autograbber_tick()
 end
 
 local function casino_enforce_heist_toggles()
-	if casino_flags.max_payout_enabled and not casino_flags.remove_crew_cuts_enabled then
-		casino_set_remove_crew_cuts(true, true)
+	if casino_flags.max_payout_enabled then
+		for i = 1, #CASINO_BUYER_MULT_TUNABLES do
+			hp_set_tunable_float(CASINO_BUYER_MULT_TUNABLES[i], 1.0)
+		end
+		if not casino_flags.remove_crew_cuts_enabled then
+			casino_set_remove_crew_cuts(true, true)
+		end
 	end
 	if casino_flags.remove_crew_cuts_enabled then
 		for i = 1, #CASINO_CREW_CUT_TUNABLES do

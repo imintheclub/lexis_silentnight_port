@@ -229,37 +229,103 @@ local function apartment_change_session()
 end
 
 local function apartment_unlock_all_jobs()
-	local p = GetMP()
-	local function hash_text(text)
-		if type(joaat) == "function" then
-			return joaat(text)
+	local function normalize_hash(value)
+		local numeric = tonumber(value)
+		if not numeric or numeric == 0 then
+			return nil
 		end
-		local hashed = invoker.call(0xD24D37CC275948CC, text) -- GET_HASH_KEY
-		return (hashed and hashed.int) or 0
+		return math.floor(numeric)
 	end
 
-	local root_hashes = {
-		hash_text("33TxqLipLUintwlU_YDzMg"),
-		hash_text("A6UBSyF61kiveglc58lm2Q"),
-		hash_text("a_hWnpMUz0-7Yd_Rc5pJ4w"),
-		hash_text("7r5AKL5aB0qe9HiDy3nW8w"),
-		hash_text("hKSf9RCT8UiaZlykyGrMwg"),
+	local function resolve_root_hash(tunable_name, fallback_text)
+		local ok_tunable, tunable_hash = pcall(function()
+			local tunable = script.tunables(tunable_name)
+			if not tunable then
+				return nil
+			end
+			return tunable.int32
+		end)
+		if ok_tunable then
+			local value = normalize_hash(tunable_hash)
+			if value then
+				return value
+			end
+		end
+
+		local ok_joaat, joaat_hash = pcall(function()
+			if type(joaat) ~= "function" then
+				return nil
+			end
+			return joaat(fallback_text)
+		end)
+		if ok_joaat then
+			local value = normalize_hash(joaat_hash)
+			if value then
+				return value
+			end
+		end
+
+		local ok_native, native_hash = pcall(function()
+			local hashed = invoker.call(0xD24D37CC275948CC, fallback_text) -- GET_HASH_KEY
+			if type(hashed) == "number" then
+				return hashed
+			end
+			if type(hashed) == "table" then
+				return hashed.int32 or hashed.int or hashed.uint or hashed.u32 or hashed.hash
+			end
+			return nil
+		end)
+		if ok_native then
+			local value = normalize_hash(native_hash)
+			if value then
+				return value
+			end
+		end
+
+		return nil
+	end
+
+	local root_defs = {
+		{ tunable = "ROOT_ID_HASH_THE_FLECCA_JOB", fallback = "33TxqLipLUintwlU_YDzMg" },
+		{ tunable = "ROOT_ID_HASH_THE_PRISON_BREAK", fallback = "A6UBSyF61kiveglc58lm2Q" },
+		{ tunable = "ROOT_ID_HASH_THE_HUMANE_LABS_RAID", fallback = "a_hWnpMUz0-7Yd_Rc5pJ4w" },
+		{ tunable = "ROOT_ID_HASH_SERIES_A_FUNDING", fallback = "7r5AKL5aB0qe9HiDy3nW8w" },
+		{ tunable = "ROOT_ID_HASH_THE_PACIFIC_STANDARD_JOB", fallback = "hKSf9RCT8UiaZlykyGrMwg" },
 	}
 
-	local ok = true
-	for i = 0, 4 do
-		ok = set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i, root_hashes[i + 1]) and ok
-		ok = set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i .. "_L", 5) and ok
+	local root_hashes = {}
+	for i = 1, #root_defs do
+		local root_hash = resolve_root_hash(root_defs[i].tunable, root_defs[i].fallback)
+		if not root_hash then
+			if notify then
+				notify.push("Apartment Tools", "Unlock failed (invalid root hash). No stats written.", 2600)
+			end
+			return false
+		end
+		root_hashes[i] = root_hash
 	end
 
-	ok = apartment_redraw_board() and ok
+	local p = GetMP()
+	local ok_all = true
+	for i = 0, 4 do
+		local strand_ok = set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i, root_hashes[i + 1])
+		local depth_ok = set_stat_int(p .. "HEIST_SAVED_STRAND_" .. i .. "_L", 5)
+		ok_all = strand_ok and depth_ok and ok_all
+	end
+
+	local board_ok = set_global_int(ApartmentGlobals.Reload.STEP2, 22)
+	ok_all = board_ok and ok_all
+	local redraw_ok = apartment_redraw_board()
+	ok_all = redraw_ok and ok_all
+
 	if notify then
 		notify.push(
 			"Apartment Tools",
-			ok and "All jobs unlocked. Change session to apply." or "Unlock-all write failed",
+			ok_all and "All jobs unlocked. Change session to apply." or "Unlock-all partial failure",
 			2600
 		)
 	end
+	return ok_all
 end
 
 local function apartment_teleport_to_entrance()

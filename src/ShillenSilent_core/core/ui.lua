@@ -694,7 +694,7 @@ local BUTTON_COLOR_STYLES = {
 }
 
 local HEIST_SUBTAB_NAMES = {
-	"Info",
+	"Settings",
 	"Cayo",
 	"Casino",
 	"Doomsday",

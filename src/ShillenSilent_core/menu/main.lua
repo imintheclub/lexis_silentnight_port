@@ -37,7 +37,7 @@ local function toggle_mode_with_notice()
 end
 
 local function register_info_menu(root)
-	local info_menu = root:submenu("Info")
+	local info_menu = root:submenu("Settings")
 	info_menu:breaker("Current menu: " .. tostring(ui_mode.get_mode_for_next_load()))
 
 	common.add_button(info_menu, "Toggle UI Mode", function()

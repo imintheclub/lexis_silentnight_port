@@ -23,7 +23,7 @@ local function register(heistTab)
 		return nil
 	end
 
-	local gInfo = ui.group(heistTab, "Info", nil, nil, nil, 160, "info")
+	local gInfo = ui.group(heistTab, "", nil, nil, nil, 160, "info")
 	ui.label(gInfo, "Current menu: " .. tostring(ui_mode.get_mode_for_next_load()), config.colors.accent)
 	ui.button(gInfo, "info_ui_mode_toggle", "Toggle UI Mode", function()
 		toggle_mode_with_notice()

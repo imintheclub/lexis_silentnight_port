@@ -59,12 +59,12 @@ local function is_hovered(x, y, w, h)
 	if state.animation.progress < 0.9 then
 		return false
 	end
-	local ox, oy = get_win_offset()
+	local ox, oy = state._frame_ox, state._frame_oy
 	return input.is_mouse_within(vec(x + ox, y + oy), vec(w, h))
 end
 
 local function is_hovered_content(item_x, item_y, w, h)
-	local ox, oy = get_win_offset()
+	local ox, oy = state._frame_ox, state._frame_oy
 
 	local cx, cy = config.content_area.x + ox, config.content_area.y + oy
 	local cw, ch = config.content_area.w, config.content_area.h
@@ -92,25 +92,35 @@ local function update_input()
 	end
 end
 
+local _scratch_color = color(255, 255, 255, 255)
+
 local function to_gui_color(c, use_anim)
 	if not c then
-		return color(255, 255, 255, 255)
+		_scratch_color.r = 255
+		_scratch_color.g = 255
+		_scratch_color.b = 255
+		_scratch_color.a = 255
+		return _scratch_color
 	end
-	local r, g, b, a = c.r or 255, c.g or 255, c.b or 255, c.a or 255
+	local a = c.a or 255
 	if use_anim and state.animation then
 		a = math.floor(a * state.animation.progress)
 	end
 	if state.render_alpha_mul and state.render_alpha_mul < 0.999 then
 		a = math.floor(a * state.render_alpha_mul)
 	end
-	return color(r, g, b, a)
+	_scratch_color.r = c.r or 255
+	_scratch_color.g = c.g or 255
+	_scratch_color.b = c.b or 255
+	_scratch_color.a = a
+	return _scratch_color
 end
 
 local function render_rect(x, y, w, h, col, rounding)
 	if state.animation.progress < 0.01 then
 		return
 	end
-	local ox, oy = get_win_offset()
+	local ox, oy = state._frame_ox, state._frame_oy
 	local sx, sy, sw, sh = snap_rect(x + ox, y + oy, w, h)
 	local r = gui.rect(vec(sx, sy), vec(sw, sh))
 	r:color(to_gui_color(col, true))
@@ -125,7 +135,7 @@ local function render_outline(x, y, w, h, col, thickness, rounding)
 	if state.animation.progress < 0.01 then
 		return
 	end
-	local ox, oy = get_win_offset()
+	local ox, oy = state._frame_ox, state._frame_oy
 	local sx, sy, sw, sh = snap_rect(x + ox, y + oy, w, h)
 	local r = gui.rect(vec(sx, sy), vec(sw, sh))
 	r:color(to_gui_color(col, true))
@@ -140,7 +150,7 @@ local function render_text(str, x, y, size, col, align)
 	if not str or state.animation.progress < 0.01 then
 		return
 	end
-	local ox, oy = get_win_offset()
+	local ox, oy = state._frame_ox, state._frame_oy
 	local t = gui.text(tostring(str))
 		:position(vec(snap(x + ox), snap(y + oy)))
 		:color(to_gui_color(col, true))
@@ -344,60 +354,6 @@ function animator.blend_color(c1, c2, t, out)
 	return out
 end
 
-local function manage_particles(w, h)
-	-- Init
-	if #state.particles == 0 then
-		for _ = 1, 60 do
-			table.insert(state.particles, {
-				x = math.random(0, w),
-				y = math.random(0, h),
-				vx = (math.random() - 0.5) * 0.8,
-				vy = (math.random() - 0.5) * 0.8,
-				size = math.random(1, 3),
-				alpha = math.random(20, 100),
-			})
-		end
-	end
-
-	-- Update
-	for _, p in ipairs(state.particles) do
-		p.x = p.x + p.vx
-		p.y = p.y + p.vy
-
-		if p.x < 0 then
-			p.x = w
-		end
-		if p.x > w then
-			p.x = 0
-		end
-		if p.y < 0 then
-			p.y = h
-		end
-		if p.y > h then
-			p.y = 0
-		end
-	end
-end
-
-local function draw_particles(x, y, w, h)
-	local ox, oy = get_win_offset()
-	gui.push_clip(vec(x + ox, y + oy), vec(w, h))
-	for _, p in ipairs(state.particles) do
-		-- Draw particles relative to menu origin
-		local px = config.origin_x + p.x
-		local py = config.origin_y + p.y
-
-		-- Helper render_rect handles win_offset
-		render_rect(px, py, p.size, p.size, {
-			r = config.colors.text_on_accent.r,
-			g = config.colors.text_on_accent.g,
-			b = config.colors.text_on_accent.b,
-			a = p.alpha,
-		}, config.radius.sm)
-	end
-	gui.pop_clip()
-end
-
 -- ---------------------------------------------------------
 -- 3. UI Structure
 -- ---------------------------------------------------------
@@ -544,25 +500,20 @@ ui.label = function(groupRef, text, color)
 	return item
 end
 
+local _card_shadow_col = { r = 0, g = 0, b = 0, a = 8 }
+
 local function render_card(x, y, w, h, bg_col, border_col, rounding)
 	local r = rounding or config.radius.md
-	local shadow_y = config.space.x1
 	local shadow_col = config.colors.chrome_shadow_soft or config.colors.card_shadow
-	render_rect(x, y + (shadow_y * 2), w, h, { r = shadow_col.r, g = shadow_col.g, b = shadow_col.b, a = 8 }, r)
 	if (config.colors.card_shadow.a or 255) > 0 then
-		render_rect(x, y + shadow_y, w, h, config.colors.card_shadow, r)
+		_card_shadow_col.r = shadow_col.r
+		_card_shadow_col.g = shadow_col.g
+		_card_shadow_col.b = shadow_col.b
+		_card_shadow_col.a = 8
+		render_rect(x, y + config.space.x1, w, h, _card_shadow_col, r)
 	end
 	render_rect(x, y, w, h, bg_col or config.colors.bg_panel, r)
 	render_outline(x, y, w, h, border_col or config.colors.border, 1, r)
-	local highlight_col = config.colors.chrome_highlight_soft or config.colors.text_on_accent
-	render_rect(
-		x + 1,
-		y + 1,
-		math.max(1, w - 2),
-		1,
-		{ r = highlight_col.r, g = highlight_col.g, b = highlight_col.b, a = 10 },
-		config.radius.full
-	)
 end
 
 local function button_variant_for(btn)
@@ -844,30 +795,39 @@ local function flatten_groups_by_order(activeGroups, heist_subtab)
 	return ordered
 end
 
+local function get_item_height(item)
+	if item.type == "toggle" then
+		return config.item_height.toggle
+	elseif item.type == "button" or item.type == "button_pair" then
+		return config.item_height.button
+	elseif item.type == "slider" then
+		return config.item_height.slider
+	elseif item.type == "dropdown" then
+		return get_dropdown_item_height(item)
+	elseif item.type == "label" then
+		return config.space.x6
+	end
+	return 0
+end
+
 local function get_group_actual_height(group)
+	if group._cached_h and group._cached_rev == layout_cache_revision then
+		return group._cached_h
+	end
+
 	local h = config.item_height.header_padding + config.space.x5
 	local items = group and group.items or {}
 
 	for _, item in ipairs(items) do
-		if item.type == "toggle" then
-			h = h + config.item_height.toggle
-		elseif item.type == "button" then
-			h = h + config.item_height.button
-		elseif item.type == "button_pair" then
-			h = h + config.item_height.button
-		elseif item.type == "slider" then
-			h = h + config.item_height.slider
-		elseif item.type == "dropdown" then
-			h = h + get_dropdown_item_height(item)
-		elseif item.type == "label" then
-			h = h + config.space.x6
-		end
+		h = h + get_item_height(item)
 	end
 
 	local min_h = (group and group.rect and group.rect.h) or 0
 	if h < min_h then
 		h = min_h
 	end
+	group._cached_h = h
+	group._cached_rev = layout_cache_revision
 	return h
 end
 
@@ -1095,7 +1055,7 @@ local function is_button_hovered(btnX, btnY, btnW, btnH)
 		return true
 	end
 
-	local ox, oy = get_win_offset()
+	local ox, oy = state._frame_ox, state._frame_oy
 	return input.is_mouse_within(vec(btnX + ox, btnY + oy), vec(btnW, btnH))
 end
 
@@ -1146,7 +1106,7 @@ local function render_button_label_center(label, btnX, btnY, btnW, btnH, textSiz
 	end
 
 	local value = tostring(label or "")
-	local ox, oy = get_win_offset()
+	local ox, oy = state._frame_ox, state._frame_oy
 	local draw_size = textSize or 1.0
 	local size = gui.text_size and gui.text_size(value, draw_size, { font = state.fonts.regular }) or nil
 	local textW = (size and size.x) or 0
@@ -1223,7 +1183,7 @@ local function draw_slider_item(item, x, y, w, original_y)
 
 	if state.dragging_slider == item.id and state.mouse.down then
 		local mx = state.mouse.x
-		local ox = get_win_offset()
+		local ox = state._frame_ox
 		local relative_mx = mx - ox
 		local ratio = math.max(0, math.min(1, (relative_mx - barX) / barW))
 		local rawValue = item.min + ratio * (item.max - item.min)
@@ -1442,7 +1402,8 @@ ui.render = function()
 		return
 	end
 
-	local ox, oy = get_win_offset()
+	state._frame_ox, state._frame_oy = get_win_offset()
+	local ox, oy = state._frame_ox, state._frame_oy
 
 	local dynamicBodyH = config.menu_height
 
@@ -1514,10 +1475,6 @@ ui.render = function()
 	config.scrollbar.y = config.content_area.y + config.content_margin
 	config.scrollbar.h = config.content_area.h - (config.content_margin * 2)
 
-	if config.enable_particles then
-		manage_particles(config.menu_width, dynamicBodyH)
-	end
-
 	render_card(
 		config.origin_x,
 		bodyY,
@@ -1527,9 +1484,6 @@ ui.render = function()
 		config.colors.border_strong,
 		config.radius.xl
 	)
-	if config.enable_particles then
-		draw_particles(config.origin_x, bodyY, config.menu_width, bodyH)
-	end
 
 	-- Bottom-right corner grip to indicate draggable resize area.
 	local grip_color = config.colors.accent
@@ -1776,11 +1730,18 @@ ui.render = function()
 					)
 
 					local itemY = drawY + config.item_height.header_padding + config.space.x3
+					local clip_bottom = clip_start + available_height
 					for _, item in ipairs(group.items) do
-						local dd
-						itemY, dd = render_group_item(item, drawX, itemY, col_w, pad_x)
-						if dd then
-							pendingDropdowns[#pendingDropdowns + 1] = dd
+						local item_h = get_item_height(item)
+						if (itemY + item_h) < clip_start or itemY > clip_bottom then
+							-- Item fully outside visible area, skip rendering
+							itemY = itemY + item_h
+						else
+							local dd
+							itemY, dd = render_group_item(item, drawX, itemY, col_w, pad_x)
+							if dd then
+								pendingDropdowns[#pendingDropdowns + 1] = dd
+							end
 						end
 					end
 					state.render_alpha_mul = 1.0

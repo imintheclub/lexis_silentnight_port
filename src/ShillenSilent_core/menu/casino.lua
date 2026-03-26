@@ -3,11 +3,13 @@ local native_api = require("ShillenSilent_core.core.native_api")
 local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
+local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local casino_logic = require("ShillenSilent_core.heists.casino.logic")
 local common = require("ShillenSilent_core.menu.common")
 
 local state = core.state
 local run_coords_teleport = coords_teleport.run_coords_teleport
+local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 local heist_skip_cutscene = native_api.heist_skip_cutscene
 local hp_set_uniform_cuts = presets.hp_set_uniform_cuts
 local hp_apply_casino_manual_preps = presets.hp_apply_casino_manual_preps
@@ -265,6 +267,15 @@ function casino_menu.register(parent_menu)
 	end)
 
 	local tp = root:submenu("Teleport")
+	common.add_button(tp, "Teleport to Arcade", function()
+		teleport_to_blip_with_job(
+			740,
+			"Casino Teleport",
+			"Teleported to Arcade",
+			"Arcade blip not found",
+			{ relay_if_interior = true }
+		)
+	end)
 	common.add_button(tp, "Tunnel", function()
 		run_coords_teleport("Casino Teleport", "Teleported to Tunnel", 968.0, -73.0, 75.0)
 	end)

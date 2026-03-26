@@ -1131,7 +1131,7 @@ local function draw_button_item(item, x, y, w)
 	local btnX = x + pad_x
 	local btnY = y + config.space.x1
 
-	local style = draw_button_surface(item, btnX, btnY, btnW, btnH, "This action is disabled")
+	local style = draw_button_surface(item, btnX, btnY, btnW, btnH, "Instant Finish function has been disabled")
 
 	local textSize = config.font_scale_small
 	render_button_label_center(item.label, btnX, btnY, btnW, btnH, textSize, style.text)
@@ -1858,7 +1858,7 @@ ui.render = function()
 	-- [INJECTED] Credits Watermark (Bottom Left)
 	local credits_x = config.origin_x + config.space.x2
 	local credits_y = config.origin_y + dynamicBodyH - (config.space.x2 * 2)
-	render_text("Thank you dustyideas, shillen000, & SilentSalo", credits_x, credits_y, wm_scale, wm_col, "left")
+	render_text("Thank you SilentSalo, shillen000, dustyideas & jefbxl", credits_x, credits_y, wm_scale, wm_col, "left")
 end
 
 return ui

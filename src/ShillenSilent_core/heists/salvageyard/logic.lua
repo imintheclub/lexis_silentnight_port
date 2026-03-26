@@ -19,6 +19,7 @@ local salvage_callbacks = salvageyard_state.callbacks
 local SALVAGE_BLIP_ENTRANCE = 867
 local SALVAGE_BOARD_COORDS = { x = 1074.720, y = -2275.502, z = -48.999, heading = 84.481 }
 local SALVAGE_SELL_COORDS = { x = 1169.749, y = -2973.535, z = 5.902, heading = 271.204 }
+local SALVAGE_INTERIOR_SCRIPT = "am_mp_salvage_yard"
 
 local SALVAGE_STATS = {
 	GEN_BS = "SALV23_GEN_BS",
@@ -365,6 +366,13 @@ local function salvage_teleport_entrance()
 end
 
 local function salvage_teleport_board()
+	if not is_script_running(SALVAGE_INTERIOR_SCRIPT) then
+		if notify then
+			notify.push("Salvage Yard", "You must be inside the Salvage Yard interior", 2200)
+		end
+		return false
+	end
+
 	return run_coords_teleport(
 		"Salvage Yard",
 		"Teleported to Screen & Board",

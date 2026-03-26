@@ -19,6 +19,7 @@ local autoshop_callbacks = autoshop_state.callbacks
 
 local AUTOSHOP_BLIP_ENTRANCE = 779
 local AUTOSHOP_BOARD_COORDS = { x = -1349.024, y = 138.381, z = -95.121, heading = 194.202 }
+local AUTOSHOP_INTERIOR_SCRIPT = "am_mp_auto_shop"
 
 local AUTOSHOP_STATS = {
 	CURRENT = "TUNER_CURRENT",
@@ -183,6 +184,13 @@ local function autoshop_teleport_entrance()
 end
 
 local function autoshop_teleport_board()
+	if not is_script_running(AUTOSHOP_INTERIOR_SCRIPT) then
+		if notify then
+			notify.push("Auto Shop", "You must be inside the Auto Shop interior", 2200)
+		end
+		return false
+	end
+
 	return run_coords_teleport(
 		"Auto Shop",
 		"Teleported to Board",

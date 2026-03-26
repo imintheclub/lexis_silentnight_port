@@ -42,6 +42,25 @@ local apartment_flags = apartment_state.flags
 local apartment_refs = apartment_state.refs
 local apartment_callbacks = apartment_state.callbacks
 
+local function is_in_apartment_interior()
+	local me = players and players.me and players.me() or nil
+	if not (me and me.in_interior) then
+		return false
+	end
+	local in_kosatka = script and script.running and script.running("am_mp_submarine") or false
+	local in_arcade = script and script.running and script.running("am_mp_arcade") or false
+	local in_facility = script and script.running and script.running("am_mp_defunct_base") or false
+	local in_agency = script and script.running and script.running("am_mp_fixer_hq") or false
+	local in_autoshop = script and script.running and script.running("am_mp_auto_shop") or false
+	local in_salvage = script and script.running and script.running("am_mp_salvage_yard") or false
+	return not in_kosatka
+		and not in_arcade
+		and not in_facility
+		and not in_agency
+		and not in_autoshop
+		and not in_salvage
+end
+
 local function register(heistTab)
 	if type(heistTab) ~= "table" then
 		return nil
@@ -108,6 +127,13 @@ local function register(heistTab)
 		end
 
 		local function apartment_teleport_to_heist_board()
+			if not is_in_apartment_interior() then
+				if notify then
+					notify.push("Teleport", "You must be inside an Apartment interior", 2200)
+				end
+				return false
+			end
+
 			return teleport_to_blip_with_job(
 				BLIP_SPRITES_HEIST,
 				"Teleport",

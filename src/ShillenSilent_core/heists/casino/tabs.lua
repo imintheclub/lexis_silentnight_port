@@ -5,6 +5,7 @@ local presets = require("ShillenSilent_core.shared.presets_and_shared")
 local heist_state = require("ShillenSilent_core.shared.heist_state")
 local danger_groups = require("ShillenSilent_core.shared.danger_groups")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
+local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local casino_logic = require("ShillenSilent_core.heists.casino.logic")
 
 local config = core.config
@@ -37,6 +38,7 @@ local casino_remove_cooldown = casino_logic.casino_remove_cooldown
 local casino_set_team_lives = casino_logic.casino_set_team_lives
 local casino_instant_finish = casino_logic.casino_instant_finish
 local run_coords_teleport = coords_teleport.run_coords_teleport
+local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 
 local casino_state = heist_state.casino
 local CasinoPrepOptions = casino_state.prep_options
@@ -407,6 +409,18 @@ local function register(heistTab)
 	end
 
 	-- Casino Teleport functions
+	local ARCADE_BLIP_ENTRANCE = 740
+
+	local function casino_teleport_arcade()
+		teleport_to_blip_with_job(
+			ARCADE_BLIP_ENTRANCE,
+			"Casino Teleport",
+			"Teleported to Arcade",
+			"Arcade blip not found",
+			{ relay_if_interior = true }
+		)
+	end
+
 	local function casino_teleport_tunnel()
 		-- Tunnel coordinates (Casino Heist - Outside Casino)
 		-- Coordinates: 968, -73, 75
@@ -439,6 +453,9 @@ local function register(heistTab)
 
 	-- Teleport section - Outside Casino
 	local gCasinoTeleportOutside = ui.group(heistTab, "Teleport - Outside Casino", nil, nil, nil, nil, "casino")
+	ui.button(gCasinoTeleportOutside, "casino_tp_arcade", "Teleport to Arcade", function()
+		casino_teleport_arcade()
+	end)
 	ui.button_pair(
 		gCasinoTeleportOutside,
 		"casino_tp_tunnel",

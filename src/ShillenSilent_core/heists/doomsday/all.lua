@@ -28,6 +28,7 @@ local doomsday_cut_enabled = doomsday_state.cut_enabled
 local doomsday_flags = doomsday_state.flags
 local doomsday_refs = doomsday_state.refs
 local doomsday_callbacks = doomsday_state.callbacks
+local DOOMSDAY_INTERIOR_SCRIPT = "am_mp_defunct_base"
 
 local DOOMSDAY_ACT_OPTIONS = {
 	{ name = "Act I: The Data Breaches", value = 1 },
@@ -191,6 +192,13 @@ local function doomsday_teleport_to_entrance()
 end
 
 local function doomsday_teleport_to_screen()
+	if not is_script_running(DOOMSDAY_INTERIOR_SCRIPT) then
+		if notify then
+			notify.push("Teleport", "You must be inside the Facility interior", 2200)
+		end
+		return false
+	end
+
 	return teleport_to_blip_with_job(
 		BLIP_SPRITES_HEIST,
 		"Teleport",

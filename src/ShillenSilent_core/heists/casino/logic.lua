@@ -36,7 +36,7 @@ local CASINO_CREW_CUT_TUNABLES = {
 }
 
 -- Enhanced Edition local offsets.
-local CASINO_AUTOGRABBER_GRAB_LOCAL = 10295
+local CASINO_AUTOGRABBER_GRAB_LOCAL = 10697
 local CASINO_AUTOGRABBER_SPEED_LOCAL = CASINO_AUTOGRABBER_GRAB_LOCAL + 14
 local CASINO_BUYER_MULT_TUNABLES = {
 	"CH_BUYER_MOD_SHORT",
@@ -463,9 +463,9 @@ local function casino_instant_keypad_hack()
 end
 
 local function casino_instant_vault_drill()
-	safe_access.set_local_int("fm_mission_controller", 10551 + 2, 7)
-	local current = safe_access.get_local_int("fm_mission_controller", 10551, 0)
-	safe_access.set_local_int("fm_mission_controller", 10551, current | (1 << 12))
+	-- EE: VaultDrill1 = 10551+7, VaultDrill2 = 10551+37; set VaultDrill1 to current VaultDrill2 value
+	local vd2 = safe_access.get_local_int("fm_mission_controller", 10551 + 37, 0)
+	safe_access.set_local_int("fm_mission_controller", 10551 + 7, vd2)
 	if notify then
 		notify.push("Casino Tools", "Vault drill completed", 2000)
 	end
@@ -546,8 +546,8 @@ local function casino_force_ready()
 
 		-- Set ready states for players 2, 3, 4
 		safe_access.set_global_int(1977672, 1) -- CASINO_READY.PLAYER2 = READY_STATE_HEIST (1)
-		safe_access.set_global_int(1977740, 1) -- CASINO_READY.PLAYER3 = READY_STATE_HEIST (1)
-		safe_access.set_global_int(1977808, 1) -- CASINO_READY.PLAYER4 = READY_STATE_HEIST (1)
+		safe_access.set_global_int(1977741, 1) -- CASINO_READY.PLAYER3 = READY_STATE_HEIST (1)
+		safe_access.set_global_int(1977810, 1) -- CASINO_READY.PLAYER4 = READY_STATE_HEIST (1)
 
 		if notify then
 			notify.push("Casino Launch", "All players ready", 2000)

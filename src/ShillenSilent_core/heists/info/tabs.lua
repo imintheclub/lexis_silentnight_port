@@ -4,6 +4,36 @@ local ui = require("ShillenSilent_core.core.ui")
 
 local config = core.config
 
+local GTA_PLUS_PATTERN = "48 8D 15 ? ? ? ? 41 B8 18 02 00 00 E8"
+local GTA_PLUS_GLOBAL = 1965683
+
+local function unlock_gta_plus()
+	local ok, err = pcall(function()
+		local s = memory.scan(GTA_PLUS_PATTERN)
+		if not s or s.value == 0 then
+			if notify then
+				notify.push("GTA+", "Pattern not found (game version mismatch?)", 3000)
+			end
+			return
+		end
+		local a = s:rip(3, 7)
+		if a then
+			a.int32 = 1
+		end
+		script.globals(GTA_PLUS_GLOBAL).bool = true
+		script.globals(GTA_PLUS_GLOBAL):at(3).int32 = 10
+	end)
+	if not ok then
+		if notify then
+			notify.push("GTA+", "Error: " .. tostring(err), 3000)
+		end
+		return
+	end
+	if notify then
+		notify.push("GTA+", "GTA+ temporarily unlocked", 3000)
+	end
+end
+
 local function toggle_mode_with_notice()
 	local current = ui_mode.get_mode_for_next_load()
 	local next_mode = (current == "controller") and "click" or "controller"
@@ -27,6 +57,9 @@ local function register(heistTab)
 	ui.label(gInfo, "Current menu: " .. tostring(ui_mode.get_mode_for_next_load()), config.colors.accent)
 	ui.button(gInfo, "info_ui_mode_toggle", "Toggle UI Mode", function()
 		toggle_mode_with_notice()
+	end)
+	ui.button(gInfo, "info_gta_plus", "Unlock GTA+", function()
+		unlock_gta_plus()
 	end)
 	local current_theme_label = ui.label(gInfo, "", config.colors.text_sec)
 	local theme_toggle_button = nil

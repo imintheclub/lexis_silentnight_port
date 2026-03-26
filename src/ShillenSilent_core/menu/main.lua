@@ -43,12 +43,45 @@ local function toggle_mode_with_notice()
 	return ok
 end
 
+local GTA_PLUS_PATTERN = "48 8D 15 ? ? ? ? 41 B8 18 02 00 00 E8"
+local GTA_PLUS_GLOBAL = 1965683
+
+local function unlock_gta_plus()
+	local ok, err = pcall(function()
+		local s = memory.scan(GTA_PLUS_PATTERN)
+		if not s or s.value == 0 then
+			if notify then
+				notify.push("GTA+", "Pattern not found (game version mismatch?)", 3000)
+			end
+			return
+		end
+		local a = s:rip(3, 7)
+		if a then
+			a.int32 = 1
+		end
+		script.globals(GTA_PLUS_GLOBAL).bool = true
+		script.globals(GTA_PLUS_GLOBAL):at(3).int32 = 10
+	end)
+	if not ok then
+		if notify then
+			notify.push("GTA+", "Error: " .. tostring(err), 3000)
+		end
+		return
+	end
+	if notify then
+		notify.push("GTA+", "GTA+ temporarily unlocked", 3000)
+	end
+end
+
 local function register_info_menu(root)
 	local info_menu = root:submenu("Settings")
 	info_menu:breaker("Current menu: " .. tostring(ui_mode.get_mode_for_next_load()))
 
 	common.add_button(info_menu, "Toggle UI Mode", function()
 		toggle_mode_with_notice()
+	end)
+	common.add_button(info_menu, "Unlock GTA+", function()
+		unlock_gta_plus()
 	end)
 end
 

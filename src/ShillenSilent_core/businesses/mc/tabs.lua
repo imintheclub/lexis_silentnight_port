@@ -39,9 +39,6 @@ local function register(heistTab)
 		ui.button(gSub, "mc_refill_" .. sub_key, "Refill Supplies", function()
 			mc_logic.refill_supplies(sub_key)
 		end)
-		ui.button(gSub, "mc_tp_" .. sub_key, "Teleport", function()
-			mc_logic.teleport(sub_key)
-		end)
 	end
 
 	return heistTab

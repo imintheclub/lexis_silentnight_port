@@ -66,20 +66,34 @@ local function register(heistTab)
 				state.solo_launch.apartment = val
 			end
 		)
-		ui.button(gApartmentLaunch, "apartment_force_ready", "Force Ready", function()
-			apartment_force_ready()
-		end)
-		ui.button(gApartmentLaunch, "apartment_redraw_board", "Redraw Board", function()
-			apartment_redraw_board()
-		end)
+		ui.button_pair(
+			gApartmentLaunch,
+			"apartment_force_ready",
+			"Force Ready",
+			function()
+				apartment_force_ready()
+			end,
+			"apartment_redraw_board",
+			"Redraw Board",
+			function()
+				apartment_redraw_board()
+			end
+		)
 
 		local gApartmentPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "apartment")
-		ui.button(gApartmentPreps, "apartment_complete_preps", "Complete Preps", function()
-			apartment_complete_preps()
-		end)
-		ui.button(gApartmentPreps, "apartment_change_session", "Change Session", function()
-			apartment_change_session()
-		end)
+		ui.button_pair(
+			gApartmentPreps,
+			"apartment_complete_preps",
+			"Complete Preps",
+			function()
+				apartment_complete_preps()
+			end,
+			"apartment_change_session",
+			"Change Session",
+			function()
+				apartment_change_session()
+			end
+		)
 
 		hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
 
@@ -145,25 +159,34 @@ local function register(heistTab)
 		)
 
 		local gApartmentInstantFinish = ui.group(heistTab, "Instant Finish", nil, nil, nil, nil, "apartment")
-		ui.button(
+		ui.button_pair(
 			gApartmentInstantFinish,
 			"apartment_instant_finish_pacific",
-			"Instant Finish (Pacific Standard)",
+			"Instant Finish (Pacific)",
 			function()
 				apartment_instant_finish_pacific()
+			end,
+			"apartment_instant_finish_other",
+			"Instant Finish (Other)",
+			function()
+				apartment_instant_finish_other()
 			end
 		)
-		ui.button(gApartmentInstantFinish, "apartment_instant_finish_other", "Instant Finish (Other)", function()
-			apartment_instant_finish_other()
-		end)
 
 		local gApartmentTeleport = ui.group(heistTab, "Teleport", nil, nil, nil, nil, "apartment")
-		ui.button(gApartmentTeleport, "apartment_tp_entrance", "Teleport to Entrance", function()
-			apartment_teleport_to_entrance()
-		end)
-		ui.button(gApartmentTeleport, "apartment_tp_heist_board", "Teleport to Heist Board", function()
-			apartment_teleport_to_heist_board()
-		end)
+		ui.button_pair(
+			gApartmentTeleport,
+			"apartment_tp_entrance",
+			"Teleport to Entrance",
+			function()
+				apartment_teleport_to_entrance()
+			end,
+			"apartment_tp_heist_board",
+			"Teleport to Heist Board",
+			function()
+				apartment_teleport_to_heist_board()
+			end
+		)
 
 		build_skip_cooldown_danger_group(heistTab, "apartment", "apartment_skip_heist_cooldown", function()
 			apartment_kill_cooldown()
@@ -278,12 +301,19 @@ local function register(heistTab)
 			end
 		)
 
-		ui.button(gApartmentCuts, "apartment_apply_selected_preset", "Apply Selected Preset", function()
-			hp_apply_selected_apartment_cut_preset(true)
-		end)
-		ui.button(gApartmentCuts, "apartment_cuts_apply", "Apply Cuts", function()
-			apply_apartment_cuts()
-		end)
+		ui.button_pair(
+			gApartmentCuts,
+			"apartment_apply_selected_preset",
+			"Apply Selected Preset",
+			function()
+				hp_apply_selected_apartment_cut_preset(true)
+			end,
+			"apartment_cuts_apply",
+			"Apply Cuts",
+			function()
+				apply_apartment_cuts()
+			end
+		)
 
 		-- 12M Bonus Function
 		local function apartment_12mil_bonus(enable, silent)

@@ -18,25 +18,32 @@ local function register(heistTab)
 	ui.label(gCluckinInfo, "Farm Raid Heist", config.colors.text_main)
 
 	local gCluckinTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "cluckin")
-	ui.button(gCluckinTools, "cluckin_skip_finale", "Skip to Finale", function()
-		cluckin_module.cluckin_skip_to_finale()
-	end)
 	ui.button_pair(
 		gCluckinTools,
+		"cluckin_skip_finale",
+		"Skip to Finale",
+		function()
+			cluckin_module.cluckin_skip_to_finale()
+		end,
 		"cluckin_reset_progress",
 		"Reset Progress",
 		function()
 			cluckin_module.cluckin_reset_progress()
-		end,
+		end
+	)
+	ui.button_pair(
+		gCluckinTools,
 		"cluckin_instant_finish",
 		"Instant Finish",
 		function()
 			cluckin_module.cluckin_instant_finish()
+		end,
+		"cluckin_skip_cutscene",
+		"Skip Cutscene",
+		function()
+			heist_skip_cutscene("Cluckin Bell")
 		end
 	)
-	ui.button(gCluckinTools, "cluckin_skip_cutscene", "Skip Cutscene", function()
-		heist_skip_cutscene("Cluckin Bell")
-	end)
 
 	build_skip_cooldown_danger_group(heistTab, "cluckin", "cluckin_remove_cooldown", function()
 		cluckin_module.cluckin_remove_cooldown()

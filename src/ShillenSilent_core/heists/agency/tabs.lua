@@ -77,13 +77,19 @@ local function register(heistTab)
 		end
 	)
 	agency_refs.collect_safe_button = gAgencyMisc.items[#gAgencyMisc.items].right
-
-	ui.button(gAgencyMisc, "agency_instant_finish", "Instant Finish", function()
-		agency_instant_finish_new()
-	end)
-	ui.button(gAgencyMisc, "agency_skip_cutscene", "Skip Cutscene", function()
-		heist_skip_cutscene("Agency")
-	end)
+	ui.button_pair(
+		gAgencyMisc,
+		"agency_instant_finish",
+		"Instant Finish",
+		function()
+			agency_instant_finish_new()
+		end,
+		"agency_skip_cutscene",
+		"Skip Cutscene",
+		function()
+			heist_skip_cutscene("Agency")
+		end
+	)
 
 	build_skip_cooldown_danger_group(heistTab, "agency", "agency_kill_cooldowns", function()
 		agency_kill_cooldowns()

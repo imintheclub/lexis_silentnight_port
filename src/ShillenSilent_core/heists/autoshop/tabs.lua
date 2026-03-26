@@ -87,12 +87,19 @@ local function register(heistTab)
 			autoshop_teleport_board()
 		end
 	)
-	ui.button(gAutoshopMisc, "autoshop_instant_finish", "Instant Finish", function()
-		autoshop_instant_finish_new()
-	end)
-	ui.button(gAutoshopMisc, "autoshop_skip_cutscene", "Skip Cutscene", function()
-		heist_skip_cutscene("Auto Shop")
-	end)
+	ui.button_pair(
+		gAutoshopMisc,
+		"autoshop_instant_finish",
+		"Instant Finish",
+		function()
+			autoshop_instant_finish_new()
+		end,
+		"autoshop_skip_cutscene",
+		"Skip Cutscene",
+		function()
+			heist_skip_cutscene("Auto Shop")
+		end
+	)
 
 	build_skip_cooldown_danger_group(heistTab, "autoshop", "autoshop_kill_cooldown", function()
 		autoshop_kill_cooldowns()

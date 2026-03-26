@@ -106,13 +106,20 @@ end
 
 local function salvage_build_slot_group(heistTab, slot)
 	local group = ui.group(heistTab, "Slot " .. tostring(slot), nil, nil, nil, nil, "salvageyard")
-	ui.button(group, "salvage_slot" .. tostring(slot) .. "_available", "Make Available", function()
-		salvage_make_slot_available(slot)
-	end)
 	salvage_bind_slot_dropdowns(group, slot)
-	ui.button(group, "salvage_slot" .. tostring(slot) .. "_apply", "Apply Changes", function()
-		salvage_apply_slot(slot)
-	end)
+	ui.button_pair(
+		group,
+		"salvage_slot" .. tostring(slot) .. "_available",
+		"Make Available",
+		function()
+			salvage_make_slot_available(slot)
+		end,
+		"salvage_slot" .. tostring(slot) .. "_apply",
+		"Apply Changes",
+		function()
+			salvage_apply_slot(slot)
+		end
+	)
 end
 
 local function register(heistTab)
@@ -131,9 +138,19 @@ local function register(heistTab)
 	salvage_build_slot_group(heistTab, 3)
 
 	local gSalvagePreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "salvageyard")
-	ui.button(gSalvagePreps, "salvage_apply_all_changes", "Apply All Changes", function()
-		salvage_apply_all_changes()
-	end)
+	ui.button_pair(
+		gSalvagePreps,
+		"salvage_apply_all_changes",
+		"Apply All Changes",
+		function()
+			salvage_apply_all_changes()
+		end,
+		"salvage_reload_screen",
+		"Reload Screen",
+		function()
+			salvage_reload_screen()
+		end
+	)
 	ui.button_pair(
 		gSalvagePreps,
 		"salvage_complete_preps",
@@ -147,9 +164,6 @@ local function register(heistTab)
 			salvage_reset_preps()
 		end
 	)
-	ui.button(gSalvagePreps, "salvage_reload_screen", "Reload Screen", function()
-		salvage_reload_screen()
-	end)
 	salvage_refs.free_setup_toggle = ui.toggle(
 		gSalvagePreps,
 		"salvage_free_setup",
@@ -209,10 +223,10 @@ local function register(heistTab)
 			salvage_collect_safe()
 		end
 	)
+	salvage_refs.collect_safe_button = gSalvageMisc.items[#gSalvageMisc.items].right
 	ui.button(gSalvageMisc, "salvage_skip_cutscene", "Skip Cutscene", function()
 		heist_skip_cutscene("Salvage Yard")
 	end)
-	salvage_refs.collect_safe_button = gSalvageMisc.items[#gSalvageMisc.items].right
 
 	build_skip_cooldown_danger_group(heistTab, "salvageyard", "salvage_skip_weekly_cooldown", function()
 		salvage_skip_weekly_cooldown()

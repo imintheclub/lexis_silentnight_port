@@ -1131,7 +1131,7 @@ local function draw_button_item(item, x, y, w)
 	local btnX = x + pad_x
 	local btnY = y + config.space.x1
 
-	local style = draw_button_surface(item, btnX, btnY, btnW, btnH, "Instant Finish function has been disabled")
+	local style = draw_button_surface(item, btnX, btnY, btnW, btnH, "This action is disabled")
 
 	local textSize = config.font_scale_small
 	render_button_label_center(item.label, btnX, btnY, btnW, btnH, textSize, style.text)
@@ -1725,7 +1725,9 @@ ui.render = function()
 					local itemY = drawY + config.item_height.header_padding + config.space.x3
 					local clip_bottom = clip_start + available_height
 					for _, item in ipairs(group.items) do
-						if item.hidden then goto continue_item end
+						if item.hidden then
+							goto continue_item
+						end
 						local item_h = get_item_height(item)
 						if (itemY + item_h) < clip_start or itemY > clip_bottom then
 							-- Item fully outside visible area, skip rendering

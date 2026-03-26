@@ -10,12 +10,19 @@ local function register(heistTab)
 	end
 
 	local tools_group = ui.group(heistTab, "Tools", nil, nil, nil, nil, "knoway")
-	ui.button(tools_group, "knoway_instant_finish", "Instant Finish", function()
-		knoway_module.knoway_instant_finish()
-	end)
-	ui.button(tools_group, "knoway_skip_cutscene", "Skip Cutscene", function()
-		heist_skip_cutscene("KnoWay")
-	end)
+	ui.button_pair(
+		tools_group,
+		"knoway_instant_finish",
+		"Instant Finish",
+		function()
+			knoway_module.knoway_instant_finish()
+		end,
+		"knoway_skip_cutscene",
+		"Skip Cutscene",
+		function()
+			heist_skip_cutscene("KnoWay")
+		end
+	)
 
 	return heistTab
 end

@@ -45,9 +45,21 @@ local function register(heistTab)
 			doomsday_module.doomsday_set_selected_act(selected, true)
 		end
 	)
-	ui.button(gDoomsdayPreps, "doomsday_apply_selected_act", "Apply Selected Act", function()
-		doomsday_module.doomsday_complete_preps(DoomsdayConfig.act)
-	end)
+	ui.button_pair(
+		gDoomsdayPreps,
+		"doomsday_apply_selected_act",
+		"Apply Selected Act",
+		function()
+			doomsday_module.doomsday_complete_preps(DoomsdayConfig.act)
+		end,
+		"doomsday_reload_board",
+		"Reload Planning Board",
+		function()
+			if doomsday_module.doomsday_reload_board(true) and notify then
+				notify.push("Doomsday", "Planning board reloaded", 2000)
+			end
+		end
+	)
 	ui.button_pair(
 		gDoomsdayPreps,
 		"doomsday_reset",
@@ -61,11 +73,6 @@ local function register(heistTab)
 			doomsday_module.doomsday_reset_preps()
 		end
 	)
-	ui.button(gDoomsdayPreps, "doomsday_reload_board", "Reload Planning Board", function()
-		if doomsday_module.doomsday_reload_board(true) and notify then
-			notify.push("Doomsday", "Planning board reloaded", 2000)
-		end
-	end)
 
 	local gDoomsdayLaunch = ui.group(heistTab, "Launch", nil, nil, nil, nil, "doomsday")
 	doomsday_refs.solo_launch_toggle = ui.toggle(
@@ -130,9 +137,19 @@ local function register(heistTab)
 			)
 		end
 	)
-	ui.button(gDoomsdayCuts, "doomsday_preset_apply", "Apply Selected Preset", function()
-		doomsday_module.apply_selected_doomsday_cut_preset(false, false)
-	end)
+	ui.button_pair(
+		gDoomsdayCuts,
+		"doomsday_preset_apply",
+		"Apply Selected Preset",
+		function()
+			doomsday_module.apply_selected_doomsday_cut_preset(false, false)
+		end,
+		"doomsday_cuts_apply",
+		"Apply Cuts",
+		function()
+			doomsday_module.apply_doomsday_cuts()
+		end
+	)
 
 	doomsday_refs.p1_toggle = ui.toggle(
 		gDoomsdayCuts,
@@ -226,10 +243,6 @@ local function register(heistTab)
 		1
 	)
 
-	ui.button(gDoomsdayCuts, "doomsday_cuts_apply", "Apply Cuts", function()
-		doomsday_module.apply_doomsday_cuts()
-	end)
-
 	local gDoomsdayTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "doomsday")
 	ui.button_pair(
 		gDoomsdayTools,
@@ -244,12 +257,19 @@ local function register(heistTab)
 			doomsday_module.doomsday_doomsday_hack()
 		end
 	)
-	ui.button(gDoomsdayTools, "doomsday_instant_finish", "Instant Finish", function()
-		doomsday_module.doomsday_instant_finish_new()
-	end)
-	ui.button(gDoomsdayTools, "doomsday_skip_cutscene", "Skip Cutscene", function()
-		heist_skip_cutscene("Doomsday")
-	end)
+	ui.button_pair(
+		gDoomsdayTools,
+		"doomsday_instant_finish",
+		"Instant Finish",
+		function()
+			doomsday_module.doomsday_instant_finish_new()
+		end,
+		"doomsday_skip_cutscene",
+		"Skip Cutscene",
+		function()
+			heist_skip_cutscene("Doomsday")
+		end
+	)
 
 	if doomsday_flags.max_payout_enabled then
 		doomsday_module.doomsday_refresh_max_payout(true, false)

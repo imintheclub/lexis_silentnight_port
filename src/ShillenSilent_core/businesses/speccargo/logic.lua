@@ -102,11 +102,15 @@ local function instant_sell()
 		local ok1 = biz.set_local_int(SELL_SCRIPT, SELL_BASE + SELL_TIMER_OFF, 67230)
 		local ok2 = biz.set_local_int(SELL_SCRIPT, SELL_BASE + SELL_STATE_OFF, 7)
 		if notify then
-			notify.push("Special Cargo", (ok1 and ok2) and "Instant sell triggered" or "Sell write failed", 2200)
+			notify.push(
+				"Special Cargo",
+				(ok1 and ok2) and "Instant sell completed" or "Instant sell failed to apply",
+				2200
+			)
 		end
 	end, function()
 		if notify then
-			notify.push("Special Cargo", "Sell already running", 1500)
+			notify.push("Special Cargo", "Instant sell failed (already running)", 1500)
 		end
 	end)
 end
@@ -115,7 +119,7 @@ local function fill_cargo()
 	local mp = biz.GetMP()
 	local ok = biz.set_stat_int(mp .. CARGO_STAT, CARGO_MAX)
 	if notify then
-		notify.push("Special Cargo", ok and "Cargo filled to max (111)" or "Cargo fill failed", 2000)
+		notify.push("Special Cargo", ok and "All cargo fill completed (111)" or "Cargo fill failed to apply", 2000)
 	end
 end
 

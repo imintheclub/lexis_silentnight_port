@@ -126,7 +126,7 @@ local function doomsday_complete_preps(act)
 	doomsday_reload_board(false)
 
 	if notify then
-		notify.push("Doomsday", "Preps applied", 2000)
+		notify.push("Doomsday", "Preps completed", 2000)
 	end
 	return true
 end
@@ -139,7 +139,7 @@ local function doomsday_reset_progress()
 	doomsday_reload_board(false)
 
 	if notify then
-		notify.push("Doomsday", "Progress reset", 2000)
+		notify.push("Doomsday", "Progress reset completed", 2000)
 	end
 	return true
 end
@@ -152,7 +152,7 @@ local function doomsday_reset_preps()
 	doomsday_reload_board(false)
 
 	if notify then
-		notify.push("Doomsday", "Preps reset", 2000)
+		notify.push("Doomsday", "Preps reset completed", 2000)
 	end
 	return true
 end
@@ -168,14 +168,14 @@ local function doomsday_force_ready()
 
 		if notify then
 			if ok1 and ok2 and ok3 then
-				notify.push("Doomsday Launch", "All players ready", 2000)
+				notify.push("Doomsday Launch", "Force ready completed", 2000)
 			else
-				notify.push("Doomsday Launch", "Could not set ready state", 2000)
+				notify.push("Doomsday Launch", "Force ready failed to apply", 2000)
 			end
 		end
 	end, function()
 		if notify then
-			notify.push("Doomsday Launch", "Force ready already running", 1500)
+			notify.push("Doomsday Launch", "Force ready failed (already running)", 1500)
 		end
 	end)
 end
@@ -309,9 +309,9 @@ apply_doomsday_cuts = function(cuts)
 
 	if notify then
 		if ok1 and ok2 and ok3 and ok4 then
-			notify.push("Doomsday Cuts", "Cuts applied", 2000)
+			notify.push("Doomsday Cuts", "Cuts completed", 2000)
 		else
-			notify.push("Doomsday Cuts", "Could not apply cuts (memory write failed)", 2200)
+			notify.push("Doomsday Cuts", "Cuts failed to apply", 2200)
 		end
 	end
 	return ok1 and ok2 and ok3 and ok4
@@ -340,7 +340,7 @@ local function apply_selected_doomsday_cut_preset(apply_now, silent)
 	)
 
 	if not silent and notify then
-		notify.push("Doomsday Cuts", "Cut preset loaded", 2000)
+		notify.push("Doomsday Cuts", "Cut preset apply completed", 2000)
 	end
 	return selected_cut
 end
@@ -369,7 +369,7 @@ local function doomsday_data_hack()
 	if safe_access.is_script_running("fm_mission_controller") then
 		local ok = safe_access.set_local_int("fm_mission_controller", 1541, 2)
 		if notify then
-			notify.push("Doomsday Tools", ok and "Data hack completed" or "Data hack write failed", 2000)
+			notify.push("Doomsday Tools", ok and "Data hack completed" or "Data hack failed to apply", 2000)
 		end
 		return ok
 	end
@@ -384,7 +384,7 @@ local function doomsday_doomsday_hack()
 	if safe_access.is_script_running("fm_mission_controller") then
 		local ok = safe_access.set_local_int("fm_mission_controller", 1298 + 135, 3)
 		if notify then
-			notify.push("Doomsday Tools", ok and "Doomsday hack completed" or "Doomsday hack write failed", 2000)
+			notify.push("Doomsday Tools", ok and "Doomsday hack completed" or "Doomsday hack failed to apply", 2000)
 		end
 		return ok
 	end
@@ -432,14 +432,14 @@ local function doomsday_instant_finish_new()
 
 		if notify then
 			if ok1 and ok2 and ok3 then
-				notify.push("Doomsday Tools", "Instant finish triggered (New)", 2000)
+				notify.push("Doomsday Tools", "Instant finish completed", 2000)
 			else
-				notify.push("Doomsday Tools", "New finish write failed", 2200)
+				notify.push("Doomsday Tools", "Instant finish failed to apply", 2200)
 			end
 		end
 	end, function()
 		if notify then
-			notify.push("Doomsday Tools", "New finish already running", 1500)
+			notify.push("Doomsday Tools", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end
@@ -463,14 +463,14 @@ local function doomsday_manual_launch_reset()
 
 		if notify then
 			if ok then
-				notify.push("Doomsday Launch", "Launch settings reset", 2000)
+				notify.push("Doomsday Launch", "Launch reset completed", 2000)
 			else
-				notify.push("Doomsday Launch", "Launch reset unavailable right now", 2000)
+				notify.push("Doomsday Launch", "Launch reset failed (unavailable)", 2000)
 			end
 		end
 	end, function()
 		if notify then
-			notify.push("Doomsday Launch", "Launch reset already running", 1500)
+			notify.push("Doomsday Launch", "Launch reset failed (already running)", 1500)
 		end
 	end)
 end

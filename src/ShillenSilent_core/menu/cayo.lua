@@ -131,10 +131,6 @@ local function add_cayo_preps_menu(cayo_root)
 	local preps_menu = cayo_root:submenu("Preps")
 	local controls = cayo_menu.controls
 
-	add_button(preps_menu, "Teleport to Kosatka", function()
-		cayo_logic.cayo_teleport_kosatka()
-	end)
-
 	add_button(preps_menu, "Unlock All POI", function()
 		cayo_logic.cayo_unlock_all_poi()
 	end)
@@ -315,9 +311,16 @@ local function add_cayo_tools_menu(cayo_root)
 	end)
 end
 
-local function add_cayo_teleport_menu(cayo_root)
-	local tp_menu = cayo_root:submenu("Teleport")
+local function add_cayo_teleport_start_button(cayo_root)
+	add_button(cayo_root, "Teleport to Kosatka", function()
+		cayo_logic.cayo_teleport_kosatka()
+	end)
+end
 
+local function add_cayo_teleport_in_heist_menu(cayo_root)
+	local tp_menu = cayo_root:submenu("Teleport (In Heist)")
+
+	tp_menu:breaker("Inside Residence")
 	add_button(tp_menu, "Main Target", function()
 		cayo_logic.cayo_teleport_main_target()
 	end)
@@ -336,6 +339,8 @@ local function add_cayo_teleport_menu(cayo_root)
 	add_button(tp_menu, "Loot #3", function()
 		cayo_logic.cayo_teleport_loot3()
 	end)
+
+	tp_menu:breaker("Outside Residence")
 	add_button(tp_menu, "Center", function()
 		cayo_logic.cayo_teleport_center()
 	end)
@@ -478,10 +483,11 @@ function cayo_menu.register(parent_menu)
 	cayo_root:breaker("Transaction cooldown: 30 min")
 	cayo_root:breaker("Heist cooldown: 45 min (skip)")
 
+	add_cayo_teleport_start_button(cayo_root)
 	add_cayo_preps_menu(cayo_root)
-	add_cayo_tools_menu(cayo_root)
-	add_cayo_teleport_menu(cayo_root)
 	add_cayo_cuts_menu(cayo_root)
+	add_cayo_tools_menu(cayo_root)
+	add_cayo_teleport_in_heist_menu(cayo_root)
 	add_cayo_danger_menu(cayo_root)
 
 	cayo_menu.refresh_controls()

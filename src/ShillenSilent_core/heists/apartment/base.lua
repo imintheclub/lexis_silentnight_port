@@ -305,7 +305,7 @@ local function apartment_force_ready()
 		end
 		if not force_script_host("fm_mission_controller") then
 			if notify then
-				notify.push("Apartment Launch", "Could not force host", 2200)
+				notify.push("Apartment Launch", "Instant finish failed (host override)", 2200)
 			end
 			return
 		end
@@ -317,11 +317,11 @@ local function apartment_force_ready()
 		ok = set_global_int(ApartmentGlobals.Ready.PLAYER4, 6) and ok
 
 		if notify then
-			notify.push("Apartment Launch", ok and "All players ready" or "Force ready write failed", 2000)
+			notify.push("Apartment Launch", ok and "Force ready completed" or "Force ready failed to apply", 2000)
 		end
 	end, function()
 		if notify then
-			notify.push("Apartment Launch", "Force ready already running", 1500)
+			notify.push("Apartment Launch", "Force ready failed (already running)", 1500)
 		end
 	end)
 end
@@ -334,7 +334,7 @@ local function apartment_redraw_board()
 	ok = set_global_int(ApartmentGlobals.Reload.STEP2, 10) and ok
 
 	if notify then
-		notify.push("Apartment Launch", ok and "Board refreshed" or "Board refresh failed", 2000)
+		notify.push("Apartment Launch", ok and "Board refresh completed" or "Board refresh failed to apply", 2000)
 	end
 	return ok
 end
@@ -344,7 +344,7 @@ local function apartment_complete_preps()
 	local heist_data = heist_key and APARTMENT_PREP_DATA[heist_key] or nil
 	if not heist_data then
 		if notify then
-			notify.push("Apartment Preps", "Could not detect active Apartment heist", 2600)
+			notify.push("Apartment Preps", "Preps failed (no active heist detected)", 2600)
 		end
 		return false
 	end
@@ -378,7 +378,7 @@ local function apartment_complete_preps()
 	ok = apartment_redraw_board() and ok
 
 	if notify then
-		notify.push("Apartment Preps", ok and "Preps applied" or "Prep write failed", 2200)
+		notify.push("Apartment Preps", ok and "Preps completed" or "Preps failed to apply", 2200)
 	end
 	return ok
 end
@@ -390,7 +390,7 @@ local function apartment_kill_cooldown()
 	ok = set_global_int(cooldown_step1, -1) and ok
 	ok = set_global_int(ApartmentGlobals.Cooldown.STEP2, 0) and ok
 	if notify then
-		notify.push("Apartment Preps", ok and "Cooldown removed" or "Cooldown write failed", 2000)
+		notify.push("Apartment Preps", ok and "Cooldown removal completed" or "Cooldown removal failed to apply", 2000)
 	end
 	return ok
 end
@@ -399,7 +399,7 @@ local function apartment_fleeca_hack()
 	if is_script_running("fm_mission_controller") then
 		local ok = set_local_int("fm_mission_controller", 12223 + 24, 7)
 		if notify then
-			notify.push("Apartment Tools", ok and "Fleeca hack completed" or "Fleeca hack write failed", 2000)
+			notify.push("Apartment Tools", ok and "Fleeca hack completed" or "Fleeca hack failed to apply", 2000)
 		end
 		return ok
 	end
@@ -414,7 +414,7 @@ local function apartment_fleeca_drill()
 	if is_script_running("fm_mission_controller") then
 		local ok = set_local_float("fm_mission_controller", 10511 + 11, 100.0)
 		if notify then
-			notify.push("Apartment Tools", ok and "Fleeca drill completed" or "Fleeca drill write failed", 2000)
+			notify.push("Apartment Tools", ok and "Fleeca drill completed" or "Fleeca drill failed to apply", 2000)
 		end
 		return ok
 	end
@@ -429,7 +429,7 @@ local function apartment_pacific_hack()
 	if is_script_running("fm_mission_controller") then
 		local ok = set_local_int("fm_mission_controller", 10217, 9)
 		if notify then
-			notify.push("Apartment Tools", ok and "Pacific hack completed" or "Pacific hack write failed", 2000)
+			notify.push("Apartment Tools", ok and "Pacific hack completed" or "Pacific hack failed to apply", 2000)
 		end
 		return ok
 	end
@@ -450,7 +450,7 @@ local function apartment_instant_finish_pacific()
 		end
 		if not force_script_host("fm_mission_controller") then
 			if notify then
-				notify.push("Apartment", "Could not force host", 2000)
+				notify.push("Apartment", "Instant finish failed (host override)", 2000)
 			end
 			return
 		end
@@ -471,7 +471,7 @@ local function apartment_instant_finish_pacific()
 		end
 	end, function()
 		if notify then
-			notify.push("Apartment", "Instant finish already running", 1500)
+			notify.push("Apartment", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end
@@ -486,7 +486,7 @@ local function apartment_instant_finish_other()
 		end
 		if not force_script_host("fm_mission_controller") then
 			if notify then
-				notify.push("Apartment", "Could not force host", 2000)
+				notify.push("Apartment", "Instant finish failed (host override)", 2000)
 			end
 			return
 		end
@@ -506,7 +506,7 @@ local function apartment_instant_finish_other()
 		end
 	end, function()
 		if notify then
-			notify.push("Apartment", "Instant finish already running", 1500)
+			notify.push("Apartment", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end
@@ -518,7 +518,7 @@ local function apartment_play_unavailable()
 	ok = set_global_int(cooldown_step1, -1) and ok
 	ok = set_global_int(ApartmentGlobals.Cooldown.STEP2, 0) and ok
 	if notify then
-		notify.push("Apartment Tools", ok and "Unavailable jobs unlocked" or "Play unavailable failed", 2000)
+		notify.push("Apartment Tools", ok and "All jobs unlock completed" or "Jobs unlock failed", 2000)
 	end
 	return ok
 end
@@ -539,7 +539,7 @@ local function apartment_change_session()
 		end
 	else
 		if notify then
-			notify.push("Apartment Tools", "Could not change session. Change it manually.", 2800)
+			notify.push("Apartment Tools", "Session change failed", 2800)
 		end
 	end
 
@@ -649,7 +649,7 @@ end
 local function apartment_apply_cuts(cuts_values)
 	if type(cuts_values) ~= "table" then
 		if notify then
-			notify.push("Apartment Cuts", "Cut write failed", 2000)
+			notify.push("Apartment Cuts", "Cuts failed to apply", 2000)
 		end
 		return false
 	end
@@ -688,7 +688,7 @@ local function apartment_apply_cuts(cuts_values)
 	end
 
 	if notify then
-		notify.push("Apartment Cuts", any_pair_ok and "Cuts applied" or "Cut write failed", 2000)
+		notify.push("Apartment Cuts", any_pair_ok and "Cuts completed" or "Cuts failed to apply", 2000)
 	end
 	return any_pair_ok
 end
@@ -703,7 +703,7 @@ local function apartment_set_12mil_bonus(enable, silent)
 		ok = set_stat_int("MPPLY_HEISTNODEATHPROGREITSET", 268435455) and ok
 		ok = set_stat_bool("MPPLY_AWD_HST_ULT_CHAL", false) and ok
 		if not silent and notify then
-			notify.push("Apartment Bonuses", ok and "12M bonus enabled" or "12M bonus write failed", 2000)
+			notify.push("Apartment Bonuses", ok and "12M bonus enabled" or "12M bonus failed to apply", 2000)
 		end
 	else
 		ok = set_stat_int("MPPLY_HEISTFLOWORDERPROGRESS", 134217727) and ok
@@ -713,7 +713,7 @@ local function apartment_set_12mil_bonus(enable, silent)
 		ok = set_stat_int("MPPLY_HEISTNODEATHPROGREITSET", 134217727) and ok
 		ok = set_stat_bool("MPPLY_AWD_HST_ULT_CHAL", true) and ok
 		if not silent and notify then
-			notify.push("Apartment Bonuses", ok and "12M bonus disabled" or "12M bonus write failed", 2000)
+			notify.push("Apartment Bonuses", ok and "12M bonus disabled" or "12M bonus failed to apply", 2000)
 		end
 	end
 	return ok

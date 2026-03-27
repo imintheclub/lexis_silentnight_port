@@ -121,7 +121,11 @@ local function production_tick_all()
 		end
 	end
 	if notify then
-		notify.push("Nightclub", any_ok and "Production tick applied" or "All products at max / stat error", 2000)
+		notify.push(
+			"Nightclub",
+			any_ok and "Production tick completed" or "Production tick failed (all products at max)",
+			2000
+		)
 	end
 end
 
@@ -239,14 +243,14 @@ local function fill_all_products()
 		end
 	end
 	if notify then
-		notify.push("Nightclub", any_ok and "All products filled" or "Stat write failed", 2000)
+		notify.push("Nightclub", any_ok and "All products fill completed" or "All products fill failed to apply", 2000)
 	end
 end
 
 local function safe_collect()
 	local ok = biz.set_global_int(NC_SAFE_COLLECT, 1)
 	if notify then
-		notify.push("Nightclub", ok and "Safe collect triggered" or "Safe collect failed", 2000)
+		notify.push("Nightclub", ok and "Safe collect completed" or "Safe collect failed to apply", 2000)
 	end
 end
 
@@ -254,7 +258,7 @@ local function safe_fill()
 	local mp = biz.GetMP()
 	local ok = biz.set_stat_int(mp .. SAFE_STAT, SAFE_MAX)
 	if notify then
-		notify.push("Nightclub", ok and "Safe filled to $250,000" or "Safe fill failed", 2000)
+		notify.push("Nightclub", ok and "Safe fill completed ($250,000)" or "Safe fill failed to apply", 2000)
 	end
 end
 
@@ -262,7 +266,7 @@ local function set_popularity_max()
 	local mp = biz.GetMP()
 	local ok = biz.set_stat_int(mp .. POPULARITY_STAT, POPULARITY_MAX)
 	if notify then
-		notify.push("Nightclub", ok and "Popularity set to max" or "Popularity write failed", 2000)
+		notify.push("Nightclub", ok and "Popularity max completed" or "Popularity max failed to apply", 2000)
 	end
 end
 

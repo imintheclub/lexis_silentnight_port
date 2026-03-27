@@ -138,6 +138,9 @@ local function register(heistTab)
 	salvage_build_slot_group(heistTab, 3)
 
 	local gSalvagePreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "salvageyard")
+	ui.button(gSalvagePreps, "salvage_tp_entrance", "Teleport to Entrance", function()
+		salvage_teleport_entrance()
+	end)
 	ui.button_pair(
 		gSalvagePreps,
 		"salvage_apply_all_changes",
@@ -183,22 +186,12 @@ local function register(heistTab)
 		end
 	)
 
-	local gSalvageMisc = ui.group(heistTab, "Misc", nil, nil, nil, nil, "salvageyard")
+	local gSalvageTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "salvageyard")
+	ui.button(gSalvageTools, "salvage_tp_board", "Teleport to Screen & Board", function()
+		salvage_teleport_board()
+	end)
 	ui.button_pair(
-		gSalvageMisc,
-		"salvage_tp_entrance",
-		"Teleport to Entrance",
-		function()
-			salvage_teleport_entrance()
-		end,
-		"salvage_tp_board",
-		"Teleport to Screen & Board",
-		function()
-			salvage_teleport_board()
-		end
-	)
-	ui.button_pair(
-		gSalvageMisc,
+		gSalvageTools,
 		"salvage_instant_finish",
 		"Instant Finish",
 		function()
@@ -211,7 +204,7 @@ local function register(heistTab)
 		end
 	)
 	ui.button_pair(
-		gSalvageMisc,
+		gSalvageTools,
 		"salvage_force_through_error",
 		"Force Through Error",
 		function()
@@ -223,8 +216,8 @@ local function register(heistTab)
 			salvage_collect_safe()
 		end
 	)
-	salvage_refs.collect_safe_button = gSalvageMisc.items[#gSalvageMisc.items].right
-	ui.button(gSalvageMisc, "salvage_skip_cutscene", "Skip Cutscene", function()
+	salvage_refs.collect_safe_button = gSalvageTools.items[#gSalvageTools.items].right
+	ui.button(gSalvageTools, "salvage_skip_cutscene", "Skip Cutscene", function()
 		heist_skip_cutscene("Salvage Yard")
 	end)
 

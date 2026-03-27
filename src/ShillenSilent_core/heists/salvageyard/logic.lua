@@ -232,7 +232,11 @@ local function salvage_reload_screen()
 	end
 
 	if notify then
-		notify.push("Salvage Yard", wrote_any and "Planning screen reloaded" or "Reload write failed", 2000)
+		notify.push(
+			"Salvage Yard",
+			wrote_any and "Planning screen reload completed" or "Planning screen reload failed to apply",
+			2000
+		)
 	end
 	return wrote_any
 end
@@ -243,7 +247,7 @@ local function salvage_apply_slot(slot)
 	if notify then
 		notify.push(
 			"Salvage Yard",
-			(ok and reload_ok) and ("Slot " .. tostring(slot) .. " changes applied") or "Apply failed",
+			(ok and reload_ok) and ("Slot " .. tostring(slot) .. " changes completed") or "Slot changes failed to apply",
 			2200
 		)
 	end
@@ -257,7 +261,11 @@ local function salvage_apply_all_changes()
 	end
 	local reload_ok = salvage_reload_screen()
 	if notify then
-		notify.push("Salvage Yard", (ok and reload_ok) and "All slot changes applied" or "Apply all failed", 2200)
+		notify.push(
+			"Salvage Yard",
+			(ok and reload_ok) and "All slot changes completed" or "All slot changes failed to apply",
+			2200
+		)
 	end
 	return ok and reload_ok
 end
@@ -274,7 +282,8 @@ local function salvage_make_slot_available(slot)
 	if notify then
 		notify.push(
 			"Salvage Yard",
-			(ok and reload_ok) and ("Slot " .. tostring(slot) .. " made available") or "Could not make slot available",
+			(ok and reload_ok) and ("Slot " .. tostring(slot) .. " availability completed")
+				or "Slot availability failed to apply",
 			2200
 		)
 	end
@@ -291,7 +300,7 @@ local function salvage_complete_preps()
 
 	local reload_ok = salvage_reload_screen()
 	if notify then
-		notify.push("Salvage Yard", (ok and reload_ok) and "Preps completed" or "Could not complete preps", 2200)
+		notify.push("Salvage Yard", (ok and reload_ok) and "Preps completed" or "Preps failed to complete", 2200)
 	end
 	return ok and reload_ok
 end
@@ -306,7 +315,7 @@ local function salvage_reset_preps()
 
 	local reload_ok = salvage_reload_screen()
 	if notify then
-		notify.push("Salvage Yard", (ok and reload_ok) and "Preps reset" or "Could not reset preps", 2200)
+		notify.push("Salvage Yard", (ok and reload_ok) and "Preps reset completed" or "Preps reset failed", 2200)
 	end
 	return ok and reload_ok
 end
@@ -322,7 +331,7 @@ local function salvage_set_free_setup(enable, silent)
 	local ok = set_tunable_int(SALVAGE_TUNABLES.SETUP_PRICE, setup_price)
 	if notify and not silent then
 		local success_message = enabled and "Free Setup enabled" or "Free Setup disabled"
-		notify.push("Salvage Yard", ok and success_message or "Free Setup write failed", 2000)
+		notify.push("Salvage Yard", ok and success_message or "Free setup failed to apply", 2000)
 	end
 	return ok
 end
@@ -340,7 +349,7 @@ local function salvage_set_free_claim(enable, silent)
 	local ok2 = set_tunable_int(SALVAGE_TUNABLES.CLAIM_PRICE_DISCOUNTED, discounted)
 	if notify and not silent then
 		local success_message = enabled and "Free Claim enabled" or "Free Claim disabled"
-		notify.push("Salvage Yard", (ok1 and ok2) and success_message or "Free Claim write failed", 2000)
+		notify.push("Salvage Yard", (ok1 and ok2) and success_message or "Free claim failed to apply", 2000)
 	end
 	return ok1 and ok2
 end
@@ -456,12 +465,12 @@ local function salvage_instant_finish()
 					2200
 				)
 			else
-				notify.push("Salvage Yard", "Instant finish write failed", 2200)
+				notify.push("Salvage Yard", "Instant finish failed to apply", 2200)
 			end
 		end
 	end, function()
 		if notify then
-			notify.push("Salvage Yard", "Instant finish already running", 1500)
+			notify.push("Salvage Yard", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end
@@ -496,7 +505,7 @@ local function salvage_force_through_error()
 		end
 	end, function()
 		if notify then
-			notify.push("Salvage Yard", "Force Through Error already running", 1500)
+			notify.push("Salvage Yard", "Force through error failed (already running)", 1500)
 		end
 	end)
 end
@@ -507,7 +516,11 @@ local function salvage_skip_weekly_cooldown()
 	local ok = set_tunable_int(SALVAGE_TUNABLES.WEEKLY_COOLDOWN, week_sync + 1)
 	local reload_ok = salvage_reload_screen()
 	if notify then
-		notify.push("Salvage Yard", (ok and reload_ok) and "Weekly cooldown skipped" or "Could not skip cooldown", 2200)
+		notify.push(
+			"Salvage Yard",
+			(ok and reload_ok) and "Weekly cooldown skip completed" or "Weekly cooldown skip failed",
+			2200
+		)
 	end
 	return ok and reload_ok
 end
@@ -531,7 +544,7 @@ local function salvage_collect_safe()
 
 	local ok = set_global_bool(SALVAGE_GLOBALS.SAFE_COLLECT_BOOL, true)
 	if notify then
-		notify.push("Salvage Yard", ok and "Safe collected" or "Collect failed", 2000)
+		notify.push("Salvage Yard", ok and "Safe collect completed" or "Safe collect failed", 2000)
 	end
 	return ok
 end
@@ -558,7 +571,11 @@ local function salvage_apply_sell_values()
 
 	local reload_ok = salvage_reload_screen()
 	if notify then
-		notify.push("Salvage Yard", (ok and reload_ok) and "Sell values applied" or "Could not apply sell values", 2200)
+		notify.push(
+			"Salvage Yard",
+			(ok and reload_ok) and "Sell values completed" or "Sell values failed to apply",
+			2200
+		)
 	end
 	return ok and reload_ok
 end

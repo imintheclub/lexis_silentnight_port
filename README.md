@@ -28,6 +28,10 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 3. Load the script in Lexis
 
 # Changelog
+## v0.1.2
+- UI fixes for consistency
+- fix production tick to be on a loop
+
 ## v0.1.1
 - Added missing teleports:
   - Casino: `Teleport to Arcade` (click UI + controller menu)

@@ -196,7 +196,7 @@ local function apply_casino_cuts()
 	safe_access.set_global_int(CasinoGlobals.P3, CutsValues.player3)
 	safe_access.set_global_int(CasinoGlobals.P4, CutsValues.player4)
 	if notify then
-		notify.push("Casino Heist", "Cuts applied", 2000)
+		notify.push("Casino Heist", "Cuts completed", 2000)
 	end
 end
 
@@ -411,7 +411,7 @@ local function reset_heist_preps()
 	safe_access.set_stat_int("MPPLY_H3_COOLDOWN", 0)
 	safe_access.set_local_int("gb_casino_heist_planning", 212, 2)
 	if notify then
-		notify.push("Casino Preps", "Preps reset", 2000)
+		notify.push("Casino Preps", "Preps reset completed", 2000)
 	end
 end
 
@@ -423,11 +423,11 @@ local function casino_skip_arcade_setup()
 
 	if success and result then
 		if notify then
-			notify.push("Casino Tools", "Arcade setup skipped", 2000)
+			notify.push("Casino Tools", "Arcade setup completed", 2000)
 		end
 	else
 		if notify then
-			notify.push("Casino Tools", "Could not skip arcade setup", 2000)
+			notify.push("Casino Tools", "Arcade setup failed", 2000)
 		end
 	end
 end
@@ -435,7 +435,7 @@ end
 local function casino_fix_stuck_keycards()
 	safe_access.set_local_int("fm_mission_controller", 63638, 5)
 	if notify then
-		notify.push("Casino Tools", "Keycards fixed", 2000)
+		notify.push("Casino Tools", "Keycards fix completed", 2000)
 	end
 end
 
@@ -443,7 +443,7 @@ local function casino_skip_objective()
 	local v = safe_access.get_local_int("fm_mission_controller", 20397, 0)
 	safe_access.set_local_int("fm_mission_controller", 20397, v | (1 << 17))
 	if notify then
-		notify.push("Casino Tools", "Objective skipped", 2000)
+		notify.push("Casino Tools", "Objective skip completed", 2000)
 	end
 end
 
@@ -475,7 +475,7 @@ local function casino_remove_cooldown()
 	safe_access.set_stat_int(p .. "H3_COMPLETEDPOSIX", -1)
 	safe_access.set_stat_int("MPPLY_H3_COOLDOWN", -1)
 	if notify then
-		notify.push("Casino Tools", "Cooldown removed", 2000)
+		notify.push("Casino Tools", "Cooldown removal completed", 2000)
 	end
 end
 
@@ -487,7 +487,7 @@ local function casino_set_team_lives()
 		end
 	else
 		if notify then
-			notify.push("Casino Tools", "Mission controller not running", 2000)
+			notify.push("Casino Tools", "Instant finish failed (controller not running)", 2000)
 		end
 	end
 end
@@ -495,7 +495,7 @@ end
 local function casino_instant_finish()
 	if not safe_access.is_script_running("fm_mission_controller") then
 		if notify then
-			notify.push("Casino Tools", "Casino mission not running", 2000)
+			notify.push("Casino Tools", "Instant finish failed (mission not running)", 2000)
 		end
 		return false
 	end
@@ -528,11 +528,11 @@ local function casino_instant_finish()
 		end
 
 		if notify then
-			notify.push("Casino Tools", "Instant finish triggered", 2000)
+			notify.push("Casino Tools", "Instant finish completed", 2000)
 		end
 	end, function()
 		if notify then
-			notify.push("Casino Tools", "Instant finish already running", 1500)
+			notify.push("Casino Tools", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end
@@ -553,7 +553,7 @@ local function casino_force_ready()
 		end
 	end, function()
 		if notify then
-			notify.push("Casino Launch", "Force ready already running", 1500)
+			notify.push("Casino Launch", "Force ready failed (already running)", 1500)
 		end
 	end)
 end

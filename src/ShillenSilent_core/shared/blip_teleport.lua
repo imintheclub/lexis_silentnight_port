@@ -89,7 +89,7 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 		invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
 	end, function()
 		if notify then
-			notify.push(notify_title or "Teleport", "Teleport already running", 1200)
+			notify.push(notify_title or "Teleport", "Teleport failed (already running)", 1200)
 		end
 	end)
 end

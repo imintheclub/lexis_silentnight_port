@@ -56,6 +56,27 @@ function doomsday_menu.register(parent_menu)
 	root:breaker("2 transactions in 30 min possible")
 	root:breaker("Heist cooldown: unknown")
 
+	local tp = root:submenu("Teleport")
+	common.add_button(tp, "Teleport to Entrance", function()
+		doomsday_module.doomsday_teleport_to_entrance()
+	end)
+	common.add_button(tp, "Teleport to Screen", function()
+		doomsday_module.doomsday_teleport_to_screen()
+	end)
+
+	local launch = root:submenu("Launch")
+	controls.solo_launch_toggle = common.add_toggle(ctx, launch, "Solo Launch", function()
+		return state.solo_launch.doomsday
+	end, function(enabled)
+		state.solo_launch.doomsday = enabled
+	end)
+	common.add_button(launch, "Force Ready", function()
+		doomsday_module.doomsday_force_ready()
+	end)
+	common.add_button(launch, "Reset Solo Launch Overrides", function()
+		doomsday_module.doomsday_manual_launch_reset()
+	end)
+
 	local preps = root:submenu("Prep Presets")
 	controls.act_combo = common.add_combo_options(ctx, preps, "Act", DOOMSDAY_ACT_OPTIONS, function()
 		return DoomsdayConfig.act
@@ -73,27 +94,6 @@ function doomsday_menu.register(parent_menu)
 	end)
 	common.add_button(preps, "Reload Planning Board", function()
 		doomsday_module.doomsday_reload_board(true)
-	end)
-
-	local launch = root:submenu("Launch")
-	controls.solo_launch_toggle = common.add_toggle(ctx, launch, "Solo Launch", function()
-		return state.solo_launch.doomsday
-	end, function(enabled)
-		state.solo_launch.doomsday = enabled
-	end)
-	common.add_button(launch, "Force Ready", function()
-		doomsday_module.doomsday_force_ready()
-	end)
-	common.add_button(launch, "Reset Solo Launch Overrides", function()
-		doomsday_module.doomsday_manual_launch_reset()
-	end)
-
-	local tp = root:submenu("Teleport")
-	common.add_button(tp, "Teleport to Entrance", function()
-		doomsday_module.doomsday_teleport_to_entrance()
-	end)
-	common.add_button(tp, "Teleport to Screen", function()
-		doomsday_module.doomsday_teleport_to_screen()
 	end)
 
 	local cuts = root:submenu("Cuts")

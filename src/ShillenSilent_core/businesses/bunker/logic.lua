@@ -74,7 +74,7 @@ end
 local function production_tick()
 	biz.production_tick(BUNKER_SLOT)
 	if notify then
-		notify.push("Bunker", "Production tick applied", 2000)
+		notify.push("Bunker", "Production tick completed", 2000)
 	end
 end
 
@@ -126,11 +126,11 @@ local function refill_supplies()
 	biz.run_guarded_job("bunker_refill", function()
 		biz.fill_supply_slot(BUNKER_SLOT)
 		if notify then
-			notify.push("Bunker", "Supplies refilled", 2000)
+			notify.push("Bunker", "Supplies refill completed", 2000)
 		end
 	end, function()
 		if notify then
-			notify.push("Bunker", "Refill already in progress", 1500)
+			notify.push("Bunker", "Supplies refill failed (already in progress)", 1500)
 		end
 	end)
 end
@@ -146,11 +146,11 @@ local function instant_sell()
 
 		local ok = biz.set_local_int(SELL_SCRIPT, SELL_BASE + SELL_COMPLETE_OFFSET, 0)
 		if notify then
-			notify.push("Bunker", ok and "Instant sell triggered" or "Sell write failed", 2200)
+			notify.push("Bunker", ok and "Instant sell completed" or "Instant sell failed to apply", 2200)
 		end
 	end, function()
 		if notify then
-			notify.push("Bunker", "Sell already running", 1500)
+			notify.push("Bunker", "Instant sell failed (already running)", 1500)
 		end
 	end)
 end

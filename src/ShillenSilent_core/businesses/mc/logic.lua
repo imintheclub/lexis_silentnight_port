@@ -71,7 +71,7 @@ local function production_tick(sub_key)
 	end
 	biz.production_tick(sub.slot)
 	if notify then
-		notify.push("MC: " .. sub.name, "Production tick applied", 2000)
+		notify.push("MC: " .. sub.name, "Production tick completed", 2000)
 	end
 end
 
@@ -85,11 +85,11 @@ local function refill_supplies(sub_key)
 	biz.run_guarded_job("mc_refill_" .. sub_key, function()
 		biz.fill_supply_slot(slot)
 		if notify then
-			notify.push("MC: " .. name, "Supplies refilled", 2000)
+			notify.push("MC: " .. name, "Supplies refill completed", 2000)
 		end
 	end, function()
 		if notify then
-			notify.push("MC: " .. name, "Refill already in progress", 1500)
+			notify.push("MC: " .. name, "Supplies refill failed (already in progress)", 1500)
 		end
 	end)
 end
@@ -101,11 +101,11 @@ local function refill_all_supplies()
 			util.yield(20)
 		end
 		if notify then
-			notify.push("Moto Club", "All supplies refilled", 2000)
+			notify.push("Moto Club", "All supplies refill completed", 2000)
 		end
 	end, function()
 		if notify then
-			notify.push("Moto Club", "Refill already in progress", 1500)
+			notify.push("Moto Club", "Supplies refill failed (already in progress)", 1500)
 		end
 	end)
 end
@@ -120,11 +120,11 @@ local function instant_sell()
 		end
 		local ok = biz.set_local_int(SELL_SCRIPT, SELL_BASE + SELL_OFF, SELL_VALUE)
 		if notify then
-			notify.push("Moto Club", ok and "Instant sell triggered" or "Sell write failed", 2200)
+			notify.push("Moto Club", ok and "Instant sell completed" or "Instant sell failed to apply", 2200)
 		end
 	end, function()
 		if notify then
-			notify.push("Moto Club", "Sell already running", 1500)
+			notify.push("Moto Club", "Instant sell failed (already running)", 1500)
 		end
 	end)
 end

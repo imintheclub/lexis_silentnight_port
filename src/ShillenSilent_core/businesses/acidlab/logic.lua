@@ -20,7 +20,7 @@ local _fast_prod_status = "Stopped"
 local function production_tick()
 	biz.production_tick(ACID_SLOT)
 	if notify then
-		notify.push("Acid Lab", "Production tick applied", 2000)
+		notify.push("Acid Lab", "Production tick completed", 2000)
 	end
 end
 
@@ -28,11 +28,11 @@ local function refill_supplies()
 	biz.run_guarded_job("acidlab_refill", function()
 		biz.fill_supply_slot(ACID_SLOT)
 		if notify then
-			notify.push("Acid Lab", "Supplies refilled", 2000)
+			notify.push("Acid Lab", "Supplies refill completed", 2000)
 		end
 	end, function()
 		if notify then
-			notify.push("Acid Lab", "Refill already in progress", 1500)
+			notify.push("Acid Lab", "Supplies refill failed (already in progress)", 1500)
 		end
 	end)
 end
@@ -52,11 +52,11 @@ local function instant_sell()
 		local ok2 = biz.set_local_int(SELL_SCRIPT, SELL_FLAGS_OFFSET, flags)
 
 		if notify then
-			notify.push("Acid Lab", (ok1 and ok2) and "Instant sell triggered" or "Sell write failed", 2200)
+			notify.push("Acid Lab", (ok1 and ok2) and "Instant sell completed" or "Instant sell failed to apply", 2200)
 		end
 	end, function()
 		if notify then
-			notify.push("Acid Lab", "Sell already running", 1500)
+			notify.push("Acid Lab", "Instant sell failed (already running)", 1500)
 		end
 	end)
 end

@@ -7,6 +7,7 @@ local casino_logic = require("ShillenSilent_core.heists.casino.logic")
 local salvageyard_logic = require("ShillenSilent_core.heists.salvageyard.logic")
 local agency_logic = require("ShillenSilent_core.heists.agency.logic")
 local moneyfronts_logic = require("ShillenSilent_core.businesses.moneyfronts.logic")
+local nightclub_logic = require("ShillenSilent_core.businesses.nightclub.logic")
 
 local state = core.state
 
@@ -68,6 +69,7 @@ local function maybe_enforce_heist_toggles()
 	pcall(cayo_logic.cayo_enforce_heist_toggles)
 	pcall(casino_logic.casino_enforce_heist_toggles)
 	pcall(salvageyard_logic.salvage_enforce_heist_toggles)
+	pcall(salvageyard_logic.salvage_popularity_lock_tick)
 end
 
 local function maybe_enforce_business_toggles()
@@ -78,6 +80,7 @@ local function maybe_enforce_business_toggles()
 	runtime_services.next_biz_enforce_tick = now + BIZ_ENFORCE_INTERVAL_MS
 
 	pcall(moneyfronts_logic.tick_heat_lock)
+	pcall(nightclub_logic.popularity_lock_tick)
 end
 
 local function maybe_maintain_solo_launch()

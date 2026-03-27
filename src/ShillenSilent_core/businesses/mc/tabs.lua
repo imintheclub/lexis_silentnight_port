@@ -36,6 +36,12 @@ local function register(heistTab)
 	ui.toggle(gGlobal, "mc_reminders", "Disable Reminders", mc_logic.get_reminders_active(), function(val)
 		mc_logic.set_disable_reminders(val)
 	end)
+	ui.toggle(gGlobal, "mc_raids", "Disable Raids", mc_logic.get_raids_active(), function(val)
+		mc_logic.set_disable_raids(val)
+	end)
+	ui.button(gGlobal, "mc_black_screen", "Kill MC Black Screen", function()
+		mc_logic.kill_black_screen()
+	end)
 
 	-- Per-sub-business groups.
 	for _, sub in ipairs(subs) do

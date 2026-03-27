@@ -45,8 +45,12 @@ local NC_SAFE_COLLECT = 2708832
 -- Stats.
 local POPULARITY_STAT = "CLUB_POPULARITY"
 local POPULARITY_MAX = 1000
+local POPULARITY_MIN = 0
 local SAFE_STAT = "CLUB_SAFE_CASH_VALUE"
 local SAFE_MAX = 250000
+local SAFE_PAY_TIME_STAT = "CLUB_PAY_TIME_LEFT"
+local NC_SAFE_TOP5 = 262145 + 23750
+local NC_SAFE_TOP100 = 262145 + 23769
 
 -- Tunables for raids/reminders.
 local TUNABLE_DISABLE_RAIDS = "BIKER_DISABLE_DEFEND_POLICE_RAID"
@@ -62,6 +66,8 @@ local _fast_prod_active = false
 local _fast_prod_thread_started = false
 local _fast_prod_status = "Stopped"
 local _fast_prod_target = "all"
+local _popularity_editor_value = POPULARITY_MAX
+local _popularity_lock_active = false
 
 -- Blip sprite ID for nightclub map icon — used for primary teleport.
 local BLIP_SPRITE = 614
@@ -270,6 +276,90 @@ local function set_popularity_max()
 	end
 end
 
+local function clamp_popularity(v)
+	local n = math.floor(tonumber(v) or POPULARITY_MIN)
+	if n < POPULARITY_MIN then
+		return POPULARITY_MIN
+	end
+	if n > POPULARITY_MAX then
+		return POPULARITY_MAX
+	end
+	return n
+end
+
+local function set_popularity(value, silent)
+	local mp = biz.GetMP()
+	local target = clamp_popularity(value)
+	local ok = biz.set_stat_int(mp .. POPULARITY_STAT, target)
+	_popularity_editor_value = target
+	if notify and not silent then
+		notify.push("Nightclub", ok and ("Popularity set to " .. tostring(target)) or "Popularity apply failed", 2000)
+	end
+	return ok
+end
+
+local function get_popularity_editor_value()
+	return _popularity_editor_value
+end
+
+local function set_popularity_editor_value(value)
+	_popularity_editor_value = clamp_popularity(value)
+end
+
+local function apply_popularity_editor_value()
+	return set_popularity(_popularity_editor_value, false)
+end
+
+local function set_popularity_lock_active(enabled)
+	_popularity_lock_active = enabled == true
+	if _popularity_lock_active then
+		set_popularity(_popularity_editor_value, true)
+	end
+	if notify then
+		notify.push(
+			"Nightclub",
+			_popularity_lock_active and "Popularity lock enabled" or "Popularity lock disabled",
+			2000
+		)
+	end
+end
+
+local function get_popularity_lock_active()
+	return _popularity_lock_active
+end
+
+local function popularity_lock_tick()
+	if not _popularity_lock_active then
+		return
+	end
+	local mp = biz.GetMP()
+	local cur = biz.get_stat_int(mp .. POPULARITY_STAT, 0) or 0
+	local target = clamp_popularity(_popularity_editor_value)
+	local min_allowed = math.max(POPULARITY_MIN, target - 50)
+	if cur < min_allowed then
+		set_popularity(target, true)
+	end
+end
+
+local function safe_unbrick()
+	local any_ok = false
+	for idx = NC_SAFE_TOP5, NC_SAFE_TOP100 do
+		if biz.set_global_int(idx, 1) then
+			any_ok = true
+		end
+	end
+	local mp = biz.GetMP()
+	biz.set_stat_int(mp .. SAFE_PAY_TIME_STAT, -1)
+	util.yield(3000)
+	if biz.set_global_int(NC_SAFE_COLLECT, 1) then
+		any_ok = true
+	end
+	if notify then
+		notify.push("Nightclub", any_ok and "Safe unbrick sequence applied" or "Safe unbrick failed", 2200)
+	end
+	return any_ok
+end
+
 local function set_disable_raids(enabled)
 	if enabled then
 		if _raids_default == nil then
@@ -325,7 +415,14 @@ local nightclub_logic = {
 	fill_all_products = fill_all_products,
 	safe_collect = safe_collect,
 	safe_fill = safe_fill,
+	safe_unbrick = safe_unbrick,
 	set_popularity_max = set_popularity_max,
+	get_popularity_editor_value = get_popularity_editor_value,
+	set_popularity_editor_value = set_popularity_editor_value,
+	apply_popularity_editor_value = apply_popularity_editor_value,
+	set_popularity_lock_active = set_popularity_lock_active,
+	get_popularity_lock_active = get_popularity_lock_active,
+	popularity_lock_tick = popularity_lock_tick,
 	set_disable_raids = set_disable_raids,
 	get_raids_active = get_raids_active,
 	set_disable_reminders = set_disable_reminders,

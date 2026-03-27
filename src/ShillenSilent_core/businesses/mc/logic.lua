@@ -39,6 +39,7 @@ local SELL_VALUE = 15
 local FAST_LOOP_INTERVAL_MS = 150
 
 local TUNABLE_REMINDERS = "BIKER_PRODUCT_REMINDER_COOLDOWN"
+local TUNABLE_DISABLE_RAIDS = "BIKER_DEFEND_MISSIONS_RAND"
 local REMINDER_COOLDOWN_DISABLED = 86400000
 local REMINDER_COOLDOWN_DEFAULT = 300000
 
@@ -48,6 +49,8 @@ local _fast_prod_status = "Stopped"
 local _sub_prod_active = {}
 local _sub_prod_status = {}
 local _sub_prod_thread_started = false
+local _raids_default = nil
+local _raids_active = false
 local _reminders_default = nil
 local _reminders_active = false
 
@@ -305,6 +308,46 @@ local function get_reminders_active()
 	return _reminders_active
 end
 
+local function set_disable_raids(enabled)
+	if enabled then
+		if _raids_default == nil then
+			_raids_default = biz.get_tunable_int(TUNABLE_DISABLE_RAIDS, 5)
+		end
+		biz.set_tunable_int(TUNABLE_DISABLE_RAIDS, 0)
+		_raids_active = true
+	else
+		biz.set_tunable_int(TUNABLE_DISABLE_RAIDS, _raids_default or 5)
+		_raids_active = false
+	end
+	if notify then
+		notify.push("Moto Club", enabled and "Raids disabled" or "Raids restored", 2000)
+	end
+end
+
+local function get_raids_active()
+	return _raids_active
+end
+
+local function kill_black_screen()
+	local any_ok = false
+	pcall(function()
+		invoker.call(0xD4E8E24955024033, 0) -- DO_SCREEN_FADE_IN
+		any_ok = true
+	end)
+	pcall(function()
+		invoker.call(0xA6294919E56FF02A, true) -- DISPLAY_HUD
+		any_ok = true
+	end)
+	pcall(function()
+		invoker.call(0xA0EBB943C300E693, true) -- DISPLAY_RADAR
+		any_ok = true
+	end)
+	if notify then
+		notify.push("Moto Club", any_ok and "Black screen reset attempted" or "Black screen reset failed", 2200)
+	end
+	return any_ok
+end
+
 local mc_logic = {
 	get_subs = get_subs,
 	production_tick = production_tick,
@@ -317,8 +360,11 @@ local mc_logic = {
 	set_sub_production_loop = set_sub_production_loop,
 	get_sub_production_loop_active = get_sub_production_loop_active,
 	get_sub_production_loop_status = get_sub_production_loop_status,
+	set_disable_raids = set_disable_raids,
+	get_raids_active = get_raids_active,
 	set_disable_reminders = set_disable_reminders,
 	get_reminders_active = get_reminders_active,
+	kill_black_screen = kill_black_screen,
 }
 
 return mc_logic

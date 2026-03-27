@@ -33,6 +33,9 @@ local SALVAGE_STATS = {
 local SALVAGE_GLOBALS = {
 	SAFE_COLLECT_BOOL = 2708859,
 }
+local STAT_SET_PACKED_INT = 0x1581503AE529CD2E
+local STAT_GET_PACKED_INT = 0x0BC900A27CBBAC55
+local SALVAGE_POP_PACKED_IDX = 51051
 
 local SALVAGE_TUNABLES = {
 	SETUP_PRICE = 71522671,
@@ -47,6 +50,8 @@ local SALVAGE_DEFAULTS = {
 	claim_price_standard = 20000,
 	claim_price_discounted = 10000,
 }
+local SALVAGE_POP_MIN = 0
+local SALVAGE_POP_MAX = 100
 
 local SALVAGE_SLOT_TUNABLES = {
 	[1] = {
@@ -71,6 +76,9 @@ local SALVAGE_SLOT_TUNABLES = {
 		status_stat = "SALV23_VEHROB_STATUS2",
 	},
 }
+
+local _salvage_popularity_editor_value = SALVAGE_POP_MAX
+local _salvage_popularity_lock_active = false
 
 local SALVAGE_SCRIPTS = {
 	PLANNING = "vehrob_planning",
@@ -178,6 +186,36 @@ local function global_bool_supported(offset)
 		local _ = script.globals(offset).bool
 	end)
 	return ok
+end
+
+local function read_packed_int(idx, slot)
+	if not (memory and invoker and invoker.call and memory.alloc_int and memory.read_int) then
+		return nil
+	end
+
+	local buf = memory.alloc_int()
+	if not buf then
+		return nil
+	end
+
+	local value = nil
+	local ok_call = pcall(function()
+		invoker.call(STAT_GET_PACKED_INT, idx, buf, slot or 0)
+	end)
+	if ok_call then
+		local ok_read, v = pcall(memory.read_int, buf)
+		if ok_read then
+			value = tonumber(v)
+		end
+	end
+
+	if memory.free then
+		pcall(memory.free, buf)
+	elseif memory.free_int then
+		pcall(memory.free_int, buf)
+	end
+
+	return value
 end
 
 local function salvage_get_slot_config(slot)
@@ -549,6 +587,115 @@ local function salvage_collect_safe()
 	return ok
 end
 
+local function clamp_salvage_popularity(v)
+	local n = math.floor(tonumber(v) or SALVAGE_POP_MIN)
+	if n < SALVAGE_POP_MIN then
+		return SALVAGE_POP_MIN
+	end
+	if n > SALVAGE_POP_MAX then
+		return SALVAGE_POP_MAX
+	end
+	return n
+end
+
+local function salvage_set_popularity(value, silent)
+	local target = clamp_salvage_popularity(value)
+	local ok0 = pcall(function()
+		invoker.call(STAT_SET_PACKED_INT, SALVAGE_POP_PACKED_IDX, target, 0)
+	end)
+	local ok1 = pcall(function()
+		invoker.call(STAT_SET_PACKED_INT, SALVAGE_POP_PACKED_IDX, target, 1)
+	end)
+	_salvage_popularity_editor_value = target
+	local ok = ok0 or ok1
+	if notify and not silent then
+		notify.push(
+			"Salvage Yard",
+			ok and ("Popularity set to " .. tostring(target)) or "Popularity apply failed",
+			2200
+		)
+	end
+	return ok
+end
+
+local function salvage_get_popularity_editor_value()
+	return _salvage_popularity_editor_value
+end
+
+local function salvage_set_popularity_editor_value(value)
+	_salvage_popularity_editor_value = clamp_salvage_popularity(value)
+end
+
+local function salvage_apply_popularity_editor_value()
+	return salvage_set_popularity(_salvage_popularity_editor_value, false)
+end
+
+local function salvage_set_popularity_lock_active(enabled)
+	_salvage_popularity_lock_active = enabled == true
+	if _salvage_popularity_lock_active then
+		salvage_set_popularity(_salvage_popularity_editor_value, true)
+	end
+	if notify then
+		notify.push(
+			"Salvage Yard",
+			_salvage_popularity_lock_active and "Popularity lock enabled" or "Popularity lock disabled",
+			2200
+		)
+	end
+end
+
+local function salvage_get_popularity_lock_active()
+	return _salvage_popularity_lock_active
+end
+
+local function salvage_popularity_lock_tick()
+	if not _salvage_popularity_lock_active then
+		return
+	end
+	local cur = read_packed_int(SALVAGE_POP_PACKED_IDX, 0)
+	local target = clamp_salvage_popularity(_salvage_popularity_editor_value)
+	local min_allowed = math.max(SALVAGE_POP_MIN, target - 10)
+	if cur and cur < min_allowed then
+		salvage_set_popularity(target, true)
+	end
+end
+
+local function salvage_tow_truck_instant_finish()
+	return run_guarded_job("salvage_tow_truck_instant_finish", function()
+		local script_name = "fm_content_tow_truck_work"
+		if not is_script_running(script_name) then
+			if notify then
+				notify.push("Salvage Yard", "Tow Truck script is not active", 2200)
+			end
+			return
+		end
+
+		local ok = false
+		local veh_bases = { 1783, 1781 }
+		local mission_bases = { 1840, 1838 }
+		for _, veh_base in ipairs(veh_bases) do
+			local ok_veh = set_local_int(script_name, veh_base + 1, 1)
+			ok = ok or ok_veh
+		end
+		for _, mission_base in ipairs(mission_bases) do
+			local ok_mission = set_local_int(script_name, mission_base + 95, 6)
+			ok = ok or ok_mission
+		end
+
+		if notify then
+			notify.push(
+				"Salvage Yard",
+				ok and "Tow Truck instant finish attempted" or "Tow Truck instant finish failed",
+				2200
+			)
+		end
+	end, function()
+		if notify then
+			notify.push("Salvage Yard", "Tow Truck instant finish failed (already running)", 1500)
+		end
+	end)
+end
+
 local function salvage_refresh_collect_safe_state()
 	salvage_flags.collect_safe_ee_only = global_bool_supported(SALVAGE_GLOBALS.SAFE_COLLECT_BOOL)
 	if salvage_refs.collect_safe_button then
@@ -591,6 +738,10 @@ salvage_callbacks.instant_finish = salvage_instant_finish
 salvage_callbacks.force_through_error = salvage_force_through_error
 salvage_callbacks.skip_weekly_cooldown = salvage_skip_weekly_cooldown
 salvage_callbacks.collect_safe = salvage_collect_safe
+salvage_callbacks.tow_truck_instant_finish = salvage_tow_truck_instant_finish
+salvage_callbacks.set_popularity = salvage_set_popularity
+salvage_callbacks.set_popularity_lock = salvage_set_popularity_lock_active
+salvage_callbacks.popularity_lock_tick = salvage_popularity_lock_tick
 salvage_callbacks.apply_sell_values = salvage_apply_sell_values
 salvage_callbacks.apply_sell_multiplier = salvage_apply_sell_values
 salvage_callbacks.enforce_toggles = salvage_enforce_heist_toggles
@@ -617,6 +768,13 @@ local salvageyard_logic = {
 	salvage_force_through_error = salvage_force_through_error,
 	salvage_skip_weekly_cooldown = salvage_skip_weekly_cooldown,
 	salvage_collect_safe = salvage_collect_safe,
+	salvage_tow_truck_instant_finish = salvage_tow_truck_instant_finish,
+	salvage_get_popularity_editor_value = salvage_get_popularity_editor_value,
+	salvage_set_popularity_editor_value = salvage_set_popularity_editor_value,
+	salvage_apply_popularity_editor_value = salvage_apply_popularity_editor_value,
+	salvage_set_popularity_lock_active = salvage_set_popularity_lock_active,
+	salvage_get_popularity_lock_active = salvage_get_popularity_lock_active,
+	salvage_popularity_lock_tick = salvage_popularity_lock_tick,
 	salvage_refresh_collect_safe_state = salvage_refresh_collect_safe_state,
 	salvage_apply_sell_values = salvage_apply_sell_values,
 }

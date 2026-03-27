@@ -43,6 +43,9 @@ function biz_misc.register(parent_menu)
 	end, function(enabled)
 		mf_logic.set_heat_lock_active(enabled)
 	end)
+	common.add_button(mf_heat, "Reset Safe Production State", function()
+		mf_logic.reset_safe_production_state()
+	end)
 
 	-- Garment Factory
 	local garment_root = root:submenu("Garment Factory")

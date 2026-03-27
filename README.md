@@ -31,6 +31,22 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 ## v0.1.2
 - UI fixes for consistency
 - fix production tick to be on a loop
+- Business Manager updates:
+  - Money Fronts:
+    - Added heat editor controls (`Heat`, `Apply Heat`, `Set Heat 0`) in click UI + controller menu
+    - Added `Lock Heat at 0` with threshold-based behavior (Sylo-style: only resets when heat is above threshold)
+    - Added `Reset Safe Production State`
+  - Moto Club:
+    - Added `Disable Raids`
+    - Added `Kill MC Black Screen`
+  - Nightclub:
+    - Added `Unbrick Safe`
+    - Added popularity editor flow (`Popularity` value, `Apply Popularity`, `Lock Popularity`)
+  - Salvage Yard:
+    - Added `Tow Truck Instant Finish` (separate from the existing general instant finish)
+    - Added popularity editor flow (`Popularity` value, `Apply Popularity`, `Lock Popularity`)
+  - Runtime services:
+    - Added business lock enforcement ticks for Money Front heat lock, Nightclub popularity lock, and Salvage Yard popularity lock
 
 ## v0.1.1
 - Added missing teleports:

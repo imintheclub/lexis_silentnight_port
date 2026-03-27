@@ -54,10 +54,6 @@ function biz_mc.register(parent_menu)
 		common.add_button(sub_menu, "Refill Supplies", function()
 			mc_logic.refill_supplies(sub_key)
 		end)
-
-		common.add_button(sub_menu, "Teleport", function()
-			mc_logic.teleport(sub_key)
-		end)
 		if util and util.create_thread and sub_status_breaker then
 			util.create_thread(function()
 				while true do

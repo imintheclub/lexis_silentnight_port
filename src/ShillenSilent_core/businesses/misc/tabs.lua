@@ -31,6 +31,28 @@ local function register(heistTab)
 	ui.button(gMF, "mf_teleport", "Teleport", function()
 		mf_logic.teleport()
 	end)
+	ui.slider(gMF, "mf_heat_value", "Heat", 0, 100, mf_logic.get_heat_editor_value(), function(val)
+		mf_logic.set_heat_editor_value(val)
+	end, "Set Money Front heat value", 5)
+	ui.button_pair(
+		gMF,
+		"mf_heat_apply",
+		"Apply Heat",
+		function()
+			mf_logic.apply_heat_editor_value()
+		end,
+		"mf_heat_reset",
+		"Set Heat 0",
+		function()
+			mf_logic.reset_heat()
+		end
+	)
+	ui.toggle(gMF, "mf_heat_lock", "Lock Heat at 0", mf_logic.get_heat_lock_active(), function(val)
+		mf_logic.set_heat_lock_active(val)
+	end)
+	ui.button(gMF, "mf_reset_safe_prod", "Reset Safe Production State", function()
+		mf_logic.reset_safe_production_state()
+	end)
 
 	-- Garment Factory card
 	local gGarment = ui.group(heistTab, "Garment Factory", nil, nil, nil, nil, "misc")

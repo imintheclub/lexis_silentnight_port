@@ -12,8 +12,11 @@ function biz_acidlab.register(parent_menu)
 	root:breaker("Acid Lab")
 
 	local prod = root:submenu("Production")
-	common.add_button(prod, "Production Tick", function()
-		acidlab_logic.production_tick()
+	local fast_status_breaker = prod:breaker("Fast Loop Status: " .. tostring(acidlab_logic.get_fast_prod_status()))
+	common.add_toggle(biz_acidlab.ctx, prod, "Production Tick (Loop)", function()
+		return acidlab_logic.get_fast_prod_active()
+	end, function(enabled)
+		acidlab_logic.set_fast_production(enabled)
 	end)
 	common.add_button(prod, "Refill Supplies", function()
 		acidlab_logic.refill_supplies()
@@ -21,11 +24,14 @@ function biz_acidlab.register(parent_menu)
 	common.add_button(prod, "Instant Sell", function()
 		acidlab_logic.instant_sell()
 	end)
-	common.add_toggle(biz_acidlab.ctx, prod, "Fast Production", function()
-		return acidlab_logic.get_fast_prod_active()
-	end, function(enabled)
-		acidlab_logic.set_fast_production(enabled)
-	end)
+	if util and util.create_thread and fast_status_breaker then
+		util.create_thread(function()
+			while true do
+				fast_status_breaker.name = "Fast Loop Status: " .. tostring(acidlab_logic.get_fast_prod_status())
+				util.yield(250)
+			end
+		end)
+	end
 
 	return root
 end

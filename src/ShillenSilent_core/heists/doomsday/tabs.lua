@@ -34,6 +34,19 @@ local function register(heistTab)
 	doomsday_refs.presets_group = hp_build_heist_preset_group(heistTab, "doomsday", "doomsday", "doomsday")
 
 	local gDoomsdayPreps = ui.group(heistTab, "Prep Presets", nil, nil, nil, nil, "doomsday")
+	ui.button_pair(
+		gDoomsdayPreps,
+		"doomsday_teleport_entrance",
+		"Teleport to Entrance",
+		function()
+			doomsday_module.doomsday_teleport_to_entrance()
+		end,
+		"doomsday_teleport_screen",
+		"Teleport to Screen",
+		function()
+			doomsday_module.doomsday_teleport_to_screen()
+		end
+	)
 	doomsday_refs.act_dropdown = ui.dropdown(
 		gDoomsdayPreps,
 		"doomsday_act",
@@ -56,7 +69,7 @@ local function register(heistTab)
 		"Reload Planning Board",
 		function()
 			if doomsday_module.doomsday_reload_board(true) and notify then
-				notify.push("Doomsday", "Planning board reloaded", 2000)
+				notify.push("Doomsday", "Planning board reload completed", 2000)
 			end
 		end
 	)
@@ -95,21 +108,6 @@ local function register(heistTab)
 		"Reset Solo Launch Overrides",
 		function()
 			doomsday_module.doomsday_manual_launch_reset()
-		end
-	)
-
-	local gDoomsdayTeleport = ui.group(heistTab, "Teleport", nil, nil, nil, nil, "doomsday")
-	ui.button_pair(
-		gDoomsdayTeleport,
-		"doomsday_teleport_entrance",
-		"Teleport to Entrance",
-		function()
-			doomsday_module.doomsday_teleport_to_entrance()
-		end,
-		"doomsday_teleport_screen",
-		"Teleport to Screen",
-		function()
-			doomsday_module.doomsday_teleport_to_screen()
 		end
 	)
 

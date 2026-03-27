@@ -3,7 +3,7 @@ local garment_logic = require("ShillenSilent_core.businesses.garment.logic")
 local bailoffice_logic = require("ShillenSilent_core.businesses.bailoffice.logic")
 local common = require("ShillenSilent_core.menu.common")
 
-local biz_misc = {}
+local biz_misc = { ctx = { syncing = false } }
 
 function biz_misc.register(parent_menu)
 	if not parent_menu then
@@ -26,6 +26,26 @@ function biz_misc.register(parent_menu)
 			mf_logic.teleport()
 		end)
 	end
+	local mf_heat = mf_root:submenu("Heat")
+	common.add_number_int(biz_misc.ctx, mf_heat, "Heat Value", 0, 100, 5, function()
+		return mf_logic.get_heat_editor_value()
+	end, function(value)
+		mf_logic.set_heat_editor_value(value)
+	end)
+	common.add_button(mf_heat, "Apply Heat", function()
+		mf_logic.apply_heat_editor_value()
+	end)
+	common.add_button(mf_heat, "Set Heat 0", function()
+		mf_logic.reset_heat()
+	end)
+	common.add_toggle(biz_misc.ctx, mf_heat, "Lock Heat at 0", function()
+		return mf_logic.get_heat_lock_active()
+	end, function(enabled)
+		mf_logic.set_heat_lock_active(enabled)
+	end)
+	common.add_button(mf_heat, "Reset Safe Production State", function()
+		mf_logic.reset_safe_production_state()
+	end)
 
 	-- Garment Factory
 	local garment_root = root:submenu("Garment Factory")

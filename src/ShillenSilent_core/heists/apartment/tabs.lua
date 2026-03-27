@@ -63,6 +63,33 @@ local function register(heistTab)
 
 	-- Apartment Tab Content (wrapped in do...end to reduce local variable count)
 	do
+		local function apartment_teleport_to_entrance()
+			return teleport_to_blip_with_job(
+				BLIP_SPRITES_APARTMENT,
+				"Teleport",
+				"Teleported to Entrance",
+				"Entrance blip not found",
+				{ relay_if_interior = true }
+			)
+		end
+
+		local function apartment_teleport_to_heist_board()
+			if not is_in_apartment_interior() then
+				if notify then
+					notify.push("Teleport", "You must be inside an Apartment interior", 2200)
+				end
+				return false
+			end
+
+			return teleport_to_blip_with_job(
+				BLIP_SPRITES_HEIST,
+				"Teleport",
+				"Teleported to Heist Board",
+				"Heist board blip not found (enter property first)",
+				{ heading = 173.376 }
+			)
+		end
+
 		local gApartmentInfo = ui.group(heistTab, "Info", nil, nil, nil, 160, "apartment")
 		ui.label(gApartmentInfo, "Apartment Heist", config.colors.accent)
 		ui.label(gApartmentInfo, "Max transaction: $3,000,000", config.colors.text_main)
@@ -71,6 +98,9 @@ local function register(heistTab)
 		ui.label(gApartmentInfo, "Heist cooldown: unknown", config.colors.text_sec)
 
 		local gApartmentLaunch = ui.group(heistTab, "Launch", nil, nil, nil, nil, "apartment")
+		ui.button(gApartmentLaunch, "apartment_tp_entrance_launch", "Teleport to Entrance", function()
+			apartment_teleport_to_entrance()
+		end)
 		apartment_refs.solo_launch_toggle = ui.toggle(
 			gApartmentLaunch,
 			"apartment_launch_solo",
@@ -111,33 +141,6 @@ local function register(heistTab)
 
 		hp_build_heist_preset_group(heistTab, "apartment", "apartment", "apartment")
 
-		local function apartment_teleport_to_entrance()
-			return teleport_to_blip_with_job(
-				BLIP_SPRITES_APARTMENT,
-				"Teleport",
-				"Teleported to Entrance",
-				"Entrance blip not found",
-				{ relay_if_interior = true }
-			)
-		end
-
-		local function apartment_teleport_to_heist_board()
-			if not is_in_apartment_interior() then
-				if notify then
-					notify.push("Teleport", "You must be inside an Apartment interior", 2200)
-				end
-				return false
-			end
-
-			return teleport_to_blip_with_job(
-				BLIP_SPRITES_HEIST,
-				"Teleport",
-				"Teleported to Heist Board",
-				"Heist board blip not found (enter property first)",
-				{ heading = 173.376 }
-			)
-		end
-
 		local gApartmentTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "apartment")
 		ui.button_pair(
 			gApartmentTools,
@@ -167,6 +170,19 @@ local function register(heistTab)
 		)
 		ui.button_pair(
 			gApartmentTools,
+			"apartment_instant_finish_pacific",
+			"Instant Finish (Pacific)",
+			function()
+				apartment_instant_finish_pacific()
+			end,
+			"apartment_instant_finish_other",
+			"Instant Finish (Other)",
+			function()
+				apartment_instant_finish_other()
+			end
+		)
+		ui.button_pair(
+			gApartmentTools,
 			"apartment_unlock_all",
 			"Unlock All Jobs",
 			function()
@@ -179,35 +195,10 @@ local function register(heistTab)
 			end
 		)
 
-		local gApartmentInstantFinish = ui.group(heistTab, "Instant Finish", nil, nil, nil, nil, "apartment")
-		ui.button_pair(
-			gApartmentInstantFinish,
-			"apartment_instant_finish_pacific",
-			"Instant Finish (Pacific)",
-			function()
-				apartment_instant_finish_pacific()
-			end,
-			"apartment_instant_finish_other",
-			"Instant Finish (Other)",
-			function()
-				apartment_instant_finish_other()
-			end
-		)
-
 		local gApartmentTeleport = ui.group(heistTab, "Teleport", nil, nil, nil, nil, "apartment")
-		ui.button_pair(
-			gApartmentTeleport,
-			"apartment_tp_entrance",
-			"Teleport to Entrance",
-			function()
-				apartment_teleport_to_entrance()
-			end,
-			"apartment_tp_heist_board",
-			"Teleport to Heist Board",
-			function()
-				apartment_teleport_to_heist_board()
-			end
-		)
+		ui.button(gApartmentTeleport, "apartment_tp_heist_board", "Teleport to Heist Board", function()
+			apartment_teleport_to_heist_board()
+		end)
 
 		build_skip_cooldown_danger_group(heistTab, "apartment", "apartment_skip_heist_cooldown", function()
 			apartment_kill_cooldown()
@@ -216,6 +207,12 @@ local function register(heistTab)
 		-- Apply Apartment Cuts
 		local function apply_apartment_cuts()
 			return apartment_apply_cuts(ApartmentCutsValues)
+		end
+		-- 12M Bonus Function
+		local function apartment_12mil_bonus(enable, silent)
+			local ok = apartment_set_12mil_bonus(enable, silent)
+			apartment_flags.bonus_enabled = enable
+			return ok
 		end
 
 		local gApartmentCuts = ui.group(heistTab, "Cuts", nil, nil, nil, nil, "apartment")
@@ -321,6 +318,15 @@ local function register(heistTab)
 				end
 			end
 		)
+		apartment_refs.bonus_toggle = ui.toggle(
+			gApartmentCuts,
+			"apartment_12m_bonus",
+			"Enable 12M Bonus",
+			apartment_flags.bonus_enabled,
+			function(val)
+				apartment_12mil_bonus(val)
+			end
+		)
 
 		ui.button_pair(
 			gApartmentCuts,
@@ -333,25 +339,6 @@ local function register(heistTab)
 			"Apply Cuts",
 			function()
 				apply_apartment_cuts()
-			end
-		)
-
-		-- 12M Bonus Function
-		local function apartment_12mil_bonus(enable, silent)
-			local ok = apartment_set_12mil_bonus(enable, silent)
-			apartment_flags.bonus_enabled = enable
-			return ok
-		end
-
-		-- Bonuses Group
-		local gApartmentBonuses = ui.group(heistTab, "Bonuses", nil, nil, nil, nil, "apartment")
-		apartment_refs.bonus_toggle = ui.toggle(
-			gApartmentBonuses,
-			"apartment_12m_bonus",
-			"Enable 12M Bonus",
-			apartment_flags.bonus_enabled,
-			function(val)
-				apartment_12mil_bonus(val)
 			end
 		)
 

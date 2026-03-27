@@ -16,21 +16,21 @@ local function cluckin_skip_to_finale()
 		hp_set_stat_for_all_characters(stat, -1)
 	end
 	if notify then
-		notify.push("Cluckin Bell", "Skipped to finale", 2000)
+		notify.push("Cluckin Bell", "Skip to finale completed", 2000)
 	end
 end
 
 local function cluckin_remove_cooldown()
 	hp_set_stat_for_all_characters("SALV23_CFR_COOLDOWN", -1)
 	if notify then
-		notify.push("Cluckin Bell", "Cooldown removed", 2000)
+		notify.push("Cluckin Bell", "Cooldown removal completed", 2000)
 	end
 end
 
 local function cluckin_reset_progress()
 	hp_set_stat_for_all_characters("SALV23_INST_PROG", 0)
 	if notify then
-		notify.push("Cluckin Bell", "Progress reset", 2000)
+		notify.push("Cluckin Bell", "Progress reset completed", 2000)
 	end
 end
 
@@ -53,9 +53,9 @@ local function cluckin_instant_finish()
 
 	if notify then
 		if action_taken then
-			notify.push("Cluckin Bell", "Instant finish triggered", 2000)
+			notify.push("Cluckin Bell", "Instant finish completed", 2000)
 		else
-			notify.push("Cluckin Bell", "Mission not running", 2000)
+			notify.push("Cluckin Bell", "Instant finish failed (mission not running)", 2000)
 		end
 	end
 end

@@ -211,7 +211,7 @@ local function agency_apply_and_complete_preps()
 	ok = set_stat_int(p .. AGENCY_STATS.GENERAL_BS, -1) and ok
 	ok = set_stat_int(p .. AGENCY_STATS.COMPLETED_BS, -1) and ok
 	if notify then
-		notify.push("Agency", ok and "Preps applied" or "Prep write failed", 2000)
+		notify.push("Agency", ok and "Preps completed" or "Preps failed to apply", 2000)
 	end
 	return ok
 end
@@ -225,7 +225,7 @@ local function agency_kill_cooldowns()
 	ok = set_stat_int(p .. AGENCY_STATS.STORY_COOLDOWN, -1) and ok
 
 	if notify then
-		notify.push("Agency", ok and "Cooldowns removed" or "Cooldown write failed", 2000)
+		notify.push("Agency", ok and "Cooldowns removal completed" or "Cooldowns failed to apply", 2000)
 	end
 	return ok
 end
@@ -234,7 +234,7 @@ local function agency_apply_payout()
 	local ok = set_tunable_int(AGENCY_TUNABLES.PAYOUT, AgencyConfig.payout)
 
 	if notify then
-		notify.push("Agency", ok and "Payout applied" or "Payout write failed", 2000)
+		notify.push("Agency", ok and "Payout completed" or "Payout failed to apply", 2000)
 	end
 	return ok
 end
@@ -302,7 +302,7 @@ local function agency_collect_safe()
 
 	local ok = set_global_bool(AGENCY_GLOBALS.SAFE_COLLECT_BOOL, true)
 	if notify then
-		notify.push("Agency", ok and "Safe collected" or "Collect failed", 2000)
+		notify.push("Agency", ok and "Safe collect completed" or "Safe collect failed", 2000)
 	end
 	return ok
 end
@@ -337,7 +337,7 @@ local function agency_instant_finish_new()
 
 		if not force_script_host(script_name) then
 			if notify then
-				notify.push("Agency", "Could not force host", 2200)
+				notify.push("Agency", "Instant finish failed (host override)", 2200)
 			end
 			return
 		end
@@ -354,13 +354,13 @@ local function agency_instant_finish_new()
 		if notify then
 			notify.push(
 				"Agency",
-				(ok1 and ok2 and ok3) and "Instant finish triggered (New)" or "New finish write failed",
+				(ok1 and ok2 and ok3) and "Instant finish completed" or "Instant finish failed to apply",
 				2200
 			)
 		end
 	end, function()
 		if notify then
-			notify.push("Agency", "New finish already running", 1500)
+			notify.push("Agency", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end

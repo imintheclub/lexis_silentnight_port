@@ -1,0 +1,59 @@
+{
+  "runtime": {
+    "version": "Lua 5.4",
+    "globals": [
+      "account",
+      "animator",
+      "color",
+      "dirs",
+      "events",
+      "file",
+      "game",
+      "gui",
+      "input",
+      "invoker",
+      "joaat",
+      "json",
+      "memory",
+      "menu",
+      "natives",
+      "notify",
+      "paths",
+      "players",
+      "script",
+      "stats",
+      "util",
+      "vec2",
+      "vec3",
+      "vec4"
+    ]
+  },
+  "diagnostics": {
+    "globals": [
+      "account",
+      "animator",
+      "color",
+      "dirs",
+      "events",
+      "file",
+      "game",
+      "gui",
+      "input",
+      "invoker",
+      "joaat",
+      "json",
+      "memory",
+      "menu",
+      "natives",
+      "notify",
+      "paths",
+      "players",
+      "script",
+      "stats",
+      "util",
+      "vec2",
+      "vec3",
+      "vec4"
+    ]
+  }
+}

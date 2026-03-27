@@ -34,6 +34,12 @@ local salvage_instant_sell = salvageyard_logic.salvage_instant_sell
 local salvage_force_through_error = salvageyard_logic.salvage_force_through_error
 local salvage_skip_weekly_cooldown = salvageyard_logic.salvage_skip_weekly_cooldown
 local salvage_collect_safe = salvageyard_logic.salvage_collect_safe
+local salvage_tow_truck_instant_finish = salvageyard_logic.salvage_tow_truck_instant_finish
+local salvage_get_popularity_editor_value = salvageyard_logic.salvage_get_popularity_editor_value
+local salvage_set_popularity_editor_value = salvageyard_logic.salvage_set_popularity_editor_value
+local salvage_apply_popularity_editor_value = salvageyard_logic.salvage_apply_popularity_editor_value
+local salvage_set_popularity_lock_active = salvageyard_logic.salvage_set_popularity_lock_active
+local salvage_get_popularity_lock_active = salvageyard_logic.salvage_get_popularity_lock_active
 local salvage_refresh_collect_safe_state = salvageyard_logic.salvage_refresh_collect_safe_state
 local salvage_apply_sell_values = salvageyard_logic.salvage_apply_sell_values
 
@@ -138,6 +144,9 @@ local function register(heistTab)
 	salvage_build_slot_group(heistTab, 3)
 
 	local gSalvagePreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "salvageyard")
+	ui.button(gSalvagePreps, "salvage_tp_entrance", "Teleport to Entrance", function()
+		salvage_teleport_entrance()
+	end)
 	ui.button_pair(
 		gSalvagePreps,
 		"salvage_apply_all_changes",
@@ -183,22 +192,12 @@ local function register(heistTab)
 		end
 	)
 
-	local gSalvageMisc = ui.group(heistTab, "Misc", nil, nil, nil, nil, "salvageyard")
+	local gSalvageTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "salvageyard")
+	ui.button(gSalvageTools, "salvage_tp_board", "Teleport to Screen & Board", function()
+		salvage_teleport_board()
+	end)
 	ui.button_pair(
-		gSalvageMisc,
-		"salvage_tp_entrance",
-		"Teleport to Entrance",
-		function()
-			salvage_teleport_entrance()
-		end,
-		"salvage_tp_board",
-		"Teleport to Screen & Board",
-		function()
-			salvage_teleport_board()
-		end
-	)
-	ui.button_pair(
-		gSalvageMisc,
+		gSalvageTools,
 		"salvage_instant_finish",
 		"Instant Finish",
 		function()
@@ -210,8 +209,11 @@ local function register(heistTab)
 			salvage_instant_sell()
 		end
 	)
+	ui.button(gSalvageTools, "salvage_tow_truck_instant_finish", "Tow Truck Instant Finish", function()
+		salvage_tow_truck_instant_finish()
+	end)
 	ui.button_pair(
-		gSalvageMisc,
+		gSalvageTools,
 		"salvage_force_through_error",
 		"Force Through Error",
 		function()
@@ -223,10 +225,37 @@ local function register(heistTab)
 			salvage_collect_safe()
 		end
 	)
-	salvage_refs.collect_safe_button = gSalvageMisc.items[#gSalvageMisc.items].right
-	ui.button(gSalvageMisc, "salvage_skip_cutscene", "Skip Cutscene", function()
+	salvage_refs.collect_safe_button = gSalvageTools.items[#gSalvageTools.items].right
+	ui.button(gSalvageTools, "salvage_skip_cutscene", "Skip Cutscene", function()
 		heist_skip_cutscene("Salvage Yard")
 	end)
+
+	local gSalvagePopularity = ui.group(heistTab, "Popularity", nil, nil, nil, nil, "salvageyard")
+	ui.slider(
+		gSalvagePopularity,
+		"salvage_popularity_value",
+		"Popularity",
+		0,
+		100,
+		salvage_get_popularity_editor_value(),
+		function(val)
+			salvage_set_popularity_editor_value(val)
+		end,
+		nil,
+		5
+	)
+	ui.button(gSalvagePopularity, "salvage_popularity_apply", "Apply Popularity", function()
+		salvage_apply_popularity_editor_value()
+	end)
+	ui.toggle(
+		gSalvagePopularity,
+		"salvage_popularity_lock",
+		"Lock Popularity",
+		salvage_get_popularity_lock_active(),
+		function(val)
+			salvage_set_popularity_lock_active(val)
+		end
+	)
 
 	build_skip_cooldown_danger_group(heistTab, "salvageyard", "salvage_skip_weekly_cooldown", function()
 		salvage_skip_weekly_cooldown()

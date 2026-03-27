@@ -44,6 +44,9 @@ local function register(heistTab)
 	autoshop_refs.presets_group = hp_build_heist_preset_group(heistTab, "autoshop", "autoshop", "autoshop")
 
 	local gAutoshopPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "autoshop")
+	ui.button(gAutoshopPreps, "autoshop_tp_entrance", "Teleport to Entrance", function()
+		autoshop_teleport_entrance()
+	end)
 	autoshop_refs.contract_dropdown = ui.dropdown(
 		gAutoshopPreps,
 		"autoshop_contract",
@@ -73,22 +76,12 @@ local function register(heistTab)
 		autoshop_redraw_board()
 	end)
 
-	local gAutoshopMisc = ui.group(heistTab, "Misc", nil, nil, nil, nil, "autoshop")
+	local gAutoshopTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "autoshop")
+	ui.button(gAutoshopTools, "autoshop_tp_board", "Teleport to Board", function()
+		autoshop_teleport_board()
+	end)
 	ui.button_pair(
-		gAutoshopMisc,
-		"autoshop_tp_entrance",
-		"Teleport to Entrance",
-		function()
-			autoshop_teleport_entrance()
-		end,
-		"autoshop_tp_board",
-		"Teleport to Board",
-		function()
-			autoshop_teleport_board()
-		end
-	)
-	ui.button_pair(
-		gAutoshopMisc,
+		gAutoshopTools,
 		"autoshop_instant_finish",
 		"Instant Finish",
 		function()

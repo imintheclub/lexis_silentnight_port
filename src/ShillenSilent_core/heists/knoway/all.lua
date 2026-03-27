@@ -32,16 +32,16 @@ local function knoway_instant_finish()
 
 		if notify then
 			if not action_taken then
-				notify.push("KnoWay", "No supported script is running", 2200)
+				notify.push("KnoWay", "Instant finish failed (no script running)", 2200)
 			elseif writes_ok then
-				notify.push("KnoWay", "Instant finish triggered", 2000)
+				notify.push("KnoWay", "Instant finish completed", 2000)
 			else
-				notify.push("KnoWay", "Instant finish write incomplete", 2200)
+				notify.push("KnoWay", "Instant finish failed to apply", 2200)
 			end
 		end
 	end, function()
 		if notify then
-			notify.push("KnoWay", "Instant finish already running", 1500)
+			notify.push("KnoWay", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end

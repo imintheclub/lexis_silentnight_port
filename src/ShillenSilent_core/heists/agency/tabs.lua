@@ -42,6 +42,9 @@ local function register(heistTab)
 	agency_refs.presets_group = hp_build_heist_preset_group(heistTab, "agency", "agency", "agency")
 
 	local gAgencyPreps = ui.group(heistTab, "Preps", nil, nil, nil, nil, "agency")
+	ui.button(gAgencyPreps, "agency_tp_entrance", "Teleport to Entrance", function()
+		agency_teleport_entrance()
+	end)
 	agency_refs.contract_dropdown = ui.dropdown(
 		gAgencyPreps,
 		"agency_contract",
@@ -56,15 +59,12 @@ local function register(heistTab)
 		agency_apply_and_complete_preps()
 	end)
 
-	local gAgencyMisc = ui.group(heistTab, "Misc", nil, nil, nil, nil, "agency")
-	ui.button(gAgencyMisc, "agency_tp_entrance", "Teleport to Entrance", function()
-		agency_teleport_entrance()
-	end)
-	agency_refs.tp_computer_button = ui.button(gAgencyMisc, "agency_tp_computer", "Teleport to Computer", function()
+	local gAgencyTools = ui.group(heistTab, "Tools", nil, nil, nil, nil, "agency")
+	agency_refs.tp_computer_button = ui.button(gAgencyTools, "agency_tp_computer", "Teleport to Computer", function()
 		agency_teleport_computer()
 	end)
 	ui.button_pair(
-		gAgencyMisc,
+		gAgencyTools,
 		"agency_tp_mission",
 		"Teleport to Mission",
 		function()
@@ -76,9 +76,9 @@ local function register(heistTab)
 			agency_collect_safe()
 		end
 	)
-	agency_refs.collect_safe_button = gAgencyMisc.items[#gAgencyMisc.items].right
+	agency_refs.collect_safe_button = gAgencyTools.items[#gAgencyTools.items].right
 	ui.button_pair(
-		gAgencyMisc,
+		gAgencyTools,
 		"agency_instant_finish",
 		"Instant Finish",
 		function()

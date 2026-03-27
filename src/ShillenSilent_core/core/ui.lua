@@ -695,70 +695,74 @@ local HEIST_GROUP_LAYOUTS = {
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
 		["Preps"] = { col = 2, order = 1 },
-		["Cuts"] = { col = 1, order = 3 },
-		["Tools"] = { col = 3, order = 1 },
-		["Teleport - Outside Residence"] = { col = 3, order = 2 },
-		["Teleport - In Residence"] = { col = 3, order = 3 },
-		["DANGER"] = { col = 3, order = 4 },
+		["Cuts"] = { col = 3, order = 1 },
+		["Tools"] = { col = 3, order = 2 },
+		["Teleport - Outside Residence"] = { col = 3, order = 3 },
+		["Teleport - In Residence"] = { col = 3, order = 4 },
+		["DANGER"] = { col = 3, order = 5 },
 	},
 	[3] = { -- Casino
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
+		["Teleport"] = { col = 1, order = 3 },
+		["Teleport - Outside Casino"] = { col = 1, order = 3 },
+		["Launch"] = { col = 1, order = 4 },
 		["Preps"] = { col = 2, order = 1 },
-		["Launch"] = { col = 2, order = 2 },
-		["Cuts"] = { col = 2, order = 3 },
-		["Tools"] = { col = 3, order = 1 },
-		["Teleport - Outside Casino"] = { col = 3, order = 2 },
+		["Cuts"] = { col = 3, order = 1 },
+		["Tools"] = { col = 3, order = 2 },
 		["Teleport - In Casino"] = { col = 3, order = 3 },
 		["DANGER"] = { col = 3, order = 4 },
 	},
 	[4] = { -- Doomsday
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
+		["Teleport"] = { col = 1, order = 3 },
+		["Launch"] = { col = 1, order = 4 },
 		["Prep Presets"] = { col = 2, order = 1 },
-		["Launch"] = { col = 2, order = 2 },
-		["Cuts"] = { col = 2, order = 3 },
-		["Tools"] = { col = 3, order = 1 },
-		["Teleport"] = { col = 3, order = 2 },
+		["Cuts"] = { col = 3, order = 1 },
+		["Tools"] = { col = 3, order = 2 },
 	},
 	[5] = { -- Apartment
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
-		["Cuts"] = { col = 1, order = 3 },
-		["Preps"] = { col = 2, order = 1 },
-		["Launch"] = { col = 2, order = 2 },
-		["Bonuses"] = { col = 2, order = 3 },
+		["Teleport"] = { col = 1, order = 3 },
+		["Launch"] = { col = 2, order = 1 },
+		["Preps"] = { col = 2, order = 2 },
+		["Cuts"] = { col = 2, order = 3 },
 		["Tools"] = { col = 3, order = 1 },
 		["Instant Finish"] = { col = 3, order = 2 },
-		["Teleport"] = { col = 3, order = 3 },
-		["DANGER"] = { col = 3, order = 4 },
+		["DANGER"] = { col = 3, order = 3 },
 	},
 	[6] = { -- Agency
 		["Info"] = { col = 1, order = 1 },
 		["Presets (JSON)"] = { col = 1, order = 2 },
 		["Preps"] = { col = 2, order = 1 },
 		["Payout"] = { col = 2, order = 2 },
-		["Misc"] = { col = 3, order = 1 },
+		["Tools"] = { col = 3, order = 1 },
+		["DANGER"] = { col = 3, order = 2 },
 	},
 	[7] = { -- Auto Shop
 		["Info"] = { col = 1, order = 1 },
 		["Preps"] = { col = 2, order = 1 },
 		["Payout"] = { col = 2, order = 2 },
-		["Misc"] = { col = 3, order = 1 },
+		["Tools"] = { col = 3, order = 1 },
+		["DANGER"] = { col = 3, order = 2 },
 	},
 	[8] = { -- Salvage Yard
 		["Info"] = { col = 1, order = 1 },
-		["Slot 1"] = { col = 1, order = 2 },
-		["Slot 2"] = { col = 2, order = 1 },
-		["Slot 3"] = { col = 2, order = 2 },
-		["Preps"] = { col = 3, order = 1 },
-		["Misc"] = { col = 3, order = 2 },
-		["Payout"] = { col = 1, order = 3 },
+		["Preps"] = { col = 2, order = 1 },
+		["Slot 1"] = { col = 2, order = 2 },
+		["Slot 2"] = { col = 2, order = 3 },
+		["Slot 3"] = { col = 2, order = 4 },
+		["Payout"] = { col = 3, order = 1 },
+		["Tools"] = { col = 3, order = 2 },
+		["DANGER"] = { col = 3, order = 3 },
 	},
 	[9] = { -- Cluckin
 		["Info"] = { col = 1, order = 1 },
 		["Preps"] = { col = 2, order = 1 },
-		["Tools"] = { col = 3, order = 1 },
+		["Tools"] = { col = 2, order = 2 },
+		["DANGER"] = { col = 3, order = 1 },
 	},
 	[10] = { -- KnoWay
 		["Tools"] = { col = 3, order = 1 },
@@ -793,13 +797,23 @@ local function flatten_groups_by_order(activeGroups, heist_subtab)
 	local layout = HEIST_GROUP_LAYOUTS[heist_subtab]
 	for i, group in ipairs(activeGroups) do
 		local rank = 1000000 + i
+		local pref_col = nil
+		local pref_order = nil
 		if layout then
 			local spec = layout[group.label]
 			if spec then
 				rank = ((spec.col - 1) * 1000) + spec.order
+				pref_col = spec.col
+				pref_order = spec.order
 			end
 		end
-		ordered[#ordered + 1] = { group = group, rank = rank, idx = i }
+		ordered[#ordered + 1] = {
+			group = group,
+			rank = rank,
+			idx = i,
+			pref_col = pref_col,
+			pref_order = pref_order,
+		}
 	end
 
 	table.sort(ordered, function(a, b)
@@ -873,6 +887,58 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 				h = group_heights[entry.group],
 			}
 		end
+		return
+	end
+
+	-- When an explicit layout map exists, honor explicit column placement.
+	-- If the UI is resized below 3 columns, overflow columns collapse rightward.
+	local has_explicit_layout = false
+	for i = 1, total do
+		if flattened[i].pref_col ~= nil then
+			has_explicit_layout = true
+			break
+		end
+	end
+	if has_explicit_layout then
+		local column_entries = {}
+		for col = 1, cols do
+			column_entries[col] = {}
+		end
+
+		for i = 1, total do
+			local entry = flattened[i]
+			local target_col = tonumber(entry.pref_col) or 1
+			if target_col < 1 then
+				target_col = 1
+			elseif target_col > cols then
+				target_col = cols
+			end
+
+			column_entries[target_col][#column_entries[target_col] + 1] = {
+				entry = entry,
+				pref_order = tonumber(entry.pref_order) or i,
+				seq_order = i,
+			}
+		end
+
+		for col = 1, cols do
+			table.sort(column_entries[col], function(a, b)
+				if a.pref_order == b.pref_order then
+					return a.seq_order < b.seq_order
+				end
+				return a.pref_order < b.pref_order
+			end)
+
+			for _, col_entry in ipairs(column_entries[col]) do
+				local entry = col_entry.entry
+				groups_by_column[col][#groups_by_column[col] + 1] = {
+					group = entry.group,
+					order = col_entry.seq_order,
+					h = group_heights[entry.group],
+				}
+			end
+		end
+
 		return
 	end
 
@@ -1891,7 +1957,7 @@ ui.render = function()
 	local wm_y = config.origin_y + config.space.x2
 	local wm_scale = config.font_scale_small or 1.0
 	local wm_col = config.colors.text_main
-	render_text("ShillenSilent v0.1.1", wm_x, wm_y, wm_scale, wm_col, "left")
+	render_text("ShillenSilent v0.1.2", wm_x, wm_y, wm_scale, wm_col, "left")
 
 	-- [INJECTED] Credits Watermark (Bottom Left)
 	local credits_x = config.origin_x + config.space.x2

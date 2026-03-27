@@ -143,7 +143,7 @@ local function autoshop_redraw_board()
 	end
 
 	if notify then
-		notify.push("Auto Shop", wrote_any and "Board redrawn" or "Board redraw write failed", 2000)
+		notify.push("Auto Shop", wrote_any and "Board redraw completed" or "Board redraw failed to apply", 2000)
 	end
 	return wrote_any
 end
@@ -158,7 +158,7 @@ local function autoshop_apply_and_complete_preps()
 	local board_ok = autoshop_redraw_board()
 
 	if notify then
-		notify.push("Auto Shop", (ok1 and ok2 and board_ok) and "Preps applied" or "Could not apply preps", 2000)
+		notify.push("Auto Shop", (ok1 and ok2 and board_ok) and "Preps completed" or "Preps failed to apply", 2000)
 	end
 	return ok1 and ok2 and board_ok
 end
@@ -168,7 +168,7 @@ local function autoshop_reset_preps()
 	local ok = set_stat_int(p .. AUTOSHOP_STATS.GEN_BS, 12467)
 	local board_ok = autoshop_redraw_board()
 	if notify then
-		notify.push("Auto Shop", (ok and board_ok) and "Preps reset" or "Could not reset preps", 2000)
+		notify.push("Auto Shop", (ok and board_ok) and "Preps reset completed" or "Preps reset failed", 2000)
 	end
 	return ok and board_ok
 end
@@ -219,7 +219,7 @@ local function autoshop_instant_finish_old()
 
 		if not force_script_host(AUTOSHOP_FINISH_SCRIPT) then
 			if notify then
-				notify.push("Auto Shop", "Could not force host", 2200)
+				notify.push("Auto Shop", "Instant finish failed (host override)", 2200)
 			end
 			return
 		end
@@ -233,13 +233,13 @@ local function autoshop_instant_finish_old()
 		if notify then
 			notify.push(
 				"Auto Shop",
-				(ok1 and ok2) and "Instant finish triggered (Old)" or "Old finish write failed",
+				(ok1 and ok2) and "Instant finish completed (Old)" or "Instant finish failed to apply",
 				2200
 			)
 		end
 	end, function()
 		if notify then
-			notify.push("Auto Shop", "Old finish already running", 1500)
+			notify.push("Auto Shop", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end
@@ -255,7 +255,7 @@ local function autoshop_instant_finish_new()
 
 		if not force_script_host(AUTOSHOP_FINISH_SCRIPT) then
 			if notify then
-				notify.push("Auto Shop", "Could not force host", 2200)
+				notify.push("Auto Shop", "Instant finish failed (host override)", 2200)
 			end
 			return
 		end
@@ -272,13 +272,13 @@ local function autoshop_instant_finish_new()
 		if notify then
 			notify.push(
 				"Auto Shop",
-				(ok1 and ok2 and ok3) and "Instant finish triggered (New)" or "New finish write failed",
+				(ok1 and ok2 and ok3) and "Instant finish completed" or "Instant finish failed to apply",
 				2200
 			)
 		end
 	end, function()
 		if notify then
-			notify.push("Auto Shop", "New finish already running", 1500)
+			notify.push("Auto Shop", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end
@@ -317,7 +317,7 @@ local function autoshop_apply_payout()
 
 	local fee_ok = set_tunable_float(AUTOSHOP_TUNABLES.CONTACT_FEE, 0.0)
 	if notify then
-		notify.push("Auto Shop", (payout_ok and fee_ok) and "Payout applied" or "Payout write incomplete", 2200)
+		notify.push("Auto Shop", (payout_ok and fee_ok) and "Payout completed" or "Payout failed to apply", 2200)
 	end
 	return payout_ok and fee_ok
 end

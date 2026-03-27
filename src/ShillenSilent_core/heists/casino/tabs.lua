@@ -181,7 +181,21 @@ local function register(heistTab)
 	end)
 
 	-- Launch group
+	local ARCADE_BLIP_ENTRANCE = 740
+	local function casino_teleport_arcade()
+		teleport_to_blip_with_job(
+			ARCADE_BLIP_ENTRANCE,
+			"Casino Teleport",
+			"Teleported to Arcade",
+			"Arcade blip not found",
+			{ relay_if_interior = true }
+		)
+	end
+
 	local gLaunch = ui.group(heistTab, "Launch", nil, nil, nil, nil, "casino")
+	ui.button(gLaunch, "casino_tp_arcade_launch", "Teleport to Arcade", function()
+		casino_teleport_arcade()
+	end)
 	casino_refs.solo_launch_toggle = ui.toggle(
 		gLaunch,
 		"launch_solo",
@@ -409,18 +423,6 @@ local function register(heistTab)
 	end
 
 	-- Casino Teleport functions
-	local ARCADE_BLIP_ENTRANCE = 740
-
-	local function casino_teleport_arcade()
-		teleport_to_blip_with_job(
-			ARCADE_BLIP_ENTRANCE,
-			"Casino Teleport",
-			"Teleported to Arcade",
-			"Arcade blip not found",
-			{ relay_if_interior = true }
-		)
-	end
-
 	local function casino_teleport_tunnel()
 		-- Tunnel coordinates (Casino Heist - Outside Casino)
 		-- Coordinates: 968, -73, 75
@@ -453,9 +455,6 @@ local function register(heistTab)
 
 	-- Teleport section - Outside Casino
 	local gCasinoTeleportOutside = ui.group(heistTab, "Teleport - Outside Casino", nil, nil, nil, nil, "casino")
-	ui.button(gCasinoTeleportOutside, "casino_tp_arcade", "Teleport to Arcade", function()
-		casino_teleport_arcade()
-	end)
 	ui.button_pair(
 		gCasinoTeleportOutside,
 		"casino_tp_tunnel",

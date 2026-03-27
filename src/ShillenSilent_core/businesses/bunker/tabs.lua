@@ -11,12 +11,22 @@ local function register(heistTab)
 
 	local gProd = ui.group(heistTab, "Production", nil, nil, nil, nil, "bunker")
 	ui.label(gProd, "Bunker", config.colors.accent)
-	ui.button(gProd, "bunker_tick", "Production Tick", function()
-		bunker_logic.production_tick()
+	local fast_status_label =
+		ui.label(gProd, "Fast Loop Status: " .. tostring(bunker_logic.get_fast_prod_status()), config.colors.text_sec)
+	ui.toggle(gProd, "bunker_fast_prod", "Production Tick (Loop)", bunker_logic.get_fast_prod_active(), function(val)
+		bunker_logic.set_fast_production(val)
 	end)
 	ui.button(gProd, "bunker_refill", "Refill Supplies", function()
 		bunker_logic.refill_supplies()
 	end)
+	if util and util.create_thread and fast_status_label then
+		util.create_thread(function()
+			while true do
+				fast_status_label.text = "Fast Loop Status: " .. tostring(bunker_logic.get_fast_prod_status())
+				util.yield(250)
+			end
+		end)
+	end
 	ui.button(gProd, "bunker_sell", "Instant Sell", function()
 		bunker_logic.instant_sell()
 	end)

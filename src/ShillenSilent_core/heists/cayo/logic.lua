@@ -217,7 +217,7 @@ local function cayo_apply_preps()
 	safe_access.set_stat_int(p .. "H4CNF_HEL_DISRP", 3)
 	safe_access.set_local_int("heist_island_planning", 1570, 2)
 	if notify then
-		notify.push("Cayo Perico", "Preps applied", 2000)
+		notify.push("Cayo Perico", "Preps completed", 2000)
 	end
 end
 
@@ -347,7 +347,7 @@ cayo_apply_cuts = function()
 	safe_access.set_global_int(CayoGlobals.P3, CayoCutsValues.player3)
 	safe_access.set_global_int(CayoGlobals.P4, CayoCutsValues.player4)
 	if notify then
-		notify.push("Cayo Perico", "Cuts applied", 2000)
+		notify.push("Cayo Perico", "Cuts completed", 2000)
 	end
 end
 
@@ -366,7 +366,7 @@ local function cayo_force_ready()
 		end
 	end, function()
 		if notify then
-			notify.push("Cayo Perico", "Force ready already running", 1500)
+			notify.push("Cayo Perico", "Force ready failed (already running)", 1500)
 		end
 	end)
 end
@@ -430,14 +430,14 @@ end
 local function cayo_bypass_plasma_cutter()
 	safe_access.set_local_float("fm_mission_controller_2020", 32589 + 3, 100.0)
 	if notify then
-		notify.push("Cayo Tools", "Plasma cutter bypassed", 2000)
+		notify.push("Cayo Tools", "Plasma cutter bypass completed", 2000)
 	end
 end
 
 local function cayo_bypass_drainage_pipe()
 	safe_access.set_local_int("fm_mission_controller_2020", 31349, 6)
 	if notify then
-		notify.push("Cayo Tools", "Drainage pipe bypassed", 2000)
+		notify.push("Cayo Tools", "Drainage pipe bypass completed", 2000)
 	end
 end
 
@@ -475,16 +475,16 @@ local function cayo_instant_finish()
 			safe_access.set_local_int("fm_mission_controller_2020", 56223, 9)
 			safe_access.set_local_int("fm_mission_controller_2020", 58000, 50)
 			if notify then
-				notify.push("Cayo Tools", "Instant finish triggered", 2000)
+				notify.push("Cayo Tools", "Instant finish completed", 2000)
 			end
 		else
 			if notify then
-				notify.push("Cayo Tools", "Could not force host", 2000)
+				notify.push("Cayo Tools", "Instant finish failed (host override)", 2000)
 			end
 		end
 	end, function()
 		if notify then
-			notify.push("Cayo Tools", "Instant finish already running", 1500)
+			notify.push("Cayo Tools", "Instant finish failed (already running)", 1500)
 		end
 	end)
 end
@@ -554,13 +554,13 @@ end
 local function cayo_teleport_kosatka()
 	if teleport_in_progress then
 		if notify then
-			notify.push("Cayo Teleport", "Teleport already running", 1200)
+			notify.push("Cayo Teleport", "Teleport failed (already running)", 1200)
 		end
 		return false
 	end
 	if not try_begin_teleport_cooldown() then
 		if notify then
-			notify.push("Cayo Teleport", "Teleport on cooldown", 1000)
+			notify.push("Cayo Teleport", "Teleport failed (on cooldown)", 1000)
 		end
 		return false
 	end

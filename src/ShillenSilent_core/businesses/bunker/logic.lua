@@ -13,11 +13,17 @@ local TUNABLE_DISABLE_RAIDS = "BIKER_DISABLE_DEFEND_POLICE_RAID"
 local TUNABLE_REMINDERS = "BIKER_PRODUCT_REMINDER_COOLDOWN"
 local REMINDER_COOLDOWN_DISABLED = 86400000
 local REMINDER_COOLDOWN_DEFAULT = 300000
+local BUNKER_STOCK_STAT = "PRODTOTALFORFACTORY5"
+local BUNKER_MAX_CAPACITY = 100
+local FAST_LOOP_INTERVAL_MS = 150
 
 local _raids_default = nil
 local _raids_active = false
 local _reminders_default = nil
 local _reminders_active = false
+local _fast_prod_active = false
+local _fast_prod_thread_started = false
+local _fast_prod_status = "Stopped"
 
 -- Blip sprite ID for bunker map icon — used for primary teleport.
 local BLIP_SPRITE = 557
@@ -68,19 +74,63 @@ end
 local function production_tick()
 	biz.production_tick(BUNKER_SLOT)
 	if notify then
-		notify.push("Bunker", "Production tick applied", 2000)
+		notify.push("Bunker", "Production tick completed", 2000)
 	end
+end
+
+local function get_stock_units()
+	local mp = biz.GetMP()
+	return biz.get_stat_int(mp .. BUNKER_STOCK_STAT, 0) or 0
+end
+
+local function is_full()
+	return get_stock_units() >= BUNKER_MAX_CAPACITY
+end
+
+local function ensure_fast_loop_thread()
+	if _fast_prod_thread_started then
+		return true
+	end
+	if not util or not util.create_thread then
+		return false
+	end
+
+	_fast_prod_thread_started = true
+	util.create_thread(function()
+		while true do
+			if _fast_prod_active then
+				if is_full() then
+					_fast_prod_active = false
+					_fast_prod_status = "Full"
+					if notify then
+						notify.push("Bunker", "Fast production stopped: stock is full", 2200)
+					end
+				else
+					_fast_prod_status = "Running"
+					biz.production_tick(BUNKER_SLOT)
+				end
+				util.yield(FAST_LOOP_INTERVAL_MS)
+			else
+				if _fast_prod_status == "Running" then
+					_fast_prod_status = "Stopped"
+				end
+				util.yield(200)
+			end
+		end
+	end)
+
+	return true
 end
 
 local function refill_supplies()
 	biz.run_guarded_job("bunker_refill", function()
 		biz.fill_supply_slot(BUNKER_SLOT)
 		if notify then
-			notify.push("Bunker", "Supplies refilled", 2000)
+			notify.push("Bunker", "Supplies refill completed", 2000)
 		end
 	end, function()
 		if notify then
-			notify.push("Bunker", "Refill already in progress", 1500)
+			notify.push("Bunker", "Supplies refill failed (already in progress)", 1500)
 		end
 	end)
 end
@@ -96,11 +146,11 @@ local function instant_sell()
 
 		local ok = biz.set_local_int(SELL_SCRIPT, SELL_BASE + SELL_COMPLETE_OFFSET, 0)
 		if notify then
-			notify.push("Bunker", ok and "Instant sell triggered" or "Sell write failed", 2200)
+			notify.push("Bunker", ok and "Instant sell completed" or "Instant sell failed to apply", 2200)
 		end
 	end, function()
 		if notify then
-			notify.push("Bunker", "Sell already running", 1500)
+			notify.push("Bunker", "Instant sell failed (already running)", 1500)
 		end
 	end)
 end
@@ -145,6 +195,42 @@ local function get_reminders_active()
 	return _reminders_active
 end
 
+local function set_fast_production(enabled)
+	enabled = enabled == true
+	if enabled then
+		if not ensure_fast_loop_thread() then
+			if notify then
+				notify.push("Bunker", "Fast production unavailable on this runtime", 2200)
+			end
+			return
+		end
+		if is_full() then
+			_fast_prod_active = false
+			_fast_prod_status = "Full"
+			if notify then
+				notify.push("Bunker", "Stock already full", 2000)
+			end
+			return
+		end
+		_fast_prod_active = true
+		_fast_prod_status = "Running"
+	else
+		_fast_prod_active = false
+		_fast_prod_status = "Stopped"
+	end
+	if notify then
+		notify.push("Bunker", enabled and "Fast production enabled" or "Fast production disabled", 2000)
+	end
+end
+
+local function get_fast_prod_active()
+	return _fast_prod_active
+end
+
+local function get_fast_prod_status()
+	return _fast_prod_status
+end
+
 local bunker_logic = {
 	get_locations = get_locations,
 	get_selected_loc = get_selected_loc,
@@ -157,6 +243,9 @@ local bunker_logic = {
 	get_raids_active = get_raids_active,
 	set_disable_reminders = set_disable_reminders,
 	get_reminders_active = get_reminders_active,
+	set_fast_production = set_fast_production,
+	get_fast_prod_active = get_fast_prod_active,
+	get_fast_prod_status = get_fast_prod_status,
 }
 
 return bunker_logic

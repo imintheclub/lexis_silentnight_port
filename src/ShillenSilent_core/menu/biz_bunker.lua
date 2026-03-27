@@ -12,8 +12,11 @@ function biz_bunker.register(parent_menu)
 	root:breaker("Bunker")
 
 	local prod = root:submenu("Production")
-	common.add_button(prod, "Production Tick", function()
-		bunker_logic.production_tick()
+	local fast_status_breaker = prod:breaker("Fast Loop Status: " .. tostring(bunker_logic.get_fast_prod_status()))
+	common.add_toggle(biz_bunker.ctx, prod, "Production Tick (Loop)", function()
+		return bunker_logic.get_fast_prod_active()
+	end, function(enabled)
+		bunker_logic.set_fast_production(enabled)
 	end)
 	common.add_button(prod, "Refill Supplies", function()
 		bunker_logic.refill_supplies()
@@ -21,6 +24,14 @@ function biz_bunker.register(parent_menu)
 	common.add_button(prod, "Instant Sell", function()
 		bunker_logic.instant_sell()
 	end)
+	if util and util.create_thread and fast_status_breaker then
+		util.create_thread(function()
+			while true do
+				fast_status_breaker.name = "Fast Loop Status: " .. tostring(bunker_logic.get_fast_prod_status())
+				util.yield(250)
+			end
+		end)
+	end
 
 	local protect = root:submenu("Protections")
 	common.add_toggle(biz_bunker.ctx, protect, "Disable Raids", function()

@@ -12,12 +12,28 @@ function biz_nightclub.register(parent_menu)
 	root:breaker("Nightclub")
 
 	local prod = root:submenu("Production")
-	common.add_button(prod, "Production Tick (All)", function()
-		nc_logic.production_tick_all()
+	local fast_status_breaker = prod:breaker("Fast Loop Status: " .. tostring(nc_logic.get_fast_prod_status()))
+	common.add_combo_options(biz_nightclub.ctx, prod, "Fast NC Target", nc_logic.get_fast_product_options(), function()
+		return nc_logic.get_fast_prod_target()
+	end, function(value)
+		nc_logic.set_fast_prod_target(value)
+	end)
+	common.add_toggle(biz_nightclub.ctx, prod, "Increased Nightclub Production (Tunables)", function()
+		return nc_logic.get_fast_prod_active()
+	end, function(enabled)
+		nc_logic.set_fast_production(enabled)
 	end)
 	common.add_button(prod, "Fill All Products", function()
 		nc_logic.fill_all_products()
 	end)
+	if util and util.create_thread and fast_status_breaker then
+		util.create_thread(function()
+			while true do
+				fast_status_breaker.name = "Fast Loop Status: " .. tostring(nc_logic.get_fast_prod_status())
+				util.yield(250)
+			end
+		end)
+	end
 
 	local safe = root:submenu("Safe")
 	common.add_button(safe, "Collect Safe", function()

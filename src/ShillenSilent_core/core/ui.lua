@@ -30,7 +30,7 @@ function ui.ensure_assets()
 	end
 
 	for i = 1, #font_candidates do
-		local status, font = pcall(gui.load_font, font_candidates[i], 64.0)
+		local status, font = pcall(gui.load_font, font_candidates[i], 32.0)
 		if status and font then
 			state.fonts.regular = font
 			break

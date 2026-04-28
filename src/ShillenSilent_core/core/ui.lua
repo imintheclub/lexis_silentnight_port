@@ -1972,7 +1972,7 @@ ui.render = function()
 	local wm_y = config.origin_y + config.space.x2
 	local wm_scale = config.font_scale_small or 1.0
 	local wm_col = config.colors.text_main
-	render_text("ShillenSilent v0.1.2", wm_x, wm_y, wm_scale, wm_col, "left")
+	render_text("ShillenSilent v0.1.3", wm_x, wm_y, wm_scale, wm_col, "left")
 
 	-- [INJECTED] Credits Watermark (Bottom Left)
 	local credits_x = config.origin_x + config.space.x2

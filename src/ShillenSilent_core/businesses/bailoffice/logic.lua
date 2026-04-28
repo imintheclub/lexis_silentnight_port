@@ -3,6 +3,9 @@ local biz = require("ShillenSilent_core.businesses.shared")
 -- Blip sprite ID for bail office map icon — used for primary teleport.
 local BLIP_SPRITE = 893
 
+-- Safe collect global (EE).
+local SAFE_COLLECT = 2708868
+
 -- Fallback locations.
 local BAILOFFICE_LOCATIONS = {
 	{ name = "Bail Office (Strawberry)", x = 97.8, y = -1286.7, z = 29.2 },
@@ -36,11 +39,19 @@ local function teleport()
 	biz.run_coords_teleport("Bail Office", "Teleported to Bail Office", x, y, z, false, nil)
 end
 
+local function collect_safe()
+	local ok = biz.set_global_int(SAFE_COLLECT, 1)
+	if notify then
+		notify.push("Bail Office", ok and "Safe collect completed" or "Safe collect failed to apply", 2000)
+	end
+end
+
 local bailoffice_logic = {
 	get_locations = get_locations,
 	get_selected_loc = get_selected_loc,
 	set_selected_loc = set_selected_loc,
 	teleport = teleport,
+	collect_safe = collect_safe,
 }
 
 return bailoffice_logic

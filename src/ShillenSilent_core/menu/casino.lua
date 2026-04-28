@@ -18,6 +18,7 @@ local CutsValues = presets.CutsValues
 local casino_state = heist_state.casino
 local CasinoPrepOptions = casino_state.prep_options
 local CasinoManualPreps = casino_state.manual_preps
+local casino_cut_enabled = casino_state.cut_enabled
 local casino_flags = casino_state.flags
 
 local casino_menu = {
@@ -87,9 +88,13 @@ function casino_menu.refresh_controls()
 	common.set_control_value(ctx, controls.remove_crew_toggle, casino_flags.remove_crew_cuts_enabled and true or false)
 	common.set_control_value(ctx, controls.max_payout_toggle, casino_flags.max_payout_enabled and true or false)
 	common.set_control_value(ctx, controls.host_cut, common.clamp_int(CutsValues.host, 0, 300))
+	common.set_control_value(ctx, controls.host_enabled, casino_cut_enabled.host and true or false)
 	common.set_control_value(ctx, controls.p2_cut, common.clamp_int(CutsValues.player2, 0, 300))
+	common.set_control_value(ctx, controls.p2_enabled, casino_cut_enabled.player2 and true or false)
 	common.set_control_value(ctx, controls.p3_cut, common.clamp_int(CutsValues.player3, 0, 300))
+	common.set_control_value(ctx, controls.p3_enabled, casino_cut_enabled.player3 and true or false)
 	common.set_control_value(ctx, controls.p4_cut, common.clamp_int(CutsValues.player4, 0, 300))
+	common.set_control_value(ctx, controls.p4_enabled, casino_cut_enabled.player4 and true or false)
 	return true
 end
 
@@ -209,7 +214,7 @@ function casino_menu.register(parent_menu)
 		return casino_flags.max_payout_enabled
 	end, function(enabled)
 		casino_logic.casino_set_max_payout(enabled)
-		casino_logic.casino_refresh_max_payout(true, false)
+		casino_logic.casino_refresh_max_payout(true)
 		casino_menu.refresh_controls()
 	end)
 	controls.host_cut = common.add_number_int(ctx, cuts, "Host Cut %", 0, 300, 5, function()
@@ -217,28 +222,47 @@ function casino_menu.register(parent_menu)
 	end, function(value)
 		CutsValues.host = value
 	end)
+	controls.host_enabled = common.add_toggle(ctx, cuts, "Enable Host", function()
+		return casino_cut_enabled.host
+	end, function(enabled)
+		casino_cut_enabled.host = enabled and true or false
+	end)
 	controls.p2_cut = common.add_number_int(ctx, cuts, "Player 2 Cut %", 0, 300, 5, function()
 		return CutsValues.player2
 	end, function(value)
 		CutsValues.player2 = value
+	end)
+	controls.p2_enabled = common.add_toggle(ctx, cuts, "Enable Player 2", function()
+		return casino_cut_enabled.player2
+	end, function(enabled)
+		casino_cut_enabled.player2 = enabled and true or false
 	end)
 	controls.p3_cut = common.add_number_int(ctx, cuts, "Player 3 Cut %", 0, 300, 5, function()
 		return CutsValues.player3
 	end, function(value)
 		CutsValues.player3 = value
 	end)
+	controls.p3_enabled = common.add_toggle(ctx, cuts, "Enable Player 3", function()
+		return casino_cut_enabled.player3
+	end, function(enabled)
+		casino_cut_enabled.player3 = enabled and true or false
+	end)
 	controls.p4_cut = common.add_number_int(ctx, cuts, "Player 4 Cut %", 0, 300, 5, function()
 		return CutsValues.player4
 	end, function(value)
 		CutsValues.player4 = value
+	end)
+	controls.p4_enabled = common.add_toggle(ctx, cuts, "Enable Player 4", function()
+		return casino_cut_enabled.player4
+	end, function(enabled)
+		casino_cut_enabled.player4 = enabled and true or false
 	end)
 	common.add_button(cuts, "Apply Preset (100%)", function()
 		hp_set_uniform_cuts(
 			CutsValues,
 			{ "host", "player2", "player3", "player4" },
 			{ controls.host_cut, controls.p2_cut, controls.p3_cut, controls.p4_cut },
-			100,
-			casino_logic.apply_casino_cuts
+			100
 		)
 	end)
 	common.add_button(cuts, "Apply Cuts", function()
@@ -303,7 +327,7 @@ function casino_menu.register(parent_menu)
 
 	casino_menu.refresh_controls()
 	if casino_flags.max_payout_enabled then
-		casino_logic.casino_refresh_max_payout(true, false)
+		casino_logic.casino_refresh_max_payout(true)
 	end
 	return root
 end

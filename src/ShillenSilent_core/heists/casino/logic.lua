@@ -9,9 +9,11 @@ local CasinoGlobals = presets.CasinoGlobals
 local CutsValues = presets.CutsValues
 local SAFE_PAYOUT_TARGETS = presets.SAFE_PAYOUT_TARGETS
 local hp_clamp_cut_percent = presets.hp_clamp_cut_percent
+local hp_get_active_mpx_stat_int = presets.hp_get_active_mpx_stat_int
 local hp_set_stat_for_all_characters = presets.hp_set_stat_for_all_characters
 
 local casino_state = heist_state.casino
+local casino_cut_enabled = casino_state.cut_enabled
 local casino_flags = casino_state.flags
 local casino_refs = casino_state.refs
 local casino_callbacks = casino_state.callbacks
@@ -85,9 +87,10 @@ local function casino_sync_crew_cut_ui_lock()
 end
 
 local function hp_get_casino_max_payout_cut_details()
-	local ManualPreps = casino_state.manual_preps
-	local difficulty = (ManualPreps.difficulty == 1) and 2 or 1
-	local target = ManualPreps.target
+	local target = hp_get_active_mpx_stat_int("H3OPT_TARGET", casino_state.manual_preps.target)
+	local approach = hp_get_active_mpx_stat_int("H3OPT_APPROACH", casino_state.manual_preps.approach)
+	local hard_approach = hp_get_active_mpx_stat_int("H3_HARD_APPROACH", 0)
+	local difficulty = (hard_approach == approach and approach ~= 0) and 2 or 1
 
 	local payouts = {
 		[0] = { 2115000, 2326500 }, -- Cash
@@ -117,9 +120,9 @@ local function hp_get_casino_max_payout_cut_details()
 	end
 
 	local buyer = safe_access.get_global_int(1975747, 0) -- DiamondCasino.Board.Buyer
-	local gunman = ManualPreps.crew_weapon
-	local driver = ManualPreps.crew_driver
-	local hacker = ManualPreps.crew_hacker
+	local gunman = hp_get_active_mpx_stat_int("H3OPT_CREWWEAP", casino_state.manual_preps.crew_weapon)
+	local driver = hp_get_active_mpx_stat_int("H3OPT_CREWDRIVER", casino_state.manual_preps.crew_driver)
+	local hacker = hp_get_active_mpx_stat_int("H3OPT_CREWHACKER", casino_state.manual_preps.crew_hacker)
 
 	local buyer_fees = {
 		[0] = 0.10,
@@ -191,10 +194,10 @@ local function hp_get_casino_max_payout_cut()
 end
 
 local function apply_casino_cuts()
-	safe_access.set_global_int(CasinoGlobals.Host, CutsValues.host)
-	safe_access.set_global_int(CasinoGlobals.P2, CutsValues.player2)
-	safe_access.set_global_int(CasinoGlobals.P3, CutsValues.player3)
-	safe_access.set_global_int(CasinoGlobals.P4, CutsValues.player4)
+	safe_access.set_global_int(CasinoGlobals.Host, casino_cut_enabled.host and CutsValues.host or 0)
+	safe_access.set_global_int(CasinoGlobals.P2, casino_cut_enabled.player2 and CutsValues.player2 or 0)
+	safe_access.set_global_int(CasinoGlobals.P3, casino_cut_enabled.player3 and CutsValues.player3 or 0)
+	safe_access.set_global_int(CasinoGlobals.P4, casino_cut_enabled.player4 and CutsValues.player4 or 0)
 	if notify then
 		notify.push("Casino Heist", "Cuts completed", 2000)
 	end
@@ -246,7 +249,7 @@ local function casino_set_autograbber(enable, silent)
 	end
 end
 
-local function casino_refresh_max_payout(force_update, apply_now)
+local function casino_refresh_max_payout(force_update)
 	if not casino_flags.max_payout_enabled then
 		casino_max_payout_cache.target = nil
 		casino_max_payout_cache.difficulty = nil
@@ -301,10 +304,6 @@ local function casino_refresh_max_payout(force_update, apply_now)
 			end
 		end
 
-		if apply_now then
-			apply_casino_cuts()
-		end
-
 		casino_max_payout_cache.target = details.target
 		casino_max_payout_cache.difficulty = details.difficulty
 		casino_max_payout_cache.buyer = details.buyer
@@ -329,7 +328,7 @@ local function casino_set_max_payout(enable, silent)
 
 	if enabled then
 		casino_set_remove_crew_cuts(true, true)
-		casino_refresh_max_payout(true, true)
+		casino_refresh_max_payout(true)
 	end
 	casino_sync_crew_cut_ui_lock()
 

@@ -11,11 +11,13 @@ local try_begin_teleport_cooldown = coords_teleport.try_begin_teleport_cooldown
 local GetMP = presets.GetMP
 local SAFE_PAYOUT_TARGETS = presets.SAFE_PAYOUT_TARGETS
 local hp_clamp_cut_percent = presets.hp_clamp_cut_percent
+local hp_get_active_mpx_stat_int = presets.hp_get_active_mpx_stat_int
 
 local cayo_state = heist_state.cayo
 local CayoPrepOptions = cayo_state.prep_options
 local CayoConfig = cayo_state.config
 local CayoCutsValues = cayo_state.cuts
+local cayo_cut_enabled = cayo_state.cut_enabled
 local cayo_flags = cayo_state.flags
 local cayo_refs = cayo_state.refs
 local cayo_callbacks = cayo_state.callbacks
@@ -84,6 +86,17 @@ end
 
 local function hp_set_tunable_float(name, value)
 	script.tunables(name).float = value
+end
+
+local function set_stat_int(stat_name, value)
+	local ok = pcall(function()
+		local stat = account.stats(stat_name)
+		if not stat then
+			error("missing stat")
+		end
+		stat.int32 = value
+	end)
+	return ok
 end
 
 local function cayo_set_womans_bag(enable, silent)
@@ -173,17 +186,17 @@ local function cayo_apply_preps()
 	local p = GetMP()
 
 	if CayoConfig.unlock_all_poi then
-		safe_access.set_stat_int(p .. "H4CNF_BS_GEN", -1)
-		safe_access.set_stat_int(p .. "H4CNF_BS_ENTR", 63)
-		safe_access.set_stat_int(p .. "H4CNF_BS_ABIL", 63)
-		safe_access.set_stat_int(p .. "H4CNF_APPROACH", -1)
-		safe_access.set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 10)
+		set_stat_int(p .. "H4CNF_BS_GEN", -1)
+		set_stat_int(p .. "H4CNF_BS_ENTR", 63)
+		set_stat_int(p .. "H4CNF_BS_ABIL", 63)
+		set_stat_int(p .. "H4CNF_APPROACH", -1)
+		set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 10)
 	end
 
-	safe_access.set_stat_int(p .. "H4_PROGRESS", CayoConfig.diff)
-	safe_access.set_stat_int(p .. "H4_MISSIONS", CayoConfig.app)
-	safe_access.set_stat_int(p .. "H4CNF_WEAPONS", CayoConfig.wep)
-	safe_access.set_stat_int(p .. "H4CNF_TARGET", CayoConfig.tgt)
+	set_stat_int(p .. "H4_PROGRESS", CayoConfig.diff)
+	set_stat_int(p .. "H4_MISSIONS", CayoConfig.app)
+	set_stat_int(p .. "H4CNF_WEAPONS", CayoConfig.wep)
+	set_stat_int(p .. "H4CNF_TARGET", CayoConfig.tgt)
 
 	local has_secondary_target = (CayoConfig.sec_comp ~= "NONE") or (CayoConfig.sec_isl ~= "NONE")
 	local value_map = {
@@ -199,22 +212,22 @@ local function cayo_apply_preps()
 		local island_value = (CayoConfig.sec_isl == loot) and CayoConfig.amt_isl or 0
 		local value_stat = has_secondary_target and value_map[loot] or 0
 
-		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_C", compound_value)
-		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_C_SCOPED", compound_value)
-		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_I", island_value)
-		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_I_SCOPED", island_value)
-		safe_access.set_stat_int(p .. "H4LOOT_" .. loot .. "_V", value_stat)
+		set_stat_int(p .. "H4LOOT_" .. loot .. "_C", compound_value)
+		set_stat_int(p .. "H4LOOT_" .. loot .. "_C_SCOPED", compound_value)
+		set_stat_int(p .. "H4LOOT_" .. loot .. "_I", island_value)
+		set_stat_int(p .. "H4LOOT_" .. loot .. "_I_SCOPED", island_value)
+		set_stat_int(p .. "H4LOOT_" .. loot .. "_V", value_stat)
 	end
 
-	safe_access.set_stat_int(p .. "H4LOOT_PAINT", CayoConfig.paint)
-	safe_access.set_stat_int(p .. "H4LOOT_PAINT_SCOPED", CayoConfig.paint)
-	safe_access.set_stat_int(p .. "H4LOOT_PAINT_V", (CayoConfig.paint ~= 0) and CayoConfig.val_art or 0)
-	safe_access.set_stat_int(p .. "H4CNF_UNIFORM", -1)
-	safe_access.set_stat_int(p .. "H4CNF_GRAPPEL", -1)
-	safe_access.set_stat_int(p .. "H4CNF_TROJAN", 5)
-	safe_access.set_stat_int(p .. "H4CNF_WEP_DISRP", 3)
-	safe_access.set_stat_int(p .. "H4CNF_ARM_DISRP", 3)
-	safe_access.set_stat_int(p .. "H4CNF_HEL_DISRP", 3)
+	set_stat_int(p .. "H4LOOT_PAINT", CayoConfig.paint)
+	set_stat_int(p .. "H4LOOT_PAINT_SCOPED", CayoConfig.paint)
+	set_stat_int(p .. "H4LOOT_PAINT_V", (CayoConfig.paint ~= 0) and CayoConfig.val_art or 0)
+	set_stat_int(p .. "H4CNF_UNIFORM", -1)
+	set_stat_int(p .. "H4CNF_GRAPPEL", -1)
+	set_stat_int(p .. "H4CNF_TROJAN", 5)
+	set_stat_int(p .. "H4CNF_WEP_DISRP", 3)
+	set_stat_int(p .. "H4CNF_ARM_DISRP", 3)
+	set_stat_int(p .. "H4CNF_HEL_DISRP", 3)
 	safe_access.set_local_int("heist_island_planning", 1570, 2)
 	if notify then
 		notify.push("Cayo Perico", "Preps completed", 2000)
@@ -223,8 +236,9 @@ end
 
 -- Apply Cayo Cuts
 local function hp_get_cayo_max_payout_cut()
-	local target = CayoConfig.tgt
-	local difficulty = ((CayoConfig.diff & 4096) ~= 0) and 2 or 1
+	local target = hp_get_active_mpx_stat_int("H4CNF_TARGET", CayoConfig.tgt)
+	local progress = hp_get_active_mpx_stat_int("H4_PROGRESS", CayoConfig.diff)
+	local difficulty = ((progress & 4096) ~= 0) and 2 or 1
 
 	local payouts = {
 		[0] = { 630000, 693000 }, -- Tequila
@@ -270,7 +284,7 @@ local function hp_get_cayo_max_payout_cut()
 	return hp_clamp_cut_percent(cut), target, difficulty
 end
 
-local function cayo_refresh_max_payout(force_update, apply_now)
+local function cayo_refresh_max_payout(force_update)
 	if not cayo_flags.max_payout_enabled then
 		cayo_max_payout_cache.target = nil
 		cayo_max_payout_cache.difficulty = nil
@@ -310,10 +324,6 @@ local function cayo_refresh_max_payout(force_update, apply_now)
 			cayo_refs.p4_slider.value = cut
 		end
 
-		if apply_now then
-			cayo_apply_cuts()
-		end
-
 		cayo_max_payout_cache.target = target
 		cayo_max_payout_cache.difficulty = difficulty
 		cayo_max_payout_cache.cut = cut
@@ -332,7 +342,7 @@ local function cayo_set_max_payout(enable, silent)
 
 	if enabled then
 		cayo_set_remove_crew_cuts(false, true)
-		cayo_refresh_max_payout(true, true)
+		cayo_refresh_max_payout(true)
 	end
 	cayo_sync_crew_cut_ui_lock()
 
@@ -342,10 +352,10 @@ local function cayo_set_max_payout(enable, silent)
 end
 
 cayo_apply_cuts = function()
-	safe_access.set_global_int(CayoGlobals.Host, CayoCutsValues.host)
-	safe_access.set_global_int(CayoGlobals.P2, CayoCutsValues.player2)
-	safe_access.set_global_int(CayoGlobals.P3, CayoCutsValues.player3)
-	safe_access.set_global_int(CayoGlobals.P4, CayoCutsValues.player4)
+	safe_access.set_global_int(CayoGlobals.Host, cayo_cut_enabled.host and CayoCutsValues.host or 0)
+	safe_access.set_global_int(CayoGlobals.P2, cayo_cut_enabled.player2 and CayoCutsValues.player2 or 0)
+	safe_access.set_global_int(CayoGlobals.P3, cayo_cut_enabled.player3 and CayoCutsValues.player3 or 0)
+	safe_access.set_global_int(CayoGlobals.P4, cayo_cut_enabled.player4 and CayoCutsValues.player4 or 0)
 	if notify then
 		notify.push("Cayo Perico", "Cuts completed", 2000)
 	end
@@ -375,13 +385,13 @@ end
 local function cayo_unlock_all_poi()
 	local p = GetMP()
 	-- Unlock all POIs (set to -1 to unlock all)
-	safe_access.set_stat_int(p .. "H4CNF_BS_GEN", -1)
+	set_stat_int(p .. "H4CNF_BS_GEN", -1)
 	-- Unlock all entry points
-	safe_access.set_stat_int(p .. "H4CNF_BS_ENTR", 63)
+	set_stat_int(p .. "H4CNF_BS_ENTR", 63)
 	-- Unlock all abilities/equipment
-	safe_access.set_stat_int(p .. "H4CNF_BS_ABIL", 63)
-	safe_access.set_stat_int(p .. "H4CNF_APPROACH", -1)
-	safe_access.set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 10)
+	set_stat_int(p .. "H4CNF_BS_ABIL", 63)
+	set_stat_int(p .. "H4CNF_APPROACH", -1)
+	set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 10)
 	-- Reload planning board if script is running
 	if safe_access.is_script_running("heist_island_planning") then
 		safe_access.set_local_int("heist_island_planning", 1570, 2)
@@ -393,14 +403,14 @@ end
 
 local function cayo_reset_preps()
 	local p = GetMP()
-	safe_access.set_stat_int(p .. "H4_PROGRESS", 0)
-	safe_access.set_stat_int(p .. "H4_MISSIONS", 0)
-	safe_access.set_stat_int(p .. "H4CNF_APPROACH", 0)
-	safe_access.set_stat_int(p .. "H4CNF_TARGET", -1)
-	safe_access.set_stat_int(p .. "H4CNF_BS_GEN", 0)
-	safe_access.set_stat_int(p .. "H4CNF_BS_ENTR", 0)
-	safe_access.set_stat_int(p .. "H4CNF_BS_ABIL", 0)
-	safe_access.set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 0)
+	set_stat_int(p .. "H4_PROGRESS", 0)
+	set_stat_int(p .. "H4_MISSIONS", 0)
+	set_stat_int(p .. "H4CNF_APPROACH", 0)
+	set_stat_int(p .. "H4CNF_TARGET", -1)
+	set_stat_int(p .. "H4CNF_BS_GEN", 0)
+	set_stat_int(p .. "H4CNF_BS_ENTR", 0)
+	set_stat_int(p .. "H4CNF_BS_ABIL", 0)
+	set_stat_int(p .. "H4_PLAYTHROUGH_STATUS", 0)
 	safe_access.set_local_int("heist_island_planning", 1570, 2)
 	if notify then
 		notify.push("Cayo Tools", "Preps reset", 2000)
@@ -450,9 +460,9 @@ end
 
 local function cayo_remove_cooldown()
 	local p = GetMP()
-	safe_access.set_stat_int(p .. "H4_TARGET_POSIX", 1659643454)
-	safe_access.set_stat_int(p .. "H4_COOLDOWN", 0)
-	safe_access.set_stat_int(p .. "H4_COOLDOWN_HARD", 0)
+	set_stat_int(p .. "H4_TARGET_POSIX", 1659643454)
+	set_stat_int(p .. "H4_COOLDOWN", 0)
+	set_stat_int(p .. "H4_COOLDOWN_HARD", 0)
 	if notify then
 		notify.push("Cayo Tools", "Solo cooldown removed", 2000)
 	end
@@ -460,9 +470,9 @@ end
 
 local function cayo_remove_cooldown_team()
 	local p = GetMP()
-	safe_access.set_stat_int(p .. "H4_TARGET_POSIX", 1659429119)
-	safe_access.set_stat_int(p .. "H4_COOLDOWN", 0)
-	safe_access.set_stat_int(p .. "H4_COOLDOWN_HARD", 0)
+	set_stat_int(p .. "H4_TARGET_POSIX", 1659429119)
+	set_stat_int(p .. "H4_COOLDOWN", 0)
+	set_stat_int(p .. "H4_COOLDOWN_HARD", 0)
 	if notify then
 		notify.push("Cayo Tools", "Team cooldown removed", 2000)
 	end
@@ -685,6 +695,7 @@ local cayo_logic = {
 	CayoConfig = CayoConfig,
 	CayoPrepOptions = CayoPrepOptions,
 	CayoCutsValues = CayoCutsValues,
+	cayo_cut_enabled = cayo_cut_enabled,
 	cayo_flags = cayo_flags,
 	cayo_refs = cayo_refs,
 	cayo_callbacks = cayo_callbacks,

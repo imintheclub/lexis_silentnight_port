@@ -23,9 +23,6 @@ function biz_nightclub.register(parent_menu)
 	end, function(enabled)
 		nc_logic.set_fast_production(enabled)
 	end)
-	common.add_button(prod, "Fill All Products", function()
-		nc_logic.fill_all_products()
-	end)
 	if util and util.create_thread and fast_status_breaker then
 		util.create_thread(function()
 			while true do

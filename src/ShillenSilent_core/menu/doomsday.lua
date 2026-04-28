@@ -101,7 +101,7 @@ function doomsday_menu.register(parent_menu)
 		return doomsday_flags.max_payout_enabled
 	end, function(enabled)
 		doomsday_module.doomsday_set_max_payout(enabled)
-		doomsday_module.doomsday_refresh_max_payout(true, false)
+		doomsday_module.doomsday_refresh_max_payout(true)
 		doomsday_menu.refresh_controls()
 	end)
 
@@ -115,7 +115,7 @@ function doomsday_menu.register(parent_menu)
 		doomsday_flags.cut_preset_index = idx
 	end)
 	common.add_button(cuts, "Apply Selected Preset", function()
-		doomsday_module.apply_selected_doomsday_cut_preset(false, false)
+		doomsday_module.apply_selected_doomsday_cut_preset(false)
 		doomsday_menu.refresh_controls()
 	end)
 

@@ -22,6 +22,10 @@ local STAT_SET_PACKED_BOOL = 0xDB8A58AEAA67CD07
 local CARGO_PACKED_IDX = 36828
 local CARGO_STOCK_STAT = "HANGAR_CONTRABAND_TOTAL"
 local CARGO_MAX = 50
+local FILL_TICK_INTERVAL_MS = 1000
+
+local _fill_active = false
+local _fill_thread_started = false
 
 local function get_locations()
 	return HANGAR_LOCATIONS
@@ -54,25 +58,76 @@ local function supplier_tick()
 	end)
 end
 
-local function fill_cargo()
-	biz.run_guarded_job("hangar_fill", function()
-		local mp = biz.GetMP()
-		for _ = 1, 60 do
-			local current = biz.get_stat_int(mp .. CARGO_STOCK_STAT, 0)
-			if current >= CARGO_MAX then
-				break
+local function ensure_fill_thread()
+	if _fill_thread_started then
+		return true
+	end
+	if not util or not util.create_thread then
+		return false
+	end
+
+	_fill_thread_started = true
+	util.create_thread(function()
+		while true do
+			if _fill_active then
+				local mp = biz.GetMP()
+				local current = biz.get_stat_int(mp .. CARGO_STOCK_STAT, 0) or 0
+				if current >= CARGO_MAX then
+					_fill_active = false
+					if notify then
+						notify.push("Hangar", "Cargo filled to max", 2000)
+					end
+				else
+					supplier_tick()
+					util.yield(FILL_TICK_INTERVAL_MS)
+				end
+			else
+				util.yield(200)
 			end
-			supplier_tick()
-			util.yield(100)
 		end
-		if notify then
-			notify.push("Hangar", "Cargo filled to max", 2000)
-		end
-	end, function()
+	end)
+
+	return true
+end
+
+local function fill_cargo()
+	if _fill_active then
 		if notify then
 			notify.push("Hangar", "Fill already in progress", 1500)
 		end
-	end)
+		return
+	end
+	if not ensure_fill_thread() then
+		if notify then
+			notify.push("Hangar", "Fill cargo unavailable on this runtime", 2200)
+		end
+		return
+	end
+	local mp = biz.GetMP()
+	if (biz.get_stat_int(mp .. CARGO_STOCK_STAT, 0) or 0) >= CARGO_MAX then
+		if notify then
+			notify.push("Hangar", "Cargo already full", 2000)
+		end
+		return
+	end
+	_fill_active = true
+end
+
+local function stop_fill()
+	if not _fill_active then
+		if notify then
+			notify.push("Hangar", "Fill not running", 1500)
+		end
+		return
+	end
+	_fill_active = false
+	if notify then
+		notify.push("Hangar", "Fill stopped", 2000)
+	end
+end
+
+local function get_fill_active()
+	return _fill_active
 end
 
 local hangar_logic = {
@@ -81,6 +136,8 @@ local hangar_logic = {
 	set_selected_loc = set_selected_loc,
 	teleport = teleport,
 	fill_cargo = fill_cargo,
+	stop_fill = stop_fill,
+	get_fill_active = get_fill_active,
 }
 
 return hangar_logic

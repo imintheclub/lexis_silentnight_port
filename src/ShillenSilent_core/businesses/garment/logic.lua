@@ -3,6 +3,9 @@ local biz = require("ShillenSilent_core.businesses.shared")
 -- Blip sprite ID for garment factory map icon — used for primary teleport.
 local BLIP_SPRITE = 900
 
+-- Safe collect global (EE).
+local SAFE_COLLECT = 2708883
+
 -- Fallback coordinates.
 local GARMENT_LOCATIONS = {
 	{ name = "Garment Factory (Entrance)", x = -770.8, y = -102.0, z = 37.0 },
@@ -34,11 +37,19 @@ local function teleport()
 	biz.run_coords_teleport("Garment Factory", "Teleported to Garment Factory", x, y, z, false, nil)
 end
 
+local function collect_safe()
+	local ok = biz.set_global_int(SAFE_COLLECT, 1)
+	if notify then
+		notify.push("Garment Factory", ok and "Safe collect completed" or "Safe collect failed to apply", 2000)
+	end
+end
+
 local garment_logic = {
 	get_locations = get_locations,
 	get_selected_loc = get_selected_loc,
 	set_selected_loc = set_selected_loc,
 	teleport = teleport,
+	collect_safe = collect_safe,
 }
 
 return garment_logic

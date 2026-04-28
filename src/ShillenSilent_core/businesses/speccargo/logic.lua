@@ -27,9 +27,41 @@ local SPECCARGO_LOCATIONS = {
 }
 local selected_loc = 1
 
--- Special cargo stock stat.
-local CARGO_STAT = "CRATE_WAREHOUSE_CARGO"
-local CARGO_MAX = 111
+-- Special Cargo supplier pulse uses packed bool stats (reference: SyloCore).
+local STAT_SET_PACKED_BOOL = 0xDB8A58AEAA67CD07
+local SUPPLY_FIRST = 32359
+local SUPPLY_LAST = 32363
+local SUPPLY_CHARS = { 0, 1 }
+local FILL_TICK_INTERVAL_MS = 5000
+
+local _fill_active = false
+local _fill_thread_started = false
+
+-- Warehouse capacities by property ID.
+local WAREHOUSE_CAP_BY_ID = {
+	[1] = 16,
+	[2] = 16,
+	[3] = 16,
+	[4] = 16,
+	[5] = 16,
+	[6] = 111,
+	[7] = 42,
+	[8] = 111,
+	[9] = 16,
+	[10] = 42,
+	[11] = 42,
+	[12] = 42,
+	[13] = 42,
+	[14] = 42,
+	[15] = 42,
+	[16] = 111,
+	[17] = 111,
+	[18] = 111,
+	[19] = 111,
+	[20] = 111,
+	[21] = 42,
+	[22] = 111,
+}
 
 -- Instant sell script locals (EE offsets).
 local SELL_SCRIPT = "gb_contraband_sell"
@@ -58,6 +90,49 @@ local function get_owned_warehouse_ids()
 		end
 	end
 	return owned
+end
+
+local function infer_warehouse_cap(warehouse_id, crates)
+	local cap = WAREHOUSE_CAP_BY_ID[warehouse_id]
+	if cap then
+		return cap
+	end
+	if crates > 42 then
+		return 111
+	end
+	if crates > 16 then
+		return 42
+	end
+	return 16
+end
+
+local function get_fullness_state()
+	local mp = biz.GetMP()
+	local has_owned = false
+	for slot = 0, 4 do
+		local warehouse_id = biz.get_stat_int(mp .. "PROP_WHOUSE_SLOT" .. tostring(slot), 0)
+		if warehouse_id and warehouse_id > 0 then
+			has_owned = true
+			local crates = biz.get_stat_int(mp .. "CONTOTALFORWHOUSE" .. tostring(slot), 0) or 0
+			local cap = infer_warehouse_cap(warehouse_id, crates)
+			if crates < cap then
+				return false, true
+			end
+		end
+	end
+	-- Reaching here: all owned warehouses are at capacity (or none are owned).
+	local all_full = has_owned
+	return all_full, has_owned
+end
+
+local function supplier_pulse_once()
+	pcall(function()
+		for idx = SUPPLY_FIRST, SUPPLY_LAST do
+			for _, ch in ipairs(SUPPLY_CHARS) do
+				invoker.call(STAT_SET_PACKED_BOOL, idx, true, ch)
+			end
+		end
+	end)
 end
 
 local function get_locations()
@@ -115,12 +190,86 @@ local function instant_sell()
 	end)
 end
 
-local function fill_cargo()
-	local mp = biz.GetMP()
-	local ok = biz.set_stat_int(mp .. CARGO_STAT, CARGO_MAX)
-	if notify then
-		notify.push("Special Cargo", ok and "All cargo fill completed (111)" or "Cargo fill failed to apply", 2000)
+local function ensure_fill_thread()
+	if _fill_thread_started then
+		return true
 	end
+	if not util or not util.create_thread then
+		return false
+	end
+
+	_fill_thread_started = true
+	util.create_thread(function()
+		while true do
+			if _fill_active then
+				local full, has_owned = get_fullness_state()
+				if not has_owned then
+					_fill_active = false
+					if notify then
+						notify.push("Special Cargo", "No owned warehouses found", 2200)
+					end
+				elseif full then
+					_fill_active = false
+					if notify then
+						notify.push("Special Cargo", "Cargo filled to warehouse capacity", 2200)
+					end
+				else
+					supplier_pulse_once()
+					util.yield(FILL_TICK_INTERVAL_MS)
+				end
+			else
+				util.yield(200)
+			end
+		end
+	end)
+
+	return true
+end
+
+local function fill_cargo()
+	if _fill_active then
+		if notify then
+			notify.push("Special Cargo", "Fill already in progress", 1500)
+		end
+		return
+	end
+	if not ensure_fill_thread() then
+		if notify then
+			notify.push("Special Cargo", "Fill cargo unavailable on this runtime", 2200)
+		end
+		return
+	end
+	local full, has_owned = get_fullness_state()
+	if not has_owned then
+		if notify then
+			notify.push("Special Cargo", "No owned warehouses found", 2200)
+		end
+		return
+	end
+	if full then
+		if notify then
+			notify.push("Special Cargo", "Cargo already at capacity", 2000)
+		end
+		return
+	end
+	_fill_active = true
+end
+
+local function stop_fill()
+	if not _fill_active then
+		if notify then
+			notify.push("Special Cargo", "Fill not running", 1500)
+		end
+		return
+	end
+	_fill_active = false
+	if notify then
+		notify.push("Special Cargo", "Fill stop requested", 2000)
+	end
+end
+
+local function get_fill_active()
+	return _fill_active
 end
 
 local function set_disable_raids(enabled)
@@ -170,6 +319,8 @@ local speccargo_logic = {
 	teleport = teleport,
 	instant_sell = instant_sell,
 	fill_cargo = fill_cargo,
+	stop_fill = stop_fill,
+	get_fill_active = get_fill_active,
 	set_disable_raids = set_disable_raids,
 	get_raids_active = get_raids_active,
 	set_disable_reminders = set_disable_reminders,

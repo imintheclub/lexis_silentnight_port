@@ -88,11 +88,6 @@ local function get_local_int(script_name, offset, fallback)
 	return fallback
 end
 
-local function force_script_host(script_name)
-	local ok, result = pcall(script.force_host, script_name)
-	return ok and result and true or false
-end
-
 -- Supply fill: writes 1 to SUPPLIES_BASE+slot 7 times with 5ms yielding.
 -- Must be called inside a guarded job.
 local SUPPLIES_BASE = 1673814
@@ -104,7 +99,9 @@ local function fill_supply_slot(slot)
 end
 
 -- Production timer base (derived from bunker trigger + bunker slot).
--- Slot layout: Meth=1 Weed=2 Cocaine=3 Counterfeit=4 Forgery=5 Bunker=6 AcidLab=7
+-- Slot layout: MC=1..5, Bunker=6, AcidLab=7. The MC slots 1..5 correspond to the
+-- player's FACTORYSLOT0..4 ownership index, NOT to a fixed business type — whichever
+-- MC business sits in FACTORYSLOTi uses supply slot i+1.
 local BUNKER_TRIG1 = 2708936
 local BUNKER_SLOT = 6
 local TIMER_ROOT = BUNKER_TRIG1 - ((BUNKER_SLOT - 1) * 2) - 1
@@ -177,18 +174,6 @@ local function find_owned_location(stat_suffix, locations)
 	return nil
 end
 
--- MC-specific: ownership ID → location index via floor((id-1)/5)+1.
--- Returns the location entry for the given sub's locations table, or nil.
-local function find_mc_owned_location(factoryslot_idx, sub_locations)
-	local stat_suffix = "FACTORYSLOT" .. tostring(factoryslot_idx)
-	local id = read_owned_id(stat_suffix)
-	if not id then
-		return nil
-	end
-	local loc_idx = math.floor((id - 1) / 5) + 1
-	return sub_locations[loc_idx]
-end
-
 return {
 	GetMP = GetMP,
 	run_guarded_job = run_guarded_job,
@@ -202,12 +187,10 @@ return {
 	is_script_running = is_script_running,
 	set_local_int = set_local_int,
 	get_local_int = get_local_int,
-	force_script_host = force_script_host,
 	fill_supply_slot = fill_supply_slot,
 	production_tick = production_tick,
 	get_blip_coords = get_blip_coords,
 	find_owned_location = find_owned_location,
-	find_mc_owned_location = find_mc_owned_location,
 	SUPPLIES_BASE = SUPPLIES_BASE,
 	TIMER_ROOT = TIMER_ROOT,
 }

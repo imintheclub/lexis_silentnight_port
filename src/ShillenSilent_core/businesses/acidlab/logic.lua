@@ -18,6 +18,12 @@ local _fast_prod_thread_started = false
 local _fast_prod_status = "Stopped"
 
 local function production_tick()
+	if not biz.is_script_running("freemode") then
+		if notify then
+			notify.push("Acid Lab", "Must be in freemode to tick production", 2000)
+		end
+		return
+	end
 	biz.production_tick(ACID_SLOT)
 	if notify then
 		notify.push("Acid Lab", "Production tick completed", 2000)
@@ -83,7 +89,7 @@ local function set_fast_production(enabled)
 							if notify then
 								notify.push("Acid Lab", "Fast production stopped: stock is full", 2200)
 							end
-						else
+						elseif biz.is_script_running("freemode") then
 							_fast_prod_status = "Running"
 							biz.production_tick(ACID_SLOT)
 						end

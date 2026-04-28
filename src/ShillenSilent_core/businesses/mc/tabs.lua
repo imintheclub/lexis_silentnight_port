@@ -66,6 +66,9 @@ local function register(heistTab)
 		ui.button(gSub, "mc_refill_" .. sub_key, "Refill Supplies", function()
 			mc_logic.refill_supplies(sub_key)
 		end)
+		ui.button(gSub, "mc_teleport_" .. sub_key, "Teleport", function()
+			mc_logic.teleport(sub_key)
+		end)
 		if util and util.create_thread and sub_status_label then
 			util.create_thread(function()
 				while true do

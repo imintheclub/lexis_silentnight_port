@@ -646,7 +646,33 @@ local function apartment_unlock_all_jobs(mp_prefix)
 	return ok_all
 end
 
-local function apartment_apply_cuts(cuts_values)
+local function apartment_force_cut_ui_flow()
+	pcall(function()
+		local gui = _G.GUI
+		if gui and type(gui.IsOpen) == "function" and type(gui.Toggle) == "function" and gui.IsOpen() then
+			gui.Toggle()
+		end
+	end)
+
+	if util and type(util.yield) == "function" then
+		util.yield(1000)
+	end
+
+	pcall(function()
+		local gta = _G.GTA
+		if gta and type(gta.SimulatePlayerControl) == "function" then
+			gta.SimulatePlayerControl(237)
+		end
+	end)
+	pcall(function()
+		local gta = _G.GTA
+		if gta and type(gta.SimulateFrontendControl) == "function" then
+			gta.SimulateFrontendControl(202)
+		end
+	end)
+end
+
+local function apartment_apply_cuts(cuts_values, auto_force_cuts)
 	if type(cuts_values) ~= "table" then
 		if notify then
 			notify.push("Apartment Cuts", "Cuts failed to apply", 2000)
@@ -658,39 +684,27 @@ local function apartment_apply_cuts(cuts_values)
 	local p2 = math.floor(tonumber(cuts_values.player2) or 0)
 	local p3 = math.floor(tonumber(cuts_values.player3) or 0)
 	local p4 = math.floor(tonumber(cuts_values.player4) or 0)
-	local base_pairs = {
-		{ global_base = 1936013, local_base = 1937981 },
-		{ global_base = 1935536, local_base = 1937504 },
-	}
-	local total_cut = p1 + p2 + p3 + p4
-	local over_cap = total_cut - 100
-	local any_pair_ok = false
+	local host_global = 100 - (p1 + p2 + p3 + p4)
+	local ok = true
 
-	for i = 1, #base_pairs do
-		local pair = base_pairs[i]
-		local pair_ok = true
-		if over_cap > 0 then
-			pair_ok = set_global_int(pair.global_base + 1 + 1, -over_cap) and pair_ok
-		else
-			pair_ok = set_global_int(pair.global_base + 1 + 1, 0) and pair_ok
-		end
+	ok = set_global_int(1936013 + 1 + 1, host_global) and ok
+	ok = set_global_int(1936013 + 1 + 2, p2) and ok
+	ok = set_global_int(1936013 + 1 + 3, p3) and ok
+	ok = set_global_int(1936013 + 1 + 4, p4) and ok
 
-		pair_ok = set_global_int(pair.global_base + 1 + 2, p2) and pair_ok
-		pair_ok = set_global_int(pair.global_base + 1 + 3, p3) and pair_ok
-		pair_ok = set_global_int(pair.global_base + 1 + 4, p4) and pair_ok
+	ok = set_global_int(1937981 + 3008 + 1, p1) and ok
+	ok = set_global_int(1937981 + 3008 + 2, p2) and ok
+	ok = set_global_int(1937981 + 3008 + 3, p3) and ok
+	ok = set_global_int(1937981 + 3008 + 4, p4) and ok
 
-		pair_ok = set_global_int(pair.local_base + 3008 + 1, p1) and pair_ok
-		pair_ok = set_global_int(pair.local_base + 3008 + 2, p2) and pair_ok
-		pair_ok = set_global_int(pair.local_base + 3008 + 3, p3) and pair_ok
-		pair_ok = set_global_int(pair.local_base + 3008 + 4, p4) and pair_ok
-
-		any_pair_ok = any_pair_ok or pair_ok
+	if auto_force_cuts then
+		apartment_force_cut_ui_flow()
 	end
 
 	if notify then
-		notify.push("Apartment Cuts", any_pair_ok and "Cuts completed" or "Cuts failed to apply", 2000)
+		notify.push("Apartment Cuts", ok and "Cuts completed" or "Cuts failed to apply", 2000)
 	end
-	return any_pair_ok
+	return ok
 end
 
 local function apartment_set_12mil_bonus(enable, silent)

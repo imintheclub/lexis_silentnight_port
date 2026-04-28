@@ -19,6 +19,7 @@ local hp_options_to_names = presets.hp_options_to_names
 local hp_option_index_by_value = presets.hp_option_index_by_value
 local hp_option_value_by_name = presets.hp_option_value_by_name
 local CutsValues = presets.CutsValues
+local casino_cut_enabled = heist_state.casino.cut_enabled
 local build_skip_cooldown_danger_group = danger_groups.build_skip_cooldown_danger_group
 local cooldown_danger_warning_lines = danger_groups.cooldown_danger_warning_lines
 local reset_heist_preps = casino_logic.reset_heist_preps
@@ -392,32 +393,61 @@ local function register(heistTab)
 			casino_set_max_payout(val)
 		end
 	)
-	casino_refs.host_slider = ui.slider(gCuts, "cut_host", "Host Cut %", 0, 300, 100, function(val)
+	casino_refs.host_slider = ui.slider(gCuts, "cut_host", "Host Cut %", 0, 300, CutsValues.host, function(val)
 		CutsValues.host = math.floor(val)
 	end, nil, 5)
-	casino_refs.p2_slider = ui.slider(gCuts, "cut_p2", "Player 2 Cut %", 0, 300, 0, function(val)
+	casino_refs.host_toggle = ui.toggle(gCuts, "cut_host_enabled", "Enable Host", casino_cut_enabled.host, function(val)
+		casino_cut_enabled.host = val and true or false
+	end)
+	casino_refs.p2_slider = ui.slider(gCuts, "cut_p2", "Player 2 Cut %", 0, 300, CutsValues.player2, function(val)
 		CutsValues.player2 = math.floor(val)
 	end, nil, 5)
-	casino_refs.p3_slider = ui.slider(gCuts, "cut_p3", "Player 3 Cut %", 0, 300, 0, function(val)
+	casino_refs.p2_toggle = ui.toggle(
+		gCuts,
+		"cut_p2_enabled",
+		"Enable Player 2",
+		casino_cut_enabled.player2,
+		function(val)
+			casino_cut_enabled.player2 = val and true or false
+		end
+	)
+	casino_refs.p3_slider = ui.slider(gCuts, "cut_p3", "Player 3 Cut %", 0, 300, CutsValues.player3, function(val)
 		CutsValues.player3 = math.floor(val)
 	end, nil, 5)
-	casino_refs.p4_slider = ui.slider(gCuts, "cut_p4", "Player 4 Cut %", 0, 300, 0, function(val)
+	casino_refs.p3_toggle = ui.toggle(
+		gCuts,
+		"cut_p3_enabled",
+		"Enable Player 3",
+		casino_cut_enabled.player3,
+		function(val)
+			casino_cut_enabled.player3 = val and true or false
+		end
+	)
+	casino_refs.p4_slider = ui.slider(gCuts, "cut_p4", "Player 4 Cut %", 0, 300, CutsValues.player4, function(val)
 		CutsValues.player4 = math.floor(val)
 	end, nil, 5)
+	casino_refs.p4_toggle = ui.toggle(
+		gCuts,
+		"cut_p4_enabled",
+		"Enable Player 4",
+		casino_cut_enabled.player4,
+		function(val)
+			casino_cut_enabled.player4 = val and true or false
+		end
+	)
 	ui.button(gCuts, "cuts_max", "Apply Preset (100%)", function()
 		hp_set_uniform_cuts(
 			CutsValues,
 			{ "host", "player2", "player3", "player4" },
 			{ casino_refs.host_slider, casino_refs.p2_slider, casino_refs.p3_slider, casino_refs.p4_slider },
-			100,
-			apply_casino_cuts
+			100
 		)
 	end)
 	ui.button(gCuts, "cuts_apply", "Apply Cuts", function()
 		apply_casino_cuts()
 	end)
 	if casino_flags.max_payout_enabled then
-		casino_refresh_max_payout(true, true)
+		casino_refresh_max_payout(true)
 	else
 		casino_set_remove_crew_cuts(casino_flags.remove_crew_cuts_enabled, true)
 	end

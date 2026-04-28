@@ -38,6 +38,7 @@ local hp_refresh_apartment_max_payout = presets.hp_refresh_apartment_max_payout
 
 local apartment_state = heist_state.apartment
 local ApartmentCutsValues = apartment_state.cuts
+local apartment_cut_enabled = apartment_state.cut_enabled
 local apartment_flags = apartment_state.flags
 local apartment_refs = apartment_state.refs
 local apartment_callbacks = apartment_state.callbacks
@@ -206,7 +207,12 @@ local function register(heistTab)
 
 		-- Apply Apartment Cuts
 		local function apply_apartment_cuts()
-			return apartment_apply_cuts(ApartmentCutsValues)
+			return apartment_apply_cuts({
+				player1 = apartment_cut_enabled.player1 and ApartmentCutsValues.player1 or 0,
+				player2 = apartment_cut_enabled.player2 and ApartmentCutsValues.player2 or 0,
+				player3 = apartment_cut_enabled.player3 and ApartmentCutsValues.player3 or 0,
+				player4 = apartment_cut_enabled.player4 and ApartmentCutsValues.player4 or 0,
+			}, apartment_flags.auto_force_cuts)
 		end
 		-- 12M Bonus Function
 		local function apartment_12mil_bonus(enable, silent)
@@ -229,6 +235,15 @@ local function register(heistTab)
 			nil,
 			10
 		)
+		apartment_refs.p1_toggle = ui.toggle(
+			gApartmentCuts,
+			"apartment_cut_p1_enabled",
+			"Enable Host",
+			apartment_cut_enabled.player1,
+			function(val)
+				apartment_cut_enabled.player1 = val and true or false
+			end
+		)
 		apartment_refs.p2_slider = ui.slider(
 			gApartmentCuts,
 			"apartment_cut_p2",
@@ -241,6 +256,15 @@ local function register(heistTab)
 			end,
 			nil,
 			10
+		)
+		apartment_refs.p2_toggle = ui.toggle(
+			gApartmentCuts,
+			"apartment_cut_p2_enabled",
+			"Enable Player 2",
+			apartment_cut_enabled.player2,
+			function(val)
+				apartment_cut_enabled.player2 = val and true or false
+			end
 		)
 		apartment_refs.p3_slider = ui.slider(
 			gApartmentCuts,
@@ -255,6 +279,15 @@ local function register(heistTab)
 			nil,
 			10
 		)
+		apartment_refs.p3_toggle = ui.toggle(
+			gApartmentCuts,
+			"apartment_cut_p3_enabled",
+			"Enable Player 3",
+			apartment_cut_enabled.player3,
+			function(val)
+				apartment_cut_enabled.player3 = val and true or false
+			end
+		)
 		apartment_refs.p4_slider = ui.slider(
 			gApartmentCuts,
 			"apartment_cut_p4",
@@ -267,6 +300,15 @@ local function register(heistTab)
 			end,
 			nil,
 			10
+		)
+		apartment_refs.p4_toggle = ui.toggle(
+			gApartmentCuts,
+			"apartment_cut_p4_enabled",
+			"Enable Player 4",
+			apartment_cut_enabled.player4,
+			function(val)
+				apartment_cut_enabled.player4 = val and true or false
+			end
 		)
 
 		local apartmentCutPresetNames = hp_options_to_names(APARTMENT_CUT_PRESET_OPTIONS)
@@ -290,7 +332,7 @@ local function register(heistTab)
 			function(val)
 				apartment_flags.max_payout_enabled = val
 				if val then
-					if not hp_refresh_apartment_max_payout(true, true) then
+					if not hp_refresh_apartment_max_payout(true) then
 						if notify then
 							notify.push("Apartment Cuts", "Unknown heist. Load an Apartment finale first.", 2400)
 						end
@@ -311,7 +353,7 @@ local function register(heistTab)
 			function(val)
 				apartment_flags.double_rewards_week = val
 				if apartment_flags.max_payout_enabled then
-					hp_refresh_apartment_max_payout(true, true)
+					hp_refresh_apartment_max_payout(true)
 				end
 				if notify then
 					notify.push("Apartment Cuts", val and "Double rewards enabled" or "Double rewards disabled", 2000)
@@ -327,13 +369,22 @@ local function register(heistTab)
 				apartment_12mil_bonus(val)
 			end
 		)
+		apartment_refs.auto_force_toggle = ui.toggle(
+			gApartmentCuts,
+			"apartment_auto_force_cuts",
+			"Auto Force Cuts",
+			apartment_flags.auto_force_cuts,
+			function(val)
+				apartment_flags.auto_force_cuts = val and true or false
+			end
+		)
 
 		ui.button_pair(
 			gApartmentCuts,
 			"apartment_apply_selected_preset",
 			"Apply Selected Preset",
 			function()
-				hp_apply_selected_apartment_cut_preset(true)
+				hp_apply_selected_apartment_cut_preset()
 			end,
 			"apartment_cuts_apply",
 			"Apply Cuts",

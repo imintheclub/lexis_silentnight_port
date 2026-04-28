@@ -1,34 +1,81 @@
 local biz = require("ShillenSilent_core.businesses.shared")
 
--- MC sub-business slot mapping.
+-- MC sub-businesses. `stock_stat` is fixed by business type (PRODTOTALFORFACTORY{N}
+-- where N identifies the business, not the player's slot). The factoryslot the
+-- player owns each business in is resolved dynamically — see find_factoryslot_for_key.
+-- `blip` is the map blip sprite for primary teleport (sylocore BLIP_SPRITES).
 local MC_SUBS = {
-	{ key = "meth", name = "Meth Lab", slot = 1, stock_stat = "PRODTOTALFORFACTORY3", cap = 20, factoryslot_idx = 3 },
-	{ key = "weed", name = "Weed Farm", slot = 2, stock_stat = "PRODTOTALFORFACTORY1", cap = 80, factoryslot_idx = 1 },
-	{
-		key = "cocaine",
-		name = "Cocaine Lockup",
-		slot = 3,
-		stock_stat = "PRODTOTALFORFACTORY4",
-		cap = 10,
-		factoryslot_idx = 4,
+	{ key = "meth", name = "Meth Lab", stock_stat = "PRODTOTALFORFACTORY3", cap = 20, blip = 499 },
+	{ key = "weed", name = "Weed Farm", stock_stat = "PRODTOTALFORFACTORY1", cap = 80, blip = 496 },
+	{ key = "cocaine", name = "Cocaine Lockup", stock_stat = "PRODTOTALFORFACTORY4", cap = 10, blip = 497 },
+	{ key = "counterfeit", name = "Counterfeit Cash", stock_stat = "PRODTOTALFORFACTORY2", cap = 40, blip = 500 },
+	{ key = "forgery", name = "Forgery Office", stock_stat = "PRODTOTALFORFACTORY0", cap = 60, blip = 498 },
+}
+
+-- Coord-table fallback per sub, indexed by location tier (1..4).
+-- Tier is derived from prop_id: math.floor((prop_id - 1) / 5) + 1.
+-- Source: sylocore/bm_downloaded.lua Teleport.MC_* tables.
+local MC_LOCATIONS = {
+	meth = {
+		{ name = "Paleto Bay", x = -58.0, y = 6465.0, z = 31.0 },
+		{ name = "Terminal", x = 1381.0, y = -2106.0, z = 52.0 },
+		{ name = "El Burro Heights", x = 1443.0, y = -1846.0, z = 52.0 },
+		{ name = "Grand Senora Desert", x = 1009.0, y = -3196.0, z = -38.0 },
 	},
-	{
-		key = "counterfeit",
-		name = "Counterfeit Cash",
-		slot = 4,
-		stock_stat = "PRODTOTALFORFACTORY2",
-		cap = 40,
-		factoryslot_idx = 2,
+	weed = {
+		{ name = "San Chianski", x = 2861.0, y = 4555.0, z = 48.0 },
+		{ name = "Elysian Island", x = 115.0, y = -2553.0, z = 6.0 },
+		{ name = "Downtown Vinewood", x = -53.0, y = 183.0, z = 72.0 },
+		{ name = "Mt Chiliad", x = 712.0, y = 5895.0, z = 18.0 },
 	},
-	{
-		key = "forgery",
-		name = "Forgery Office",
-		slot = 5,
-		stock_stat = "PRODTOTALFORFACTORY0",
-		cap = 60,
-		factoryslot_idx = 0,
+	cocaine = {
+		{ name = "Paleto Bay", x = -153.0, y = 6435.0, z = 31.0 },
+		{ name = "Elysian Island", x = 91.0, y = -2491.0, z = 6.0 },
+		{ name = "Morningwood", x = -1169.0, y = -287.0, z = 37.0 },
+		{ name = "Alamo Sea", x = 1088.0, y = -3187.0, z = -39.0 },
+	},
+	counterfeit = {
+		{ name = "Paleto Bay", x = -132.0, y = 6256.0, z = 31.0 },
+		{ name = "Cypress Flats", x = 853.0, y = -2336.0, z = 30.0 },
+		{ name = "Vespucci Canals", x = -1109.0, y = -1361.0, z = 5.0 },
+		{ name = "Grand Senora Desert", x = 1163.0, y = 2712.0, z = 38.0 },
+	},
+	forgery = {
+		{ name = "Paleto Bay", x = -32.0, y = 6281.0, z = 31.0 },
+		{ name = "Elysian Island", x = 111.0, y = -2528.0, z = 6.0 },
+		{ name = "Textile City", x = 711.0, y = -921.0, z = 25.0 },
+		{ name = "Grapeseed", x = 1910.0, y = 4773.0, z = 41.0 },
 	},
 }
+
+local SUB_BY_KEY = {}
+for _, sub in ipairs(MC_SUBS) do
+	SUB_BY_KEY[sub.key] = sub
+end
+
+-- Property ID → MC sub key. Property IDs come in groups of 5 across 4 location tiers.
+-- Reference: sylocore/bm_downloaded.lua MC_BUSINESSES (~line 4210) — the table used
+-- by the actual refill code path. (A second table at ~8454 used by teleport scanning
+-- has the opposite ordering; trust the refill table here.)
+local PROP_ID_TO_KEY = {}
+for n = 0, 3 do
+	PROP_ID_TO_KEY[1 + n * 5] = "meth"
+	PROP_ID_TO_KEY[2 + n * 5] = "weed"
+	PROP_ID_TO_KEY[3 + n * 5] = "cocaine"
+	PROP_ID_TO_KEY[4 + n * 5] = "counterfeit"
+	PROP_ID_TO_KEY[5 + n * 5] = "forgery"
+end
+
+local function find_factoryslot_for_key(sub_key)
+	local mp = biz.GetMP()
+	for i = 0, 4 do
+		local prop_id = biz.get_stat_int(mp .. "FACTORYSLOT" .. tostring(i), 0)
+		if prop_id and prop_id > 0 and PROP_ID_TO_KEY[prop_id] == sub_key then
+			return i
+		end
+	end
+	return nil
+end
 
 -- Instant sell uses gb_biker_contraband_sell script locals (EE offsets).
 local SELL_SCRIPT = "gb_biker_contraband_sell"
@@ -72,10 +119,51 @@ local function production_tick(sub_key)
 	if not sub then
 		return
 	end
-	biz.production_tick(sub.slot)
+	local factoryslot = find_factoryslot_for_key(sub_key)
+	if factoryslot == nil then
+		if notify then
+			notify.push("MC: " .. sub.name, "Not owned in any factory slot", 2000)
+		end
+		return
+	end
+	biz.production_tick(factoryslot + 1)
 	if notify then
 		notify.push("MC: " .. sub.name, "Production tick completed", 2000)
 	end
+end
+
+local function teleport(sub_key)
+	local sub = find_sub(sub_key)
+	if not sub then
+		return
+	end
+	local label = "MC: " .. sub.name
+	local x, y, z
+	if sub.blip then
+		x, y, z = biz.get_blip_coords(sub.blip)
+	end
+	if not x then
+		local mp = biz.GetMP()
+		for i = 0, 4 do
+			local prop_id = biz.get_stat_int(mp .. "FACTORYSLOT" .. tostring(i), 0)
+			if prop_id and prop_id > 0 and PROP_ID_TO_KEY[prop_id] == sub_key then
+				local tier = math.floor((prop_id - 1) / 5) + 1
+				local locs = MC_LOCATIONS[sub_key]
+				local loc = locs and locs[tier]
+				if loc then
+					x, y, z = loc.x, loc.y, loc.z
+				end
+				break
+			end
+		end
+	end
+	if not x then
+		if notify then
+			notify.push(label, "Not owned in any factory slot", 2000)
+		end
+		return
+	end
+	biz.run_coords_teleport(label, "Teleported to " .. sub.name, x, y, z, false, nil)
 end
 
 local function refill_supplies(sub_key)
@@ -83,10 +171,16 @@ local function refill_supplies(sub_key)
 	if not sub then
 		return
 	end
-	local slot = sub.slot
 	local name = sub.name
 	biz.run_guarded_job("mc_refill_" .. sub_key, function()
-		biz.fill_supply_slot(slot)
+		local factoryslot = find_factoryslot_for_key(sub_key)
+		if factoryslot == nil then
+			if notify then
+				notify.push("MC: " .. name, "Not owned in any factory slot", 2000)
+			end
+			return
+		end
+		biz.fill_supply_slot(factoryslot + 1)
 		if notify then
 			notify.push("MC: " .. name, "Supplies refill completed", 2000)
 		end
@@ -99,12 +193,18 @@ end
 
 local function refill_all_supplies()
 	biz.run_guarded_job("mc_refill_all", function()
-		for _, sub in ipairs(MC_SUBS) do
-			biz.fill_supply_slot(sub.slot)
-			util.yield(20)
+		local mp = biz.GetMP()
+		local any_owned = false
+		for i = 0, 4 do
+			local prop_id = biz.get_stat_int(mp .. "FACTORYSLOT" .. tostring(i), 0)
+			if prop_id and prop_id > 0 then
+				any_owned = true
+				biz.fill_supply_slot(i + 1)
+				util.yield(20)
+			end
 		end
 		if notify then
-			notify.push("Moto Club", "All supplies refill completed", 2000)
+			notify.push("Moto Club", any_owned and "All supplies refill completed" or "No owned MC businesses", 2000)
 		end
 	end, function()
 		if notify then
@@ -150,15 +250,19 @@ local function set_fast_production(enabled)
 						local any_owned = false
 						local mp = biz.GetMP()
 
-						for _, sub in ipairs(MC_SUBS) do
-							local owned = biz.get_stat_int(mp .. "FACTORYSLOT" .. tostring(sub.factoryslot_idx), 0)
-							if owned and owned > 0 then
+						for i = 0, 4 do
+							local prop_id = biz.get_stat_int(mp .. "FACTORYSLOT" .. tostring(i), 0)
+							if prop_id and prop_id > 0 then
 								any_owned = true
-								local stock = biz.get_stat_int(mp .. sub.stock_stat, 0) or 0
-								if stock < sub.cap then
-									_fast_prod_status = "Running"
-									biz.production_tick(sub.slot)
-									all_owned_full = false
+								local sub_key = PROP_ID_TO_KEY[prop_id]
+								local sub = sub_key and SUB_BY_KEY[sub_key]
+								if sub then
+									local stock = biz.get_stat_int(mp .. sub.stock_stat, 0) or 0
+									if stock < sub.cap then
+										_fast_prod_status = "Running"
+										biz.production_tick(i + 1)
+										all_owned_full = false
+									end
 								end
 							end
 						end
@@ -224,8 +328,8 @@ local function ensure_sub_production_loop_thread()
 			for _, sub in ipairs(MC_SUBS) do
 				if _sub_prod_active[sub.key] then
 					any_active = true
-					local owned = biz.get_stat_int(mp .. "FACTORYSLOT" .. tostring(sub.factoryslot_idx), 0)
-					if not owned or owned <= 0 then
+					local factoryslot = find_factoryslot_for_key(sub.key)
+					if factoryslot == nil then
 						_sub_prod_active[sub.key] = false
 						_sub_prod_status[sub.key] = "Not Owned"
 					else
@@ -235,7 +339,7 @@ local function ensure_sub_production_loop_thread()
 							_sub_prod_status[sub.key] = "Full"
 						else
 							_sub_prod_status[sub.key] = "Running"
-							biz.production_tick(sub.slot)
+							biz.production_tick(factoryslot + 1)
 						end
 					end
 				elseif _sub_prod_status[sub.key] == nil then
@@ -351,6 +455,7 @@ end
 local mc_logic = {
 	get_subs = get_subs,
 	production_tick = production_tick,
+	teleport = teleport,
 	refill_supplies = refill_supplies,
 	refill_all_supplies = refill_all_supplies,
 	instant_sell = instant_sell,

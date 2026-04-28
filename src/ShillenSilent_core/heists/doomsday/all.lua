@@ -12,6 +12,7 @@ local solo_launch_runtime = require("ShillenSilent_core.runtime.solo_launch")
 local state = core.state
 local run_guarded_job = core.run_guarded_job
 local SAFE_PAYOUT_TARGETS = presets.SAFE_PAYOUT_TARGETS
+local hp_get_active_mpx_stat_int = presets.hp_get_active_mpx_stat_int
 local hp_set_stat_for_all_characters = presets.hp_set_stat_for_all_characters
 local hp_set_uniform_cuts = presets.hp_set_uniform_cuts
 local hp_clamp_doomsday_cut_percent = presets.hp_clamp_doomsday_cut_percent
@@ -54,6 +55,7 @@ local DOOMSDAY_FINISH_NEW_OFFSETS = {
 	},
 }
 local apply_doomsday_cuts
+local doomsday_refresh_max_payout
 
 local doomsday_max_payout_cache = {
 	heist = nil,
@@ -101,6 +103,10 @@ local function doomsday_set_selected_act(act, silent)
 
 	if not silent and notify then
 		notify.push("Doomsday", "Selected " .. DOOMSDAY_ACT_OPTIONS[selected_act].name, 2000)
+	end
+
+	if doomsday_flags.max_payout_enabled then
+		doomsday_refresh_max_payout(true)
 	end
 
 	return true
@@ -191,7 +197,7 @@ local function doomsday_teleport_to_entrance()
 end
 
 local function doomsday_teleport_to_screen()
-	if not is_script_running(DOOMSDAY_INTERIOR_SCRIPT) then
+	if not safe_access.is_script_running(DOOMSDAY_INTERIOR_SCRIPT) then
 		if notify then
 			notify.push("Teleport", "You must be inside the Facility interior", 2200)
 		end
@@ -208,8 +214,6 @@ local function doomsday_teleport_to_screen()
 end
 
 local function hp_get_doomsday_max_payout_cut()
-	local act_preset = DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act]
-	local heist = act_preset and act_preset.flow or nil
 	local difficulty = safe_access.get_global_int(4718592 + 3538, 1) or 1
 	if difficulty == 0 then
 		difficulty = 1
@@ -227,6 +231,12 @@ local function hp_get_doomsday_max_payout_cut()
 		[16368] = { 1800000, 2250000 },
 	}
 
+	local heist = hp_get_active_mpx_stat_int("GANGOPS_FLOW_MISSION_PROG", nil)
+	if not payouts[heist] then
+		local act_preset = DOOMSDAY_ACT_PRESETS[DoomsdayConfig.act]
+		heist = act_preset and act_preset.flow or heist
+	end
+
 	local payout_by_heist = payouts[heist]
 	if not payout_by_heist then
 		return nil, heist, difficulty
@@ -239,7 +249,7 @@ local function hp_get_doomsday_max_payout_cut()
 	return hp_clamp_doomsday_cut_percent(cut), heist, difficulty
 end
 
-local function doomsday_refresh_max_payout(force_update, apply_now)
+doomsday_refresh_max_payout = function(force_update)
 	if not doomsday_flags.max_payout_enabled then
 		doomsday_max_payout_cache.heist = nil
 		doomsday_max_payout_cache.difficulty = nil
@@ -264,10 +274,6 @@ local function doomsday_refresh_max_payout(force_update, apply_now)
 			{ doomsday_refs.p1_slider, doomsday_refs.p2_slider, doomsday_refs.p3_slider, doomsday_refs.p4_slider },
 			cut
 		)
-
-		if apply_now then
-			apply_doomsday_cuts()
-		end
 
 		doomsday_max_payout_cache.heist = heist
 		doomsday_max_payout_cache.difficulty = difficulty
@@ -317,7 +323,7 @@ apply_doomsday_cuts = function(cuts)
 	return ok1 and ok2 and ok3 and ok4
 end
 
-local function apply_selected_doomsday_cut_preset(apply_now, silent)
+local function apply_selected_doomsday_cut_preset(silent)
 	local selected = APARTMENT_CUT_PRESET_OPTIONS[doomsday_flags.cut_preset_index]
 		or APARTMENT_CUT_PRESET_OPTIONS[#APARTMENT_CUT_PRESET_OPTIONS]
 
@@ -326,17 +332,11 @@ local function apply_selected_doomsday_cut_preset(apply_now, silent)
 		selected_cut = hp_get_doomsday_max_payout_cut() or selected_cut
 	end
 
-	local apply_fn = nil
-	if apply_now then
-		apply_fn = apply_doomsday_cuts
-	end
-
 	hp_set_uniform_cuts(
 		DoomsdayCutsValues,
 		{ "player1", "player2", "player3", "player4" },
 		{ doomsday_refs.p1_slider, doomsday_refs.p2_slider, doomsday_refs.p3_slider, doomsday_refs.p4_slider },
-		selected_cut,
-		apply_fn
+		selected_cut
 	)
 
 	if not silent and notify then
@@ -355,7 +355,7 @@ local function doomsday_set_max_payout(enable, silent)
 	end
 
 	if enabled then
-		doomsday_refresh_max_payout(true, true)
+		doomsday_refresh_max_payout(true)
 	end
 
 	if changed and not silent and notify then
@@ -485,7 +485,7 @@ end
 
 bind_doomsday_callbacks()
 if doomsday_flags.max_payout_enabled then
-	doomsday_refresh_max_payout(true, true)
+	doomsday_refresh_max_payout(true)
 end
 
 local doomsday_module = {

@@ -101,7 +101,7 @@ function menu_main.start()
 		return false
 	end
 
-	root:breaker("ShillenSilent v0.1.2")
+	root:breaker("ShillenSilent v0.1.3")
 	register_info_menu(root)
 
 	register_menu_group(cayo_menu.register, root)

@@ -30,7 +30,7 @@ function ui.ensure_assets()
 	end
 
 	for i = 1, #font_candidates do
-		local status, font = pcall(gui.load_font, font_candidates[i], 64.0)
+		local status, font = pcall(gui.load_font, font_candidates[i], 32.0)
 		if status and font then
 			state.fonts.regular = font
 			break
@@ -1375,7 +1375,17 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 		item.isOpen = false
 	end
 
-	render_text(item.label, x + pad_x, y + config.space.x1, config.font_scale_body, config.colors.text_main)
+	local label_y
+	if is_preset_file then
+		label_y = y + config.space.x1
+	else
+		local label_size = gui.text_size
+				and gui.text_size(tostring(item.label or ""), config.font_scale_body, { font = state.fonts.regular })
+			or nil
+		local label_h = (label_size and label_size.y) or (config.font_scale_body * 0.7)
+		label_y = y + math.floor((config.item_height.dropdown - label_h) / 2)
+	end
+	render_text(item.label, x + pad_x, label_y, config.font_scale_body, config.colors.text_main)
 
 	local box_active = hovered or (open_t > 0.01)
 	local boxBg = box_active and config.colors.accent or config.colors.bg_control
@@ -1396,7 +1406,12 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	local selected = item.options[item.value] or ""
 	local selected_max_w = boxW - config.space.x9
 	local selected_text = text_with_ellipsis(selected, selected_max_w, config.font_scale_body)
-	render_text(selected_text, boxX + config.space.x3, boxY + config.space.x1, config.font_scale_body, boxText)
+	local sel_size = gui.text_size
+			and gui.text_size(selected_text, config.font_scale_body, { font = state.fonts.regular })
+		or nil
+	local sel_h = (sel_size and sel_size.y) or (config.font_scale_body * 0.7)
+	local sel_y = boxY + math.floor((boxH - sel_h) / 2)
+	render_text(selected_text, boxX + config.space.x3, sel_y, config.font_scale_body, boxText)
 
 	-- Dropdown Arrow (ASCII-safe frames to simulate rotation)
 	local arrowFrames = { "v", ">", "^" }
@@ -1407,13 +1422,13 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	if arrowIdx > #arrowFrames then
 		arrowIdx = #arrowFrames
 	end
-	render_text(
-		arrowFrames[arrowIdx],
-		boxX + boxW - config.space.x4,
-		boxY + config.space.x1,
-		config.font_scale_small,
-		boxArrow
-	)
+	local arrow_glyph = arrowFrames[arrowIdx]
+	local arrow_size = gui.text_size
+			and gui.text_size(arrow_glyph, config.font_scale_small, { font = state.fonts.regular })
+		or nil
+	local arrow_h = (arrow_size and arrow_size.y) or (config.font_scale_small * 0.7)
+	local arrow_y = boxY + math.floor((boxH - arrow_h) / 2)
+	render_text(arrow_glyph, boxX + boxW - config.space.x4, arrow_y, config.font_scale_small, boxArrow)
 
 	if open_t > 0.01 then
 		return {
@@ -1957,7 +1972,7 @@ ui.render = function()
 	local wm_y = config.origin_y + config.space.x2
 	local wm_scale = config.font_scale_small or 1.0
 	local wm_col = config.colors.text_main
-	render_text("ShillenSilent v0.1.2", wm_x, wm_y, wm_scale, wm_col, "left")
+	render_text("ShillenSilent v0.1.3", wm_x, wm_y, wm_scale, wm_col, "left")
 
 	-- [INJECTED] Credits Watermark (Bottom Left)
 	local credits_x = config.origin_x + config.space.x2

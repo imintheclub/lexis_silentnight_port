@@ -61,35 +61,48 @@ local function register(heistTab)
 	ui.button(gInfo, "info_gta_plus", "Unlock GTA+", function()
 		unlock_gta_plus()
 	end)
-	local current_theme_label = ui.label(gInfo, "", config.colors.text_sec)
-	local theme_toggle_button = nil
+	local THEME_OPTIONS = {
+		{ id = "dark", label = "Dark" },
+		{ id = "light", label = "Light" },
+		{ id = "dracula", label = "Dracula" },
+		{ id = "solarized_dark", label = "Solarized Dark" },
+		{ id = "solarized_light", label = "Solarized Light" },
+		{ id = "monokai", label = "Monokai" },
+		{ id = "one_dark", label = "One Dark" },
+		{ id = "gruvbox", label = "Gruvbox" },
+		{ id = "nord", label = "Nord" },
+		{ id = "material", label = "Material" },
+		{ id = "tokyo_night", label = "Tokyo Night" },
+		{ id = "night_owl", label = "Night Owl" },
+	}
 
-	local function sync_theme_ui_state()
-		local active_mode = tostring(config.theme_mode or core.read_theme_mode())
-		local next_mode = (active_mode == "dark") and "light" or "dark"
-		current_theme_label.text = "Current theme: " .. active_mode
-		if theme_toggle_button then
-			local title_mode = next_mode:gsub("^%l", string.upper)
-			theme_toggle_button.label = "Switch to " .. title_mode
-		end
+	local theme_labels = {}
+	local theme_id_by_label = {}
+	local theme_idx_by_id = {}
+	for i, opt in ipairs(THEME_OPTIONS) do
+		theme_labels[i] = opt.label
+		theme_id_by_label[opt.label] = opt.id
+		theme_idx_by_id[opt.id] = i
 	end
 
-	theme_toggle_button = ui.button(gInfo, "info_theme_mode_toggle", "Switch to Light", function()
-		local current_mode = tostring(config.theme_mode or core.read_theme_mode())
-		local next_mode = (current_mode == "dark") and "light" or "dark"
-		local applied_mode = core.apply_theme(next_mode)
-		local wrote = core.write_theme_mode(applied_mode)
-		sync_theme_ui_state()
+	local active_mode = tostring(config.theme_mode or core.read_theme_mode())
+	local current_idx = theme_idx_by_id[active_mode] or 1
 
+	ui.dropdown(gInfo, "info_theme_mode", "Theme", theme_labels, current_idx, function(opt)
+		local target_id = theme_id_by_label[opt]
+		if not target_id then
+			return
+		end
+		local applied_mode = core.apply_theme(target_id)
+		local wrote = core.write_theme_mode(applied_mode)
 		if notify then
 			if wrote then
-				notify.push("Theme", "Theme set to " .. tostring(applied_mode) .. " (saved for next reload)", 2600)
+				notify.push("Theme", "Theme set to " .. tostring(applied_mode), 2600)
 			else
 				notify.push("Theme", "Theme set to " .. tostring(applied_mode) .. " (save failed)", 3200)
 			end
 		end
 	end)
-	sync_theme_ui_state()
 
 	return heistTab
 end

@@ -28,6 +28,17 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 3. Load the script in Lexis
 
 # Changelog
+## v0.1.3-beta
+- MC businesses — Production ticks, refills, fast-production, and new teleport all should be fixed now.
+- Special Cargo — Production tick should be fixed.
+- Hangar — Production tick should be fixed.
+- Nightclub — filling products fixed; fast prod / tick now use a per-slot cap table (Cargo 50, Sporting 100, …) instead of a uniform 360.
+- New Collect Safe actions for Car Wash (money fronts), Garment Factory, Bail Office, and Arcade.
+- Apartment cuts — MAX PAYOUT SHOULD BE FIXED +AUTOMATIC NOW. TURN IT ON AND APPLY CUTS
+- Casino & Cayo cuts — MAX PAYOUT SHOULD BE FIXED +AUTOMATIC NOW. TURN IT ON AND APPLY CUTS
+- Doomsday — MAX PAYOUT SHOULD BE FIXED +AUTOMATIC NOW. TURN IT ON AND APPLY CUTS
+- UI — added themes + fixed centering of dropdowns + labels + hopefully made font render less blurry
+
 ## v0.1.2
 - UI fixes for consistency
 - fix production tick to be on a loop

@@ -21,6 +21,16 @@ local DEFAULT_THEME_MODE = "dark"
 local VALID_THEME_MODES = {
 	dark = true,
 	light = true,
+	dracula = true,
+	solarized_dark = true,
+	solarized_light = true,
+	monokai = true,
+	one_dark = true,
+	gruvbox = true,
+	nord = true,
+	material = true,
+	tokyo_night = true,
+	night_owl = true,
 }
 
 local SLATE = {
@@ -145,6 +155,245 @@ local function build_dark_palette()
 	}
 end
 
+local function hex(h, alpha)
+	if type(h) ~= "string" then
+		return { r = 255, g = 255, b = 255, a = alpha or 255 }
+	end
+	local s = h:gsub("^#", "")
+	return {
+		r = tonumber(s:sub(1, 2), 16) or 0,
+		g = tonumber(s:sub(3, 4), 16) or 0,
+		b = tonumber(s:sub(5, 6), 16) or 0,
+		a = alpha or 255,
+	}
+end
+
+-- Primitives for syntax-highlighting-inspired themes. Each table provides a
+-- minimal set of source colors; build_palette_from_primitives expands them
+-- into the full 25-key palette structure.
+local THEME_PRIMITIVES = {
+	dracula = {
+		bg = "#282A36",
+		panel = "#21222C",
+		control = "#44475A",
+		control_hover = "#5A5E78",
+		border = "#44475A",
+		border_strong = "#6272A4",
+		accent = "#BD93F9",
+		accent_hover = "#A77AF0",
+		fg = "#F8F8F2",
+		fg_sec = "#E0E0DC",
+		comment = "#6272A4",
+		danger = "#FF5555",
+		danger_hover = "#E04545",
+		success = "#50FA7B",
+		success_hover = "#3FE068",
+	},
+	solarized_dark = {
+		bg = "#002B36",
+		panel = "#073642",
+		control = "#073642",
+		control_hover = "#586E75",
+		border = "#073642",
+		border_strong = "#586E75",
+		accent = "#268BD2",
+		accent_hover = "#1A6FA8",
+		fg = "#FDF6E3",
+		fg_sec = "#93A1A1",
+		comment = "#586E75",
+		danger = "#DC322F",
+		danger_hover = "#B82826",
+		success = "#859900",
+		success_hover = "#6B7B00",
+	},
+	solarized_light = {
+		is_light = true,
+		bg = "#FDF6E3",
+		panel = "#EEE8D5",
+		control = "#EEE8D5",
+		control_hover = "#93A1A1",
+		border = "#EEE8D5",
+		border_strong = "#93A1A1",
+		accent = "#268BD2",
+		accent_hover = "#1A6FA8",
+		fg = "#586E75",
+		fg_sec = "#657B83",
+		comment = "#93A1A1",
+		text_on_accent = "#FDF6E3",
+		danger = "#DC322F",
+		danger_hover = "#B82826",
+		success = "#859900",
+		success_hover = "#6B7B00",
+	},
+	monokai = {
+		bg = "#272822",
+		panel = "#1F1F1A",
+		control = "#3E3D32",
+		control_hover = "#5A5A48",
+		border = "#3E3D32",
+		border_strong = "#75715E",
+		accent = "#F92672",
+		accent_hover = "#D81C5F",
+		fg = "#F8F8F2",
+		fg_sec = "#CCCCCC",
+		comment = "#75715E",
+		danger = "#F92672",
+		danger_hover = "#D81C5F",
+		success = "#A6E22E",
+		success_hover = "#8BBF26",
+	},
+	one_dark = {
+		bg = "#282C34",
+		panel = "#21252B",
+		control = "#3E4451",
+		control_hover = "#4F5666",
+		border = "#3E4451",
+		border_strong = "#5C6370",
+		accent = "#61AFEF",
+		accent_hover = "#4F95D0",
+		fg = "#ABB2BF",
+		fg_sec = "#9DA5B4",
+		comment = "#5C6370",
+		danger = "#E06C75",
+		danger_hover = "#C7515B",
+		success = "#98C379",
+		success_hover = "#7DAB5E",
+	},
+	gruvbox = {
+		bg = "#282828",
+		panel = "#1D2021",
+		control = "#3C3836",
+		control_hover = "#504945",
+		border = "#3C3836",
+		border_strong = "#665C54",
+		accent = "#FE8019",
+		accent_hover = "#D65D0E",
+		fg = "#EBDBB2",
+		fg_sec = "#D5C4A1",
+		comment = "#928374",
+		danger = "#FB4934",
+		danger_hover = "#CC241D",
+		success = "#B8BB26",
+		success_hover = "#98971A",
+	},
+	nord = {
+		bg = "#2E3440",
+		panel = "#3B4252",
+		control = "#434C5E",
+		control_hover = "#4C566A",
+		border = "#434C5E",
+		border_strong = "#4C566A",
+		accent = "#88C0D0",
+		accent_hover = "#5E81AC",
+		fg = "#ECEFF4",
+		fg_sec = "#D8DEE9",
+		comment = "#4C566A",
+		danger = "#BF616A",
+		danger_hover = "#A14953",
+		success = "#A3BE8C",
+		success_hover = "#8AA572",
+	},
+	material = {
+		bg = "#263238",
+		panel = "#1E272C",
+		control = "#314549",
+		control_hover = "#3E5359",
+		border = "#314549",
+		border_strong = "#546E7A",
+		accent = "#82AAFF",
+		accent_hover = "#5C8AE6",
+		fg = "#EEFFFF",
+		fg_sec = "#B2CCD6",
+		comment = "#546E7A",
+		danger = "#F07178",
+		danger_hover = "#D45A60",
+		success = "#C3E88D",
+		success_hover = "#A6CC72",
+	},
+	tokyo_night = {
+		bg = "#1A1B26",
+		panel = "#1F2335",
+		control = "#283457",
+		control_hover = "#3B4261",
+		border = "#3B4261",
+		border_strong = "#565F89",
+		accent = "#7AA2F7",
+		accent_hover = "#5E85DB",
+		fg = "#C0CAF5",
+		fg_sec = "#A9B1D6",
+		comment = "#565F89",
+		danger = "#F7768E",
+		danger_hover = "#DB6079",
+		success = "#9ECE6A",
+		success_hover = "#82B254",
+	},
+	night_owl = {
+		bg = "#011627",
+		panel = "#001019",
+		control = "#0E293F",
+		control_hover = "#1D3B53",
+		border = "#1D3B53",
+		border_strong = "#5F7E97",
+		accent = "#82AAFF",
+		accent_hover = "#5C8AE6",
+		fg = "#D6DEEB",
+		fg_sec = "#C5D1E2",
+		comment = "#637777",
+		danger = "#EF5350",
+		danger_hover = "#D03A3A",
+		success = "#22DA6E",
+		success_hover = "#1AB95C",
+	},
+}
+
+local function build_palette_from_primitives(p)
+	local is_light = p.is_light == true
+	return {
+		bg_main = hex(p.bg),
+		bg_panel = hex(p.panel or p.bg),
+		bg_control = hex(p.control),
+		bg_control_hover = hex(p.control_hover or p.control),
+		bg_ghost_hover = hex(p.control),
+
+		accent = hex(p.accent),
+		accent_hover = hex(p.accent_hover or p.accent),
+
+		text_main = hex(p.fg),
+		text_sec = hex(p.fg_sec or p.fg),
+		text_dim = hex(p.comment, 240),
+		text_on_accent = hex(p.text_on_accent or p.bg),
+
+		white = hex(p.fg),
+		border = hex(p.border or p.control),
+		border_strong = hex(p.border_strong or p.comment),
+		scroll_track = hex(p.control, 220),
+		card_shadow = hex("#000000", is_light and 30 or 120),
+		transparent = hex(p.bg, 0),
+
+		neutral_muted = hex(p.comment),
+		chrome_shadow_soft = hex("#000000"),
+		chrome_highlight_soft = hex(p.fg),
+
+		danger = hex(p.danger or "#DC2626"),
+		danger_hover = hex(p.danger_hover or "#B91C1C"),
+		danger_soft = hex(p.danger_soft or (is_light and "#FEF2F2" or "#3A1F22")),
+		danger_text = hex(p.danger_text or p.danger or "#FCA5A5"),
+		success = hex(p.success or "#059669"),
+		success_hover = hex(p.success_hover or "#047857"),
+	}
+end
+
+local THEME_BUILDERS = {
+	dark = build_dark_palette,
+	light = build_light_palette,
+}
+
+for name, primitives in pairs(THEME_PRIMITIVES) do
+	THEME_BUILDERS[name] = function()
+		return build_palette_from_primitives(primitives)
+	end
+end
+
 local function read_theme_mode()
 	local ok, result = pcall(function()
 		local handle = file.open(SHILLENSILENT_THEME_MODE_PATH, { append = false, create_if_not_exists = false })
@@ -253,7 +502,7 @@ local function init_config()
 		menu_width = menu_width,
 		menu_height = menu_height,
 
-		sidebar_width = tw(25),
+		sidebar_width = tw(26),
 		sidebar_gap = tw(4),
 
 		content_margin = content_margin,
@@ -311,8 +560,8 @@ local function init_config()
 		radius = {
 			none = 0,
 			sm = s(2),
-			md = s(4),
-			lg = s(6),
+			md = s(3),
+			lg = s(5),
 			xl = s(8),
 			full = s(999),
 		},
@@ -353,7 +602,8 @@ local config = init_config()
 
 local function apply_theme(mode)
 	local applied_mode = normalize_theme_mode(mode) or DEFAULT_THEME_MODE
-	local palette = (applied_mode == "light") and build_light_palette() or build_dark_palette()
+	local builder = THEME_BUILDERS[applied_mode] or THEME_BUILDERS[DEFAULT_THEME_MODE]
+	local palette = builder()
 	local target_colors = config.colors or {}
 	config.colors = target_colors
 

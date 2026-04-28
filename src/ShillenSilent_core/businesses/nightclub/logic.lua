@@ -4,7 +4,20 @@ local biz = require("ShillenSilent_core.businesses.shared")
 -- Slot 0-6: Cargo, Sporting, Pharmaceutical, Cash, Organic, South American, Printing.
 local PROD_STAT_BASE = "HUB_PROD_TOTAL_"
 local PROD_SLOT_COUNT = 7
-local PROD_MAX_UNITS = 360
+-- Per-product max caps (reference-aligned with SyloCore offsets.nightclub_products).
+local PROD_CAP_BY_SLOT = {
+	[0] = 50, -- Cargo & Shipments
+	[1] = 100, -- Sporting Goods
+	[2] = 10, -- South American Imports
+	[3] = 20, -- Pharmaceutical Research
+	[4] = 80, -- Organic Produce
+	[5] = 60, -- Printing & Copying
+	[6] = 40, -- Cash Creation
+}
+
+local function get_slot_cap(slot)
+	return PROD_CAP_BY_SLOT[slot] or 50
+end
 
 -- SyloCore nightclub fast-production method:
 -- repeatedly force accrue-time tunables down to 1000ms.
@@ -119,8 +132,9 @@ local function production_tick_all()
 	for i = 0, PROD_SLOT_COUNT - 1 do
 		local stat_name = mp .. PROD_STAT_BASE .. tostring(i)
 		local cur = biz.get_stat_int(stat_name, 0)
-		if cur < PROD_MAX_UNITS then
-			local ok = biz.set_stat_int(stat_name, math.min(cur + 1, PROD_MAX_UNITS))
+		local cap = get_slot_cap(i)
+		if cur < cap then
+			local ok = biz.set_stat_int(stat_name, math.min(cur + 1, cap))
 			if ok then
 				any_ok = true
 			end
@@ -235,21 +249,6 @@ local function set_fast_prod_target(target)
 		-- Re-apply immediately on target change while loop is active.
 		set_fast_production(false)
 		set_fast_production(true)
-	end
-end
-
-local function fill_all_products()
-	local mp = biz.GetMP()
-	local any_ok = false
-	for i = 0, PROD_SLOT_COUNT - 1 do
-		local stat_name = mp .. PROD_STAT_BASE .. tostring(i)
-		local ok = biz.set_stat_int(stat_name, PROD_MAX_UNITS)
-		if ok then
-			any_ok = true
-		end
-	end
-	if notify then
-		notify.push("Nightclub", any_ok and "All products fill completed" or "All products fill failed to apply", 2000)
 	end
 end
 
@@ -412,7 +411,6 @@ local nightclub_logic = {
 	get_fast_product_options = get_fast_product_options,
 	get_fast_prod_target = get_fast_prod_target,
 	set_fast_prod_target = set_fast_prod_target,
-	fill_all_products = fill_all_products,
 	safe_collect = safe_collect,
 	safe_fill = safe_fill,
 	safe_unbrick = safe_unbrick,

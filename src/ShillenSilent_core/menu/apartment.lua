@@ -32,6 +32,7 @@ local hp_refresh_apartment_max_payout = presets.hp_refresh_apartment_max_payout
 
 local apartment_state = heist_state.apartment
 local ApartmentCutsValues = apartment_state.cuts
+local apartment_cut_enabled = apartment_state.cut_enabled
 local apartment_flags = apartment_state.flags
 
 local apartment_menu = {
@@ -81,7 +82,12 @@ local function apartment_teleport_to_heist_board()
 end
 
 local function apply_apartment_cuts()
-	return apartment_apply_cuts(ApartmentCutsValues)
+	return apartment_apply_cuts({
+		player1 = apartment_cut_enabled.player1 and ApartmentCutsValues.player1 or 0,
+		player2 = apartment_cut_enabled.player2 and ApartmentCutsValues.player2 or 0,
+		player3 = apartment_cut_enabled.player3 and ApartmentCutsValues.player3 or 0,
+		player4 = apartment_cut_enabled.player4 and ApartmentCutsValues.player4 or 0,
+	}, apartment_flags.auto_force_cuts)
 end
 
 local function apartment_12mil_bonus(enable, silent)
@@ -98,6 +104,7 @@ function apartment_menu.refresh_controls()
 	common.set_control_value(ctx, controls.bonus_toggle, apartment_flags.bonus_enabled and true or false)
 	common.set_control_value(ctx, controls.double_toggle, apartment_flags.double_rewards_week and true or false)
 	common.set_control_value(ctx, controls.max_payout_toggle, apartment_flags.max_payout_enabled and true or false)
+	common.set_control_value(ctx, controls.auto_force_toggle, apartment_flags.auto_force_cuts and true or false)
 	common.set_control_value(
 		ctx,
 		controls.preset_combo,
@@ -105,9 +112,13 @@ function apartment_menu.refresh_controls()
 	)
 
 	common.set_control_value(ctx, controls.p1_cut, common.clamp_int(ApartmentCutsValues.player1, 0, 3000))
+	common.set_control_value(ctx, controls.p1_enabled, apartment_cut_enabled.player1 and true or false)
 	common.set_control_value(ctx, controls.p2_cut, common.clamp_int(ApartmentCutsValues.player2, 0, 3000))
+	common.set_control_value(ctx, controls.p2_enabled, apartment_cut_enabled.player2 and true or false)
 	common.set_control_value(ctx, controls.p3_cut, common.clamp_int(ApartmentCutsValues.player3, 0, 3000))
+	common.set_control_value(ctx, controls.p3_enabled, apartment_cut_enabled.player3 and true or false)
 	common.set_control_value(ctx, controls.p4_cut, common.clamp_int(ApartmentCutsValues.player4, 0, 3000))
+	common.set_control_value(ctx, controls.p4_enabled, apartment_cut_enabled.player4 and true or false)
 	return true
 end
 
@@ -157,20 +168,40 @@ function apartment_menu.register(parent_menu)
 	end, function(value)
 		ApartmentCutsValues.player1 = value
 	end)
+	controls.p1_enabled = common.add_toggle(ctx, cuts, "Enable Host", function()
+		return apartment_cut_enabled.player1
+	end, function(enabled)
+		apartment_cut_enabled.player1 = enabled and true or false
+	end)
 	controls.p2_cut = common.add_number_int(ctx, cuts, "Player 2 Cut %", 0, 3000, 10, function()
 		return ApartmentCutsValues.player2
 	end, function(value)
 		ApartmentCutsValues.player2 = value
+	end)
+	controls.p2_enabled = common.add_toggle(ctx, cuts, "Enable Player 2", function()
+		return apartment_cut_enabled.player2
+	end, function(enabled)
+		apartment_cut_enabled.player2 = enabled and true or false
 	end)
 	controls.p3_cut = common.add_number_int(ctx, cuts, "Player 3 Cut %", 0, 3000, 10, function()
 		return ApartmentCutsValues.player3
 	end, function(value)
 		ApartmentCutsValues.player3 = value
 	end)
+	controls.p3_enabled = common.add_toggle(ctx, cuts, "Enable Player 3", function()
+		return apartment_cut_enabled.player3
+	end, function(enabled)
+		apartment_cut_enabled.player3 = enabled and true or false
+	end)
 	controls.p4_cut = common.add_number_int(ctx, cuts, "Player 4 Cut %", 0, 3000, 10, function()
 		return ApartmentCutsValues.player4
 	end, function(value)
 		ApartmentCutsValues.player4 = value
+	end)
+	controls.p4_enabled = common.add_toggle(ctx, cuts, "Enable Player 4", function()
+		return apartment_cut_enabled.player4
+	end, function(enabled)
+		apartment_cut_enabled.player4 = enabled and true or false
 	end)
 
 	local preset_entries = {}
@@ -188,7 +219,7 @@ function apartment_menu.register(parent_menu)
 	end, function(enabled)
 		apartment_flags.max_payout_enabled = enabled and true or false
 		if enabled then
-			if not hp_refresh_apartment_max_payout(true, false) then
+			if not hp_refresh_apartment_max_payout(true) then
 				if notify then
 					notify.push("Apartment Cuts", "Unknown heist. Load an Apartment finale first.", 2400)
 				end
@@ -205,7 +236,7 @@ function apartment_menu.register(parent_menu)
 	end, function(enabled)
 		apartment_flags.double_rewards_week = enabled and true or false
 		if apartment_flags.max_payout_enabled then
-			hp_refresh_apartment_max_payout(true, false)
+			hp_refresh_apartment_max_payout(true)
 		end
 		if notify then
 			notify.push("Apartment Cuts", enabled and "Double rewards enabled" or "Double rewards disabled", 2000)
@@ -216,9 +247,14 @@ function apartment_menu.register(parent_menu)
 	end, function(enabled)
 		apartment_12mil_bonus(enabled)
 	end)
+	controls.auto_force_toggle = common.add_toggle(ctx, cuts, "Auto Force Cuts", function()
+		return apartment_flags.auto_force_cuts
+	end, function(enabled)
+		apartment_flags.auto_force_cuts = enabled and true or false
+	end)
 
 	common.add_button(cuts, "Apply Selected Preset", function()
-		hp_apply_selected_apartment_cut_preset(true)
+		hp_apply_selected_apartment_cut_preset()
 		apartment_menu.refresh_controls()
 	end)
 	common.add_button(cuts, "Apply Cuts", function()

@@ -3,6 +3,7 @@ local ui = require("ShillenSilent_core.core.ui")
 local mf_logic = require("ShillenSilent_core.businesses.moneyfronts.logic")
 local garment_logic = require("ShillenSilent_core.businesses.garment.logic")
 local bailoffice_logic = require("ShillenSilent_core.businesses.bailoffice.logic")
+local arcade_logic = require("ShillenSilent_core.businesses.arcade.logic")
 
 local config = core.config
 
@@ -53,6 +54,9 @@ local function register(heistTab)
 	ui.button(gMF, "mf_reset_safe_prod", "Reset Safe Production State", function()
 		mf_logic.reset_safe_production_state()
 	end)
+	ui.button(gMF, "mf_carwash_safe_collect", "Collect Car Wash Safe", function()
+		mf_logic.car_wash_collect_safe()
+	end)
 
 	-- Garment Factory card
 	local gGarment = ui.group(heistTab, "Garment Factory", nil, nil, nil, nil, "misc")
@@ -60,12 +64,25 @@ local function register(heistTab)
 	ui.button(gGarment, "garment_teleport", "Teleport to Entrance", function()
 		garment_logic.teleport()
 	end)
+	ui.button(gGarment, "garment_safe_collect", "Collect Safe", function()
+		garment_logic.collect_safe()
+	end)
 
 	-- Bail Office card
 	local gBail = ui.group(heistTab, "Bail Office", nil, nil, nil, nil, "misc")
 	ui.label(gBail, "Bail Office", config.colors.accent)
 	ui.button(gBail, "bail_teleport", "Teleport", function()
 		bailoffice_logic.teleport()
+	end)
+	ui.button(gBail, "bail_safe_collect", "Collect Safe", function()
+		bailoffice_logic.collect_safe()
+	end)
+
+	-- Arcade card
+	local gArcade = ui.group(heistTab, "Arcade", nil, nil, nil, nil, "misc")
+	ui.label(gArcade, "Arcade", config.colors.accent)
+	ui.button(gArcade, "arcade_safe_collect", "Collect Safe", function()
+		arcade_logic.collect_safe()
 	end)
 
 	return heistTab

@@ -24,13 +24,12 @@ local function register(heistTab)
 		end
 	end
 	ui.dropdown(gProd, "nc_fast_target", "Fast NC Target", target_names, selected_idx, function(opt)
-		if not opt or not opt.value then
-			return
-		end
-		local idx = tonumber(opt.value) or 1
-		local selected = target_options[idx]
-		if selected then
-			nc_logic.set_fast_prod_target(selected.value)
+		for i = 1, #target_options do
+			local entry = target_options[i]
+			if entry.name == opt then
+				nc_logic.set_fast_prod_target(entry.value)
+				break
+			end
 		end
 	end)
 	ui.toggle(
@@ -42,9 +41,6 @@ local function register(heistTab)
 			nc_logic.set_fast_production(val)
 		end
 	)
-	ui.button(gProd, "nc_fill", "Fill All Products", function()
-		nc_logic.fill_all_products()
-	end)
 	if util and util.create_thread and fast_status_label then
 		util.create_thread(function()
 			while true do

@@ -34,6 +34,7 @@ local cayo_state = heist_state.cayo
 local CayoPrepOptions = cayo_state.prep_options
 local CayoConfig = cayo_state.config
 local CayoCutsValues = cayo_state.cuts
+local cayo_cut_enabled = cayo_state.cut_enabled
 local cayo_flags = cayo_state.flags
 local cayo_refs = cayo_state.refs
 local cayo_callbacks = cayo_state.callbacks
@@ -41,12 +42,14 @@ local cayo_callbacks = cayo_state.callbacks
 local casino_state = heist_state.casino
 local CasinoPrepOptions = casino_state.prep_options
 local CasinoManualPreps = casino_state.manual_preps
+local casino_cut_enabled = casino_state.cut_enabled
 local casino_flags = casino_state.flags
 local casino_refs = casino_state.refs
 local casino_callbacks = casino_state.callbacks
 
 local apartment_state = heist_state.apartment
 local ApartmentCutsValues = apartment_state.cuts
+local apartment_cut_enabled = apartment_state.cut_enabled
 local apartment_flags = apartment_state.flags
 local apartment_refs = apartment_state.refs
 local apartment_callbacks = apartment_state.callbacks
@@ -80,6 +83,15 @@ local salvage_callbacks = salvageyard_state.callbacks
 local function GetMP()
 	local mp_idx = script.globals(MPGlobal).int32
 	return mp_idx == 1 and "MP1_" or "MP0_"
+end
+
+local function hp_get_active_mp_prefix()
+	local last_char = safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
+	return (math.floor(tonumber(last_char) or 0) == 1) and "MP1_" or "MP0_"
+end
+
+local function hp_get_active_mpx_stat_int(stat_name, fallback)
+	return safe_access.get_stat_int(hp_get_active_mp_prefix() .. stat_name, fallback)
 end
 
 local function hp_options_to_names(options)
@@ -514,12 +526,12 @@ local APARTMENT_HEIST_IDS = {
 	pacific_standard = "zCxFg29teE2ReKGnr0L4Bg",
 }
 
-local APARTMENT_HEIST_IDS_BY_INDEX = {
-	[1] = APARTMENT_HEIST_IDS.fleeca,
-	[2] = APARTMENT_HEIST_IDS.prison_break,
-	[3] = APARTMENT_HEIST_IDS.humane_labs,
-	[4] = APARTMENT_HEIST_IDS.series_a,
-	[5] = APARTMENT_HEIST_IDS.pacific_standard,
+local APARTMENT_HEIST_IDS_BY_RCONT = {
+	[-1072870761] = APARTMENT_HEIST_IDS.fleeca,
+	[979654579] = APARTMENT_HEIST_IDS.prison_break,
+	[-1096986654] = APARTMENT_HEIST_IDS.humane_labs,
+	[164435858] = APARTMENT_HEIST_IDS.series_a,
+	[-231973569] = APARTMENT_HEIST_IDS.pacific_standard,
 }
 
 local APARTMENT_PAYOUTS = {
@@ -821,10 +833,10 @@ local function hp_collect_cayo_preset_data()
 		remove_crew_cuts = cayo_flags.remove_crew_cuts_enabled and true or false,
 		max_payout = cayo_flags.max_payout_enabled and true or false,
 		unlock_all_poi = CayoConfig.unlock_all_poi and true or false,
-		player1 = { enabled = true, cut = CayoCutsValues.host },
-		player2 = { enabled = (CayoCutsValues.player2 > 0), cut = CayoCutsValues.player2 },
-		player3 = { enabled = (CayoCutsValues.player3 > 0), cut = CayoCutsValues.player3 },
-		player4 = { enabled = (CayoCutsValues.player4 > 0), cut = CayoCutsValues.player4 },
+		player1 = { enabled = cayo_cut_enabled.host and true or false, cut = CayoCutsValues.host },
+		player2 = { enabled = cayo_cut_enabled.player2 and true or false, cut = CayoCutsValues.player2 },
+		player3 = { enabled = cayo_cut_enabled.player3 and true or false, cut = CayoCutsValues.player3 },
+		player4 = { enabled = cayo_cut_enabled.player4 and true or false, cut = CayoCutsValues.player4 },
 	}
 	return preps
 end
@@ -896,6 +908,10 @@ local function hp_apply_cayo_preset_data(preps)
 		hp_read_player_cut(preps, "player3", "player3_cut", CayoCutsValues.player3, hp_clamp_cut_percent)
 	CayoCutsValues.player4 =
 		hp_read_player_cut(preps, "player4", "player4_cut", CayoCutsValues.player4, hp_clamp_cut_percent)
+	cayo_cut_enabled.host = hp_read_player_enabled(preps, "player1", "host_enabled", true)
+	cayo_cut_enabled.player2 = hp_read_player_enabled(preps, "player2", "player2_enabled", false)
+	cayo_cut_enabled.player3 = hp_read_player_enabled(preps, "player3", "player3_enabled", false)
+	cayo_cut_enabled.player4 = hp_read_player_enabled(preps, "player4", "player4_enabled", false)
 
 	if cayo_refs.unlock_on_apply_toggle then
 		cayo_refs.unlock_on_apply_toggle.state = CayoConfig.unlock_all_poi
@@ -960,17 +976,29 @@ local function hp_apply_cayo_preset_data(preps)
 	if cayo_refs.host_slider then
 		cayo_refs.host_slider.value = CayoCutsValues.host
 	end
+	if cayo_refs.host_toggle then
+		cayo_refs.host_toggle.state = cayo_cut_enabled.host
+	end
 	if cayo_refs.p2_slider then
 		cayo_refs.p2_slider.value = CayoCutsValues.player2
+	end
+	if cayo_refs.p2_toggle then
+		cayo_refs.p2_toggle.state = cayo_cut_enabled.player2
 	end
 	if cayo_refs.p3_slider then
 		cayo_refs.p3_slider.value = CayoCutsValues.player3
 	end
+	if cayo_refs.p3_toggle then
+		cayo_refs.p3_toggle.state = cayo_cut_enabled.player3
+	end
 	if cayo_refs.p4_slider then
 		cayo_refs.p4_slider.value = CayoCutsValues.player4
 	end
+	if cayo_refs.p4_toggle then
+		cayo_refs.p4_toggle.state = cayo_cut_enabled.player4
+	end
 	if cayo_flags.max_payout_enabled and type(cayo_callbacks.refresh_max_payout) == "function" then
-		cayo_callbacks.refresh_max_payout(true, false)
+		cayo_callbacks.refresh_max_payout(true)
 	end
 
 	return true
@@ -996,10 +1024,10 @@ local function hp_collect_casino_preset_data()
 		remove_crew_cuts = casino_flags.remove_crew_cuts_enabled and true or false,
 		autograbber = casino_flags.autograbber_enabled and true or false,
 		max_payout = casino_flags.max_payout_enabled and true or false,
-		player1 = { enabled = true, cut = CutsValues.host },
-		player2 = { enabled = (CutsValues.player2 > 0), cut = CutsValues.player2 },
-		player3 = { enabled = (CutsValues.player3 > 0), cut = CutsValues.player3 },
-		player4 = { enabled = (CutsValues.player4 > 0), cut = CutsValues.player4 },
+		player1 = { enabled = casino_cut_enabled.host and true or false, cut = CutsValues.host },
+		player2 = { enabled = casino_cut_enabled.player2 and true or false, cut = CutsValues.player2 },
+		player3 = { enabled = casino_cut_enabled.player3 and true or false, cut = CutsValues.player3 },
+		player4 = { enabled = casino_cut_enabled.player4 and true or false, cut = CutsValues.player4 },
 	}
 	return preps
 end
@@ -1068,6 +1096,10 @@ local function hp_apply_casino_preset_data(preps)
 	CutsValues.player2 = hp_read_player_cut(preps, "player2", "player2_cut", CutsValues.player2, hp_clamp_cut_percent)
 	CutsValues.player3 = hp_read_player_cut(preps, "player3", "player3_cut", CutsValues.player3, hp_clamp_cut_percent)
 	CutsValues.player4 = hp_read_player_cut(preps, "player4", "player4_cut", CutsValues.player4, hp_clamp_cut_percent)
+	casino_cut_enabled.host = hp_read_player_enabled(preps, "player1", "host_enabled", true)
+	casino_cut_enabled.player2 = hp_read_player_enabled(preps, "player2", "player2_enabled", false)
+	casino_cut_enabled.player3 = hp_read_player_enabled(preps, "player3", "player3_enabled", false)
+	casino_cut_enabled.player4 = hp_read_player_enabled(preps, "player4", "player4_enabled", false)
 
 	if casino_refs.manual_difficulty_dropdown then
 		casino_refs.manual_difficulty_dropdown.value =
@@ -1145,17 +1177,29 @@ local function hp_apply_casino_preset_data(preps)
 	if casino_refs.host_slider then
 		casino_refs.host_slider.value = CutsValues.host
 	end
+	if casino_refs.host_toggle then
+		casino_refs.host_toggle.state = casino_cut_enabled.host
+	end
 	if casino_refs.p2_slider then
 		casino_refs.p2_slider.value = CutsValues.player2
+	end
+	if casino_refs.p2_toggle then
+		casino_refs.p2_toggle.state = casino_cut_enabled.player2
 	end
 	if casino_refs.p3_slider then
 		casino_refs.p3_slider.value = CutsValues.player3
 	end
+	if casino_refs.p3_toggle then
+		casino_refs.p3_toggle.state = casino_cut_enabled.player3
+	end
 	if casino_refs.p4_slider then
 		casino_refs.p4_slider.value = CutsValues.player4
 	end
+	if casino_refs.p4_toggle then
+		casino_refs.p4_toggle.state = casino_cut_enabled.player4
+	end
 	if casino_flags.max_payout_enabled and type(casino_callbacks.refresh_max_payout) == "function" then
-		casino_callbacks.refresh_max_payout(true, false)
+		casino_callbacks.refresh_max_payout(true)
 	end
 
 	return true
@@ -1170,11 +1214,12 @@ local function hp_collect_apartment_preset_data()
 		bonus_12mil = apartment_flags.bonus_enabled and true or false,
 		double_rewards_week = apartment_flags.double_rewards_week and true or false,
 		max_payout = apartment_flags.max_payout_enabled and true or false,
+		auto_force_cuts = apartment_flags.auto_force_cuts and true or false,
 		preset = math.max(0, (apartment_flags.cut_preset_index or 1) - 1),
-		player1 = { enabled = true, cut = cuts.player1 or 0 },
-		player2 = { enabled = ((cuts.player2 or 0) > 0), cut = cuts.player2 or 0 },
-		player3 = { enabled = ((cuts.player3 or 0) > 0), cut = cuts.player3 or 0 },
-		player4 = { enabled = ((cuts.player4 or 0) > 0), cut = cuts.player4 or 0 },
+		player1 = { enabled = apartment_cut_enabled.player1 and true or false, cut = cuts.player1 or 0 },
+		player2 = { enabled = apartment_cut_enabled.player2 and true or false, cut = cuts.player2 or 0 },
+		player3 = { enabled = apartment_cut_enabled.player3 and true or false, cut = cuts.player3 or 0 },
+		player4 = { enabled = apartment_cut_enabled.player4 and true or false, cut = cuts.player4 or 0 },
 	}
 	return preps
 end
@@ -1206,6 +1251,9 @@ local function hp_apply_apartment_preset_data(preps)
 	if type(preps.max_payout) == "boolean" then
 		apartment_flags.max_payout_enabled = preps.max_payout
 	end
+	if type(preps.auto_force_cuts) == "boolean" then
+		apartment_flags.auto_force_cuts = preps.auto_force_cuts
+	end
 
 	local preset = tonumber(preps.preset)
 	if not preset then
@@ -1223,6 +1271,10 @@ local function hp_apply_apartment_preset_data(preps)
 		hp_read_player_cut(preps, "player3", "player3_cut", ApartmentCutsValues.player3, hp_clamp_apartment_cut_percent)
 	ApartmentCutsValues.player4 =
 		hp_read_player_cut(preps, "player4", "player4_cut", ApartmentCutsValues.player4, hp_clamp_apartment_cut_percent)
+	apartment_cut_enabled.player1 = hp_read_player_enabled(preps, "player1", "player1_enabled", true)
+	apartment_cut_enabled.player2 = hp_read_player_enabled(preps, "player2", "player2_enabled", false)
+	apartment_cut_enabled.player3 = hp_read_player_enabled(preps, "player3", "player3_enabled", false)
+	apartment_cut_enabled.player4 = hp_read_player_enabled(preps, "player4", "player4_enabled", false)
 
 	if apartment_refs.solo_launch_toggle then
 		apartment_refs.solo_launch_toggle.state = state.solo_launch.apartment
@@ -1236,6 +1288,9 @@ local function hp_apply_apartment_preset_data(preps)
 	if apartment_refs.max_payout_toggle then
 		apartment_refs.max_payout_toggle.state = apartment_flags.max_payout_enabled
 	end
+	if apartment_refs.auto_force_toggle then
+		apartment_refs.auto_force_toggle.state = apartment_flags.auto_force_cuts
+	end
 	if apartment_refs.preset_dropdown then
 		apartment_refs.preset_dropdown.value = apartment_flags.cut_preset_index
 	end
@@ -1243,18 +1298,30 @@ local function hp_apply_apartment_preset_data(preps)
 	if apartment_refs.p1_slider then
 		apartment_refs.p1_slider.value = ApartmentCutsValues.player1
 	end
+	if apartment_refs.p1_toggle then
+		apartment_refs.p1_toggle.state = apartment_cut_enabled.player1
+	end
 	if apartment_refs.p2_slider then
 		apartment_refs.p2_slider.value = ApartmentCutsValues.player2
+	end
+	if apartment_refs.p2_toggle then
+		apartment_refs.p2_toggle.state = apartment_cut_enabled.player2
 	end
 	if apartment_refs.p3_slider then
 		apartment_refs.p3_slider.value = ApartmentCutsValues.player3
 	end
+	if apartment_refs.p3_toggle then
+		apartment_refs.p3_toggle.state = apartment_cut_enabled.player3
+	end
 	if apartment_refs.p4_slider then
 		apartment_refs.p4_slider.value = ApartmentCutsValues.player4
 	end
+	if apartment_refs.p4_toggle then
+		apartment_refs.p4_toggle.state = apartment_cut_enabled.player4
+	end
 
 	if apartment_flags.max_payout_enabled then
-		hp_refresh_apartment_max_payout(true, false)
+		hp_refresh_apartment_max_payout(true)
 	end
 
 	return true
@@ -1736,23 +1803,11 @@ local apartment_max_payout_cache = {
 }
 
 local function hp_get_apartment_heist_id()
-	local stat = account.stats("HEIST_MISSION_RCONT_ID_1")
-	local heist = ""
-
-	if stat and type(stat.str) == "string" then
-		heist = stat.str
-	end
-
-	if heist ~= "" then
-		return heist
-	end
-
-	local legacy_index = (stat and stat.int32) or nil
-	if legacy_index and APARTMENT_HEIST_IDS_BY_INDEX[legacy_index] then
-		return APARTMENT_HEIST_IDS_BY_INDEX[legacy_index]
-	end
-
-	return nil
+	local character = account and type(account.character) == "function" and account.character() or 0
+	local prefix = (math.floor(tonumber(character) or 0) == 1) and "MP1_" or "MP0_"
+	local stat = account and type(account.stats) == "function" and account.stats(prefix .. "HEIST_MISSION_RCONT_ID_0")
+	local rcont_id = stat and stat.int32 or nil
+	return APARTMENT_HEIST_IDS_BY_RCONT[math.floor(tonumber(rcont_id) or 0)]
 end
 
 local function hp_is_apartment_fleeca()
@@ -1789,7 +1844,7 @@ local function hp_get_apartment_max_payout_cut(double_rewards)
 	return hp_clamp_apartment_cut_percent(cut), heist, difficulty
 end
 
-local function hp_set_apartment_uniform_cuts(cut, apply_now)
+local function hp_set_apartment_uniform_cuts(cut)
 	if type(ApartmentCutsValues) ~= "table" then
 		return hp_clamp_apartment_cut_percent(cut)
 	end
@@ -1813,21 +1868,17 @@ local function hp_set_apartment_uniform_cuts(cut, apply_now)
 		apartment_refs.p4_slider.value = value
 	end
 
-	if apply_now and type(apartment_callbacks.apply_cuts) == "function" then
-		apartment_callbacks.apply_cuts()
-	end
-
 	return value
 end
 
-local function hp_apply_selected_apartment_cut_preset(apply_now)
+local function hp_apply_selected_apartment_cut_preset()
 	local selected = APARTMENT_CUT_PRESET_OPTIONS[apartment_flags.cut_preset_index]
 		or APARTMENT_CUT_PRESET_OPTIONS[#APARTMENT_CUT_PRESET_OPTIONS]
 	local value = selected and selected.value or 100
-	return hp_set_apartment_uniform_cuts(value, apply_now)
+	return hp_set_apartment_uniform_cuts(value)
 end
 
-hp_refresh_apartment_max_payout = function(force_update, apply_now)
+hp_refresh_apartment_max_payout = function(force_update)
 	if not apartment_flags.max_payout_enabled then
 		apartment_max_payout_cache.heist = nil
 		apartment_max_payout_cache.difficulty = nil
@@ -1848,7 +1899,7 @@ hp_refresh_apartment_max_payout = function(force_update, apply_now)
 		or apartment_max_payout_cache.cut ~= cut
 
 	if changed then
-		hp_set_apartment_uniform_cuts(cut, apply_now)
+		hp_set_apartment_uniform_cuts(cut)
 		apartment_max_payout_cache.heist = heist
 		apartment_max_payout_cache.difficulty = difficulty
 		apartment_max_payout_cache.double = apartment_flags.double_rewards_week
@@ -1870,6 +1921,8 @@ local presets = {
 	SALVAGE_MULTIPLIER_MAX = SALVAGE_MULTIPLIER_MAX,
 	APARTMENT_CUT_PRESET_OPTIONS = APARTMENT_CUT_PRESET_OPTIONS,
 	GetMP = GetMP,
+	hp_get_active_mp_prefix = hp_get_active_mp_prefix,
+	hp_get_active_mpx_stat_int = hp_get_active_mpx_stat_int,
 	hp_options_to_names = hp_options_to_names,
 	hp_find_option_index = hp_find_option_index,
 	hp_option_index_by_value = hp_option_index_by_value,

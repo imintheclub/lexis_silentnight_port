@@ -7,6 +7,9 @@ local MONEYFRONTS_LOCATIONS = {
 }
 local selected_loc = 1
 
+-- Safe collect global for Car Wash (EE).
+local CARWASH_SAFE_COLLECT = 2708890
+
 -- Money Fronts heat uses packed int stats in both character slots.
 -- Mirrors SyloCore indices for Car Wash / Heli Tours / Weed Shop.
 local STAT_SET_PACKED_INT = 0x1581503AE529CD2E
@@ -190,6 +193,13 @@ local function tick_heat_lock()
 	end
 end
 
+local function car_wash_collect_safe()
+	local ok = biz.set_global_int(CARWASH_SAFE_COLLECT, 1)
+	if notify then
+		notify.push("Car Wash", ok and "Safe collect completed" or "Safe collect failed to apply", 2000)
+	end
+end
+
 local moneyfronts_logic = {
 	get_locations = get_locations,
 	get_selected_loc = get_selected_loc,
@@ -203,6 +213,7 @@ local moneyfronts_logic = {
 	set_heat_lock_active = set_heat_lock_active,
 	get_heat_lock_active = get_heat_lock_active,
 	tick_heat_lock = tick_heat_lock,
+	car_wash_collect_safe = car_wash_collect_safe,
 }
 
 return moneyfronts_logic

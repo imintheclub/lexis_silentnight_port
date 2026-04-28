@@ -19,6 +19,7 @@ local CayoConfig = cayo_logic.CayoConfig
 local CayoPrepOptions = cayo_logic.CayoPrepOptions
 local CayoCutsValues = cayo_logic.CayoCutsValues
 local cayo_state = heist_state.cayo
+local cayo_cut_enabled = cayo_state.cut_enabled
 local cayo_flags = cayo_state.flags
 local cayo_refs = cayo_state.refs
 local cayo_teleport_kosatka = cayo_logic.cayo_teleport_kosatka
@@ -451,6 +452,15 @@ local function register(heistTab)
 		nil,
 		5
 	)
+	cayo_refs.host_toggle = ui.toggle(
+		gCayoCuts,
+		"cayo_cut_host_enabled",
+		"Enable Host",
+		cayo_cut_enabled.host,
+		function(val)
+			cayo_cut_enabled.host = val and true or false
+		end
+	)
 	cayo_refs.p2_slider = ui.slider(
 		gCayoCuts,
 		"cayo_cut_p2",
@@ -463,6 +473,15 @@ local function register(heistTab)
 		end,
 		nil,
 		5
+	)
+	cayo_refs.p2_toggle = ui.toggle(
+		gCayoCuts,
+		"cayo_cut_p2_enabled",
+		"Enable Player 2",
+		cayo_cut_enabled.player2,
+		function(val)
+			cayo_cut_enabled.player2 = val and true or false
+		end
 	)
 	cayo_refs.p3_slider = ui.slider(
 		gCayoCuts,
@@ -477,6 +496,15 @@ local function register(heistTab)
 		nil,
 		5
 	)
+	cayo_refs.p3_toggle = ui.toggle(
+		gCayoCuts,
+		"cayo_cut_p3_enabled",
+		"Enable Player 3",
+		cayo_cut_enabled.player3,
+		function(val)
+			cayo_cut_enabled.player3 = val and true or false
+		end
+	)
 	cayo_refs.p4_slider = ui.slider(
 		gCayoCuts,
 		"cayo_cut_p4",
@@ -490,20 +518,28 @@ local function register(heistTab)
 		nil,
 		5
 	)
+	cayo_refs.p4_toggle = ui.toggle(
+		gCayoCuts,
+		"cayo_cut_p4_enabled",
+		"Enable Player 4",
+		cayo_cut_enabled.player4,
+		function(val)
+			cayo_cut_enabled.player4 = val and true or false
+		end
+	)
 	ui.button(gCayoCuts, "cayo_cuts_max", "Apply Preset (100%)", function()
 		hp_set_uniform_cuts(
 			CayoCutsValues,
 			{ "host", "player2", "player3", "player4" },
 			{ cayo_refs.host_slider, cayo_refs.p2_slider, cayo_refs.p3_slider, cayo_refs.p4_slider },
-			100,
-			cayo_apply_cuts
+			100
 		)
 	end)
 	ui.button(gCayoCuts, "cayo_cuts_apply", "Apply Cuts", function()
 		cayo_apply_cuts()
 	end)
 	if cayo_flags.max_payout_enabled then
-		cayo_refresh_max_payout(true, true)
+		cayo_refresh_max_payout(true)
 	else
 		cayo_set_remove_crew_cuts(cayo_flags.remove_crew_cuts_enabled, true)
 	end

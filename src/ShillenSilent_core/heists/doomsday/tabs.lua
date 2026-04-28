@@ -140,7 +140,7 @@ local function register(heistTab)
 		"doomsday_preset_apply",
 		"Apply Selected Preset",
 		function()
-			doomsday_module.apply_selected_doomsday_cut_preset(false, false)
+			doomsday_module.apply_selected_doomsday_cut_preset(false)
 		end,
 		"doomsday_cuts_apply",
 		"Apply Cuts",
@@ -270,7 +270,7 @@ local function register(heistTab)
 	)
 
 	if doomsday_flags.max_payout_enabled then
-		doomsday_module.doomsday_refresh_max_payout(true, true)
+		doomsday_module.doomsday_refresh_max_payout(true)
 	end
 
 	return heistTab

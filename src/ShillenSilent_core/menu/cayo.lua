@@ -4,6 +4,7 @@ local native_api = require("ShillenSilent_core.core.native_api")
 local CayoConfig = cayo_logic.CayoConfig
 local CayoPrepOptions = cayo_logic.CayoPrepOptions
 local CayoCutsValues = cayo_logic.CayoCutsValues
+local cayo_cut_enabled = cayo_logic.cayo_cut_enabled
 local cayo_flags = cayo_logic.cayo_flags
 
 local cayo_menu = {
@@ -370,7 +371,7 @@ local function add_cayo_cuts_menu(cayo_root)
 		return cayo_flags.max_payout_enabled
 	end, function(enabled)
 		cayo_logic.cayo_set_max_payout(enabled)
-		cayo_logic.cayo_refresh_max_payout(true, false)
+		cayo_logic.cayo_refresh_max_payout(true)
 		cayo_menu.refresh_controls()
 	end)
 
@@ -379,20 +380,40 @@ local function add_cayo_cuts_menu(cayo_root)
 	end, function(value)
 		CayoCutsValues.host = value
 	end)
+	controls.host_enabled = add_toggle_option(cuts_menu, "Enable Host", function()
+		return cayo_cut_enabled.host
+	end, function(enabled)
+		cayo_cut_enabled.host = enabled and true or false
+	end)
 	controls.p2_cut = add_number_option(cuts_menu, "Player 2 Cut %", 0, 300, 5, function()
 		return CayoCutsValues.player2
 	end, function(value)
 		CayoCutsValues.player2 = value
+	end)
+	controls.p2_enabled = add_toggle_option(cuts_menu, "Enable Player 2", function()
+		return cayo_cut_enabled.player2
+	end, function(enabled)
+		cayo_cut_enabled.player2 = enabled and true or false
 	end)
 	controls.p3_cut = add_number_option(cuts_menu, "Player 3 Cut %", 0, 300, 5, function()
 		return CayoCutsValues.player3
 	end, function(value)
 		CayoCutsValues.player3 = value
 	end)
+	controls.p3_enabled = add_toggle_option(cuts_menu, "Enable Player 3", function()
+		return cayo_cut_enabled.player3
+	end, function(enabled)
+		cayo_cut_enabled.player3 = enabled and true or false
+	end)
 	controls.p4_cut = add_number_option(cuts_menu, "Player 4 Cut %", 0, 300, 5, function()
 		return CayoCutsValues.player4
 	end, function(value)
 		CayoCutsValues.player4 = value
+	end)
+	controls.p4_enabled = add_toggle_option(cuts_menu, "Enable Player 4", function()
+		return cayo_cut_enabled.player4
+	end, function(enabled)
+		cayo_cut_enabled.player4 = enabled and true or false
 	end)
 
 	add_button(cuts_menu, "Apply Preset (100%)", function()
@@ -400,7 +421,6 @@ local function add_cayo_cuts_menu(cayo_root)
 		CayoCutsValues.player2 = 100
 		CayoCutsValues.player3 = 100
 		CayoCutsValues.player4 = 100
-		cayo_logic.cayo_apply_cuts()
 		cayo_menu.refresh_controls()
 	end)
 
@@ -465,9 +485,13 @@ function cayo_menu.refresh_controls()
 	set_control_value(controls.art_value, clamp_int(CayoConfig.val_art, 0, 2550000))
 
 	set_control_value(controls.host_cut, clamp_int(CayoCutsValues.host, 0, 300))
+	set_control_value(controls.host_enabled, cayo_cut_enabled.host and true or false)
 	set_control_value(controls.p2_cut, clamp_int(CayoCutsValues.player2, 0, 300))
+	set_control_value(controls.p2_enabled, cayo_cut_enabled.player2 and true or false)
 	set_control_value(controls.p3_cut, clamp_int(CayoCutsValues.player3, 0, 300))
+	set_control_value(controls.p3_enabled, cayo_cut_enabled.player3 and true or false)
 	set_control_value(controls.p4_cut, clamp_int(CayoCutsValues.player4, 0, 300))
+	set_control_value(controls.p4_enabled, cayo_cut_enabled.player4 and true or false)
 
 	return true
 end

@@ -2,31 +2,43 @@ local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.businesses.acidlab.data")
 local state = require("ShillenSilent_core.features.businesses.acidlab.state")
 
 local actions = {}
 
 local function cfg()
-	return offsets.feature(data.feature_id)
+	return offsets[data.feature_id] or {}
 end
 
 local t = i18n.t
 
 local push = notify_core.feature("feature.acidlab.name")
 
+local function offset_with_delta(field, delta)
+	delta = tonumber(delta) or 0
+	if type(field) == "number" then
+		return field + delta
+	end
+	if type(field) == "table" then
+		return { ee = field.ee + delta, legacy = field.legacy + delta }
+	end
+	return nil
+end
+
 local function fill_supply_slot()
 	local supply = cfg().supply or {}
 	local base = supply.base
 	local slot = supply.slot
-	if type(base) ~= "number" or type(slot) ~= "number" then
+	local offset = offset_with_delta(base, slot)
+	if not offset or type(slot) ~= "number" then
 		return false
 	end
 
 	local ok = true
 	for _ = 1, tonumber(supply.fill_repeats) or 7 do
-		ok = safe_access.set_global_int(base + slot, 1) and ok
+		ok = safe_access.set_global_int_variants(offset, 1) and ok
 		util.yield(tonumber(supply.fill_yield_ms) or 5)
 	end
 	return ok
@@ -38,16 +50,20 @@ local function apply_production_tick()
 	local base = supply.base
 	local slot = supply.slot
 	local timer_root = production.timer_root
-	if type(base) ~= "number" or type(slot) ~= "number" or type(timer_root) ~= "number" then
+	if type(slot) ~= "number" then
 		return false
 	end
 
-	local trig1 = timer_root + 1 + (slot - 1) * 2
-	local trig2 = trig1 + 1
+	local supply_offset = offset_with_delta(base, slot)
+	local trig1 = offset_with_delta(timer_root, 1 + (slot - 1) * 2)
+	local trig2 = offset_with_delta(trig1, 1)
+	if not supply_offset or not trig1 or not trig2 then
+		return false
+	end
 	local ok = true
-	ok = safe_access.set_global_int(base + slot, 1) and ok
-	ok = safe_access.set_global_int(trig1, 0) and ok
-	ok = safe_access.set_global_int(trig2, 1) and ok
+	ok = safe_access.set_global_int_variants(supply_offset, 1) and ok
+	ok = safe_access.set_global_int_variants(trig1, 0) and ok
+	ok = safe_access.set_global_int_variants(trig2, 1) and ok
 	return ok
 end
 

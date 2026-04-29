@@ -3,7 +3,7 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local data = require("ShillenSilent_core.features.businesses.speccargo.data")
@@ -12,7 +12,7 @@ local state = require("ShillenSilent_core.features.businesses.speccargo.state")
 local actions = {}
 
 local function cfg()
-	return offsets.feature(data.feature_id)
+	return offsets[data.feature_id] or {}
 end
 
 local t = i18n.t
@@ -156,10 +156,10 @@ function actions.instant_sell()
 			supplier_pulse_once()
 		end
 		business_runtime.set_xp_multiplier(state.config.no_xp, tunables.xp_multiplier)
-		local ok1 = safe_access.set_local_int(sell.name, sell.timer_offset, sell.timer_value)
-		local ok2 = safe_access.set_local_int(sell.name, sell.state_offset, sell.state_value)
+		local ok1 = safe_access.set_local_int_variants(sell.name, sell.timer_offset, sell.timer_value)
+		local ok2 = safe_access.set_local_int_variants(sell.name, sell.state_offset, sell.state_value)
 		util.yield(2000)
-		ok1 = safe_access.set_local_int(sell.name, sell.timer_offset, sell.timer_value) and ok1
+		ok1 = safe_access.set_local_int_variants(sell.name, sell.timer_offset, sell.timer_value) and ok1
 		push((ok1 and ok2) and "speccargo.notify.sell_ok" or "speccargo.notify.sell_failed", 2200)
 	end, function()
 		push("speccargo.notify.sell_running", 1500)
@@ -299,10 +299,10 @@ function actions.instant_buy()
 		end
 		local amount = data.clamp_crate_amount(state.config.crate_amount)
 		local ok = true
-		ok = safe_access.set_local_int(buy.name, buy.amount_offset, amount) and ok
-		ok = safe_access.set_local_int(buy.name, buy.finish1_offset, 1) and ok
-		ok = safe_access.set_local_int(buy.name, buy.finish2_offset, 6) and ok
-		ok = safe_access.set_local_int(buy.name, buy.finish3_offset, 4) and ok
+		ok = safe_access.set_local_int_variants(buy.name, buy.amount_offset, amount) and ok
+		ok = safe_access.set_local_int_variants(buy.name, buy.finish1_offset, 1) and ok
+		ok = safe_access.set_local_int_variants(buy.name, buy.finish2_offset, 6) and ok
+		ok = safe_access.set_local_int_variants(buy.name, buy.finish3_offset, 4) and ok
 		push(ok and "speccargo.notify.buy_ok" or "speccargo.notify.buy_failed", 2200)
 	end, function()
 		push("speccargo.notify.buy_running", 1500)

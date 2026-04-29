@@ -4,7 +4,7 @@ local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.apartment.data")
 local state = require("ShillenSilent_core.features.heists.apartment.state")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
@@ -17,7 +17,7 @@ local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 local actions = {}
 
 local function config()
-	return offsets.feature("apartment")
+	return offsets.apartment or {}
 end
 
 local push = notify_core.feature("feature.apartment.name")
@@ -89,22 +89,9 @@ end
 
 local function world_apartment_id()
 	local cfg = config()
-	local player_id = user_id()
 	local world = cfg.globals.world_apartment_id
-	local ee_global = world.ee + (player_id * world.ee_stride)
-	local legacy_global = world.legacy + (player_id * world.legacy_stride)
-
-	local id = safe_access.get_global_int(ee_global, nil)
-	if id ~= nil then
-		return id
-	end
-
-	id = safe_access.get_global_int(legacy_global, nil)
-	if id ~= nil then
-		return id
-	end
-
-	return safe_access.get_stat_int(cfg.stats.property_house, 0) or 0
+	local id = safe_access.get_global_int_strided_variants(world, user_id(), nil)
+	return id or safe_access.get_stat_int(cfg.stats.property_house, 0) or 0
 end
 
 local function normalize_hash(value)
@@ -210,9 +197,9 @@ function actions.force_ready()
 
 		local ready = config().globals.ready
 		local ok = true
-		ok = safe_access.set_global_int(ready.player2, data.values.force_ready) and ok
-		ok = safe_access.set_global_int(ready.player3, data.values.force_ready) and ok
-		ok = safe_access.set_global_int(ready.player4, data.values.force_ready) and ok
+		ok = safe_access.set_global_int_variants(ready.player2, data.values.force_ready) and ok
+		ok = safe_access.set_global_int_variants(ready.player3, data.values.force_ready) and ok
+		ok = safe_access.set_global_int_variants(ready.player4, data.values.force_ready) and ok
 
 		push(ok and "apartment.notify.ready_ok" or "apartment.notify.ready_failed", 2000)
 	end, function()
@@ -227,7 +214,7 @@ function actions.redraw_board()
 	ok = safe_access.set_global_int(reload.step1, data.values.board_reload_step1_reset) and ok
 	util.yield(1000)
 	ok = safe_access.set_global_int(reload.step1, data.values.board_reload_step1) and ok
-	ok = safe_access.set_global_int(reload.step2, data.values.board_reload_step2) and ok
+	ok = safe_access.set_global_int_variants(reload.step2, data.values.board_reload_step2) and ok
 
 	push(ok and "apartment.notify.board_ok" or "apartment.notify.board_failed", 2000)
 	return ok
@@ -269,11 +256,11 @@ function actions.complete_preps()
 	end
 
 	local root = cfg.globals.root_content
-	ok = safe_access.set_global_string(root.step1, heist.root_content_id) and ok
+	ok = safe_access.set_global_string_variants(root.step1, heist.root_content_id) and ok
 	ok = safe_access.set_global_string(root.step2, heist.root_content_id) and ok
-	ok = safe_access.set_global_string(root.step3, heist.root_content_id) and ok
+	ok = safe_access.set_global_string_variants(root.step3, heist.root_content_id) and ok
 
-	ok = safe_access.set_global_int(cfg.globals.cooldown.step1, data.values.cooldown_enabled) and ok
+	ok = safe_access.set_global_int_variants(cfg.globals.cooldown.step1, data.values.cooldown_enabled) and ok
 	ok = safe_access.set_global_int(cfg.globals.cooldown.step2, data.values.cooldown_cleared) and ok
 	ok = actions.redraw_board() and ok
 
@@ -283,9 +270,11 @@ end
 
 local function clear_cooldown()
 	local cooldown = config().globals.cooldown
-	local cooldown_step1 = cooldown.step1 + (user_id() * cooldown.player_stride)
+	local pid = user_id()
+	local stride = cooldown.player_stride
+	local cooldown_step1 = { ee = cooldown.step1.ee + (pid * stride), legacy = cooldown.step1.legacy + (pid * stride) }
 	local ok = true
-	ok = safe_access.set_global_int(cooldown_step1, data.values.cooldown_removed) and ok
+	ok = safe_access.set_global_int_variants(cooldown_step1, data.values.cooldown_removed) and ok
 	ok = safe_access.set_global_int(cooldown.step2, data.values.cooldown_cleared) and ok
 	return ok
 end
@@ -300,7 +289,8 @@ function actions.fleeca_hack()
 	local cfg = config()
 	local script_name = cfg.scripts.mission_controller
 	if safe_access.is_script_running(script_name) then
-		local ok = safe_access.set_local_int(script_name, cfg.locals.fleeca_hack, data.values.fleeca_hack_complete)
+		local ok =
+			safe_access.set_local_int_variants(script_name, cfg.locals.fleeca_hack, data.values.fleeca_hack_complete)
 		push(ok and "apartment.notify.fleeca_hack_ok" or "apartment.notify.fleeca_hack_failed", 2000)
 		return ok
 	end
@@ -313,7 +303,11 @@ function actions.fleeca_drill()
 	local cfg = config()
 	local script_name = cfg.scripts.mission_controller
 	if safe_access.is_script_running(script_name) then
-		local ok = safe_access.set_local_float(script_name, cfg.locals.fleeca_drill, data.values.fleeca_drill_complete)
+		local ok = safe_access.set_local_float_variants(
+			script_name,
+			cfg.locals.fleeca_drill,
+			data.values.fleeca_drill_complete
+		)
 		push(ok and "apartment.notify.fleeca_drill_ok" or "apartment.notify.fleeca_drill_failed", 2000)
 		return ok
 	end
@@ -326,7 +320,8 @@ function actions.pacific_hack()
 	local cfg = config()
 	local script_name = cfg.scripts.mission_controller
 	if safe_access.is_script_running(script_name) then
-		local ok = safe_access.set_local_int(script_name, cfg.locals.pacific_hack, data.values.pacific_hack_complete)
+		local ok =
+			safe_access.set_local_int_variants(script_name, cfg.locals.pacific_hack, data.values.pacific_hack_complete)
 		push(ok and "apartment.notify.pacific_hack_ok" or "apartment.notify.pacific_hack_failed", 2000)
 		return ok
 	end
@@ -350,12 +345,18 @@ function actions.instant_finish_pacific()
 
 		util.yield(1000)
 		local ok = true
-		ok = safe_access.set_local_int(script_name, cfg.locals.pacific_finish_status, data.values.pacific_finish_status)
+		ok = safe_access.set_local_int_variants(
+			script_name,
+			cfg.locals.pacific_finish_status,
+			data.values.pacific_finish_status
+		) and ok
+		ok = safe_access.set_local_int_variants(script_name, cfg.locals.pacific_finish_percent, 80) and ok
+		ok = safe_access.set_local_int_variants(script_name, cfg.locals.finish_take_1, data.values.pacific_finish_take)
 			and ok
-		ok = safe_access.set_local_int(script_name, cfg.locals.pacific_finish_percent, 80) and ok
-		ok = safe_access.set_local_int(script_name, cfg.locals.finish_take_1, data.values.pacific_finish_take) and ok
-		ok = safe_access.set_local_int(script_name, cfg.locals.finish_take_2, data.values.finish_large_take) and ok
-		ok = safe_access.set_local_int(script_name, cfg.locals.finish_take_3, data.values.finish_large_take) and ok
+		ok = safe_access.set_local_int_variants(script_name, cfg.locals.finish_take_2, data.values.finish_large_take)
+			and ok
+		ok = safe_access.set_local_int_variants(script_name, cfg.locals.finish_take_3, data.values.finish_large_take)
+			and ok
 		push(ok and "apartment.notify.finish_pacific_ok" or "apartment.notify.finish_write_failed", 2000)
 	end, function()
 		push("apartment.notify.finish_running", 1500)
@@ -377,11 +378,17 @@ function actions.instant_finish_other()
 
 		util.yield(1000)
 		local ok = true
-		ok = safe_access.set_local_int(script_name, cfg.locals.other_finish_status, data.values.other_finish_status)
+		ok = safe_access.set_local_int_variants(
+			script_name,
+			cfg.locals.other_finish_status,
+			data.values.other_finish_status
+		) and ok
+		ok = safe_access.set_local_int_variants(script_name, cfg.locals.finish_take_1, data.values.finish_large_take)
 			and ok
-		ok = safe_access.set_local_int(script_name, cfg.locals.finish_take_1, data.values.finish_large_take) and ok
-		ok = safe_access.set_local_int(script_name, cfg.locals.finish_take_2, data.values.finish_large_take) and ok
-		ok = safe_access.set_local_int(script_name, cfg.locals.finish_take_3, data.values.finish_large_take) and ok
+		ok = safe_access.set_local_int_variants(script_name, cfg.locals.finish_take_2, data.values.finish_large_take)
+			and ok
+		ok = safe_access.set_local_int_variants(script_name, cfg.locals.finish_take_3, data.values.finish_large_take)
+			and ok
 		push(ok and "apartment.notify.finish_other_ok" or "apartment.notify.finish_write_failed", 2000)
 	end, function()
 		push("apartment.notify.finish_running", 1500)
@@ -431,7 +438,7 @@ function actions.unlock_all_jobs()
 		ok_all = strand_ok and depth_ok and ok_all
 	end
 
-	ok_all = safe_access.set_global_int(cfg.globals.reload.step2, data.values.board_unlock_all) and ok_all
+	ok_all = safe_access.set_global_int_variants(cfg.globals.reload.step2, data.values.board_unlock_all) and ok_all
 	ok_all = actions.redraw_board() and ok_all
 
 	push(ok_all and "apartment.notify.unlock_all_ok" or "apartment.notify.unlock_all_partial", 2600)
@@ -607,7 +614,7 @@ local function launcher_value()
 		return nil
 	end
 
-	local value = safe_access.get_local_int(cfg.scripts.launcher, cfg.locals.launcher_value, nil)
+	local value = safe_access.get_local_int_variants(cfg.scripts.launcher, cfg.locals.launcher_value, nil)
 	if not value or value == 0 then
 		return nil
 	end
@@ -630,12 +637,16 @@ function actions.solo_launch_reset()
 	local globals = cfg.launcher.globals
 	local ok = true
 	ok = safe_access.set_global_int(solo_launch_player_count_global(value), required_players) and ok
-	ok = safe_access.set_local_int(cfg.scripts.launcher, cfg.locals.launcher_required_players, required_players) and ok
+	ok = safe_access.set_local_int_variants(
+		cfg.scripts.launcher,
+		cfg.locals.launcher_required_players,
+		required_players
+	) and ok
 	ok = safe_access.set_global_int(globals.player_count_1, required_players) and ok
 	ok = safe_access.set_global_int(globals.player_count_2, required_players) and ok
 	ok = safe_access.set_global_int(globals.flow, data.values.launcher_apartment_flow) and ok
-	ok = safe_access.set_global_int(globals.extra, data.values.launcher_apartment_extra) and ok
-	ok = safe_access.set_local_int(
+	ok = safe_access.set_global_int_variants(globals.extra, data.values.launcher_apartment_extra) and ok
+	ok = safe_access.set_local_int_variants(
 		cfg.scripts.launcher,
 		cfg.locals.launcher_flags,
 		data.values.launcher_apartment_extra

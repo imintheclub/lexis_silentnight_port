@@ -214,14 +214,15 @@ local function get_keyboard_result()
 	if not (invoker and invoker.call) then
 		return ""
 	end
-	local result = invoker.call(0x8362B09B91893647)
+	local ok, result = pcall(invoker.call, 0x8362B09B91893647)
+	if not ok or result == nil then
+		return ""
+	end
 	if type(result) == "string" then
 		return result
 	end
-	if type(result) == "table" then
-		return result.str or result.ptr_string or result.as_str or result.string or result.value or ""
-	end
-	return ""
+	local s = result.str
+	return type(s) == "string" and s or ""
 end
 
 pcall(function()

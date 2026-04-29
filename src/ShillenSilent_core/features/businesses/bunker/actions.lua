@@ -3,7 +3,7 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local data = require("ShillenSilent_core.features.businesses.bunker.data")
@@ -12,24 +12,36 @@ local state = require("ShillenSilent_core.features.businesses.bunker.state")
 local actions = {}
 
 local function cfg()
-	return offsets.feature(data.feature_id)
+	return offsets[data.feature_id] or {}
 end
 
 local t = i18n.t
 
 local push = notify_core.feature("feature.bunker.name")
 
+local function offset_with_delta(field, delta)
+	delta = tonumber(delta) or 0
+	if type(field) == "number" then
+		return field + delta
+	end
+	if type(field) == "table" then
+		return { ee = field.ee + delta, legacy = field.legacy + delta }
+	end
+	return nil
+end
+
 local function fill_supply_slot()
 	local supply = cfg().supply or {}
 	local base = supply.base
 	local slot = supply.slot
-	if type(base) ~= "number" or type(slot) ~= "number" then
+	local offset = offset_with_delta(base, slot)
+	if not offset or type(slot) ~= "number" then
 		return false
 	end
 
 	local ok = true
 	for _ = 1, tonumber(supply.fill_repeats) or 7 do
-		ok = safe_access.set_global_int(base + slot, 1) and ok
+		ok = safe_access.set_global_int_variants(offset, 1) and ok
 		util.yield(tonumber(supply.fill_yield_ms) or 5)
 	end
 	return ok
@@ -41,16 +53,20 @@ local function apply_production_tick()
 	local base = supply.base
 	local slot = supply.slot
 	local timer_root = production.timer_root
-	if type(base) ~= "number" or type(slot) ~= "number" or type(timer_root) ~= "number" then
+	if type(slot) ~= "number" then
 		return false
 	end
 
-	local trig1 = timer_root + 1 + (slot - 1) * 2
-	local trig2 = trig1 + 1
+	local supply_offset = offset_with_delta(base, slot)
+	local trig1 = offset_with_delta(timer_root, 1 + (slot - 1) * 2)
+	local trig2 = offset_with_delta(trig1, 1)
+	if not supply_offset or not trig1 or not trig2 then
+		return false
+	end
 	local ok = true
-	ok = safe_access.set_global_int(base + slot, 1) and ok
-	ok = safe_access.set_global_int(trig1, 0) and ok
-	ok = safe_access.set_global_int(trig2, 1) and ok
+	ok = safe_access.set_global_int_variants(supply_offset, 1) and ok
+	ok = safe_access.set_global_int_variants(trig1, 0) and ok
+	ok = safe_access.set_global_int_variants(trig2, 1) and ok
 	return ok
 end
 
@@ -195,8 +211,9 @@ function actions.set_supplier_loop(enabled, silent)
 	state.set_supplier_active(enabled == true)
 	if not state.config.supplier_active then
 		local supply = cfg().supply or {}
-		if type(supply.base) == "number" and type(supply.slot) == "number" then
-			safe_access.set_global_int(supply.base + supply.slot, 0)
+		local offset = offset_with_delta(supply.base, supply.slot)
+		if offset and type(supply.slot) == "number" then
+			safe_access.set_global_int_variants(offset, 0)
 		end
 		if not silent then
 			push("bunker.notify.supplier_off", 2000)
@@ -234,7 +251,7 @@ function actions.instant_sell()
 
 		local tunables = cfg().tunables or {}
 		business_runtime.set_xp_multiplier(state.config.no_xp, tunables.xp_multiplier)
-		local ok = safe_access.set_local_int(sell.name, sell.offset, sell.value)
+		local ok = safe_access.set_local_int_variants(sell.name, sell.offset, sell.value)
 		push(ok and "bunker.notify.sell_ok" or "bunker.notify.sell_failed", 2200)
 	end, function()
 		push("bunker.notify.sell_running", 1500)

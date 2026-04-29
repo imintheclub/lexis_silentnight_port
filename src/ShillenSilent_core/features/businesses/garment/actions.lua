@@ -1,7 +1,7 @@
 local safe_access = require("ShillenSilent_core.core.safe_access")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local data = require("ShillenSilent_core.features.businesses.garment.data")
@@ -10,7 +10,7 @@ local state = require("ShillenSilent_core.features.businesses.garment.state")
 local actions = {}
 
 local function cfg()
-	return offsets.feature(data.feature_id)
+	return offsets[data.feature_id] or {}
 end
 
 local t = i18n.t

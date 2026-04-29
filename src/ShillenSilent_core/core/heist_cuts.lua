@@ -42,7 +42,7 @@ function heist_cuts.write_player_globals(opts)
 		if offset == nil then
 			ok = false
 		else
-			ok = safe_access.set_global_int(offset, values[key] or 0) and ok
+			ok = safe_access.set_global_int_variants(offset, values[key] or 0) and ok
 		end
 	end
 
@@ -58,10 +58,10 @@ function heist_cuts.write_apartment_globals(opts)
 	local p4 = values.player4 or 0
 	local ok = true
 
-	ok = safe_access.set_global_int(offsets.host_balance, 100 - (p1 + p2 + p3 + p4)) and ok
-	ok = safe_access.set_global_int(offsets.player2_balance, p2) and ok
-	ok = safe_access.set_global_int(offsets.player3_balance, p3) and ok
-	ok = safe_access.set_global_int(offsets.player4_balance, p4) and ok
+	ok = safe_access.set_global_int_variants(offsets.host_balance, 100 - (p1 + p2 + p3 + p4)) and ok
+	ok = safe_access.set_global_int_variants(offsets.player2_balance, p2) and ok
+	ok = safe_access.set_global_int_variants(offsets.player3_balance, p3) and ok
+	ok = safe_access.set_global_int_variants(offsets.player4_balance, p4) and ok
 
 	local player_ok = heist_cuts.write_player_globals({
 		player_keys = opts.player_keys,

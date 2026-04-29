@@ -4,14 +4,14 @@ local ui_mode = require("ShillenSilent_core.app.ui_mode")
 local i18n = require("ShillenSilent_core.i18n")
 local click_config = require("ShillenSilent_core.ui.click.config")
 local click_theme = require("ShillenSilent_core.ui.click.theme")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.info.data")
 local state = require("ShillenSilent_core.features.heists.info.state")
 
 local actions = {}
 
 local function config()
-	return offsets.feature("info")
+	return offsets.info or {}
 end
 
 local function should_notify(opts)

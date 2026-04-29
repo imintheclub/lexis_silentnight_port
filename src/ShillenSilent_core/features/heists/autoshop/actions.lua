@@ -3,7 +3,7 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.autoshop.data")
 local state = require("ShillenSilent_core.features.heists.autoshop.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -16,7 +16,7 @@ local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 local actions = {}
 
 local function config()
-	return offsets.feature("autoshop")
+	return offsets.autoshop or {}
 end
 
 local text = i18n.t
@@ -121,8 +121,8 @@ function actions.instant_finish_old()
 		util.yield(1000)
 
 		local finish = cfg.finish.old
-		local ok1 = safe_access.set_local_int(cfg.scripts.finish, finish.step1_offset, finish.step1_value)
-		local ok2 = safe_access.set_local_int(cfg.scripts.finish, finish.step2_offset, finish.step2_value)
+		local ok1 = safe_access.set_local_int_variants(cfg.scripts.finish, finish.step1_offset, finish.step1_value)
+		local ok2 = safe_access.set_local_int_variants(cfg.scripts.finish, finish.step2_offset, finish.step2_value)
 
 		push((ok1 and ok2) and "autoshop.notify.finish_ok_old" or "autoshop.notify.finish_failed", 2200)
 	end, function()
@@ -145,13 +145,13 @@ function actions.instant_finish_new()
 		util.yield(1000)
 
 		local finish = cfg.finish.current
-		local flags = safe_access.get_local_int(cfg.scripts.finish, finish.step3_offset, 0)
+		local flags = safe_access.get_local_int_variants(cfg.scripts.finish, finish.step3_offset, 0)
 		flags = flags | (1 << 9)
 		flags = flags | (1 << 16)
 
-		local ok1 = safe_access.set_local_int(cfg.scripts.finish, finish.step1_offset, 5)
-		local ok2 = safe_access.set_local_int(cfg.scripts.finish, finish.step2_offset, 999999)
-		local ok3 = safe_access.set_local_int(cfg.scripts.finish, finish.step3_offset, flags)
+		local ok1 = safe_access.set_local_int_variants(cfg.scripts.finish, finish.step1_offset, 5)
+		local ok2 = safe_access.set_local_int_variants(cfg.scripts.finish, finish.step2_offset, 999999)
+		local ok3 = safe_access.set_local_int_variants(cfg.scripts.finish, finish.step3_offset, flags)
 
 		push((ok1 and ok2 and ok3) and "autoshop.notify.finish_ok" or "autoshop.notify.finish_failed", 2200)
 	end, function()
@@ -167,9 +167,7 @@ function actions.kill_cooldowns()
 		stats_ok = stats_ok and ok
 	end
 
-	local cooldown_ok = safe_access.set_tunable_int(cfg.tunables.cooldown, 0)
-	local cooldown_legacy_ok = safe_access.set_tunable_int(cfg.tunables.cooldown_legacy, 0)
-	local any_tunable = cooldown_ok or cooldown_legacy_ok
+	local any_tunable = safe_access.set_tunable_int_variants(cfg.tunables.cooldown, 0)
 
 	push(
 		(stats_ok and any_tunable) and "autoshop.notify.cooldowns_removed" or "autoshop.notify.cooldowns_incomplete",

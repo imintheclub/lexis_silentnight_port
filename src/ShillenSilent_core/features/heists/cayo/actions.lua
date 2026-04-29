@@ -4,7 +4,7 @@ local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.cayo.data")
 local state = require("ShillenSilent_core.features.heists.cayo.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -16,7 +16,7 @@ local try_begin_teleport_cooldown = coords_teleport.try_begin_teleport_cooldown
 local actions = {}
 
 local function cfg()
-	return offsets.feature("cayo")
+	return offsets.cayo or {}
 end
 
 local t = i18n.t
@@ -29,7 +29,7 @@ local tp_push = notify_core.feature("cayo.group.teleport")
 
 local function set_planning_reload()
 	local c = cfg()
-	return safe_access.set_local_int(c.scripts.planning, c.locals.planning_reload, 2)
+	return safe_access.set_local_int_variants(c.scripts.planning, c.locals.planning_reload, 2)
 end
 
 local function should_notify(silent)
@@ -272,9 +272,9 @@ function actions.force_ready()
 		safe_access.force_host(c.scripts.controller)
 		util.yield(1000)
 		local ok = true
-		ok = safe_access.set_global_int(c.globals.ready.player2, 1) and ok
-		ok = safe_access.set_global_int(c.globals.ready.player3, 1) and ok
-		ok = safe_access.set_global_int(c.globals.ready.player4, 1) and ok
+		ok = safe_access.set_global_int_variants(c.globals.ready.player2, 1) and ok
+		ok = safe_access.set_global_int_variants(c.globals.ready.player3, 1) and ok
+		ok = safe_access.set_global_int_variants(c.globals.ready.player4, 1) and ok
 		push(ok and "cayo.notify.ready_ok" or "cayo.notify.ready_failed", 2000)
 	end, function()
 		push("cayo.notify.ready_running", 1500)
@@ -320,21 +320,21 @@ end
 
 function actions.instant_password_hack()
 	local c = cfg()
-	local ok = safe_access.set_local_int(c.scripts.controller, c.locals.password_complete, 5)
+	local ok = safe_access.set_local_int_variants(c.scripts.controller, c.locals.password_complete, 5)
 	tool_push(ok and "cayo.notify.password_ok" or "cayo.notify.password_failed", 2000)
 	return ok
 end
 
 function actions.bypass_plasma_cutter()
 	local c = cfg()
-	local ok = safe_access.set_local_float(c.scripts.controller, c.locals.plasma_cutter, 100.0)
+	local ok = safe_access.set_local_float_variants(c.scripts.controller, c.locals.plasma_cutter, 100.0)
 	tool_push(ok and "cayo.notify.plasma_ok" or "cayo.notify.plasma_failed", 2000)
 	return ok
 end
 
 function actions.bypass_drainage_pipe()
 	local c = cfg()
-	local ok = safe_access.set_local_int(c.scripts.controller, c.locals.drainage_pipe, 6)
+	local ok = safe_access.set_local_int_variants(c.scripts.controller, c.locals.drainage_pipe, 6)
 	tool_push(ok and "cayo.notify.drainage_ok" or "cayo.notify.drainage_failed", 2000)
 	return ok
 end
@@ -375,8 +375,8 @@ function actions.instant_finish()
 		end
 		util.yield(1000)
 		local ok = true
-		ok = safe_access.set_local_int(c.scripts.controller, c.locals.finish_status, 9) and ok
-		ok = safe_access.set_local_int(c.scripts.controller, c.locals.finish_cash_take, 50) and ok
+		ok = safe_access.set_local_int_variants(c.scripts.controller, c.locals.finish_status, 9) and ok
+		ok = safe_access.set_local_int_variants(c.scripts.controller, c.locals.finish_cash_take, 50) and ok
 		tool_push(ok and "cayo.notify.finish_ok" or "cayo.notify.finish_failed", 2000)
 	end, function()
 		tool_push("cayo.notify.finish_running", 1500)
@@ -446,9 +446,7 @@ function actions.teleport_kosatka()
 	end
 
 	local function request_kosatka_spawn()
-		for i = 1, #c.globals.kosatka_request do
-			safe_access.set_global_int(c.globals.kosatka_request[i], 1)
-		end
+		safe_access.set_global_int_variants(c.globals.kosatka_request, 1)
 	end
 
 	state.runtime.teleport_in_progress = true

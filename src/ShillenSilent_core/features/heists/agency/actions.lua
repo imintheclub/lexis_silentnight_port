@@ -3,7 +3,7 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.agency.data")
 local state = require("ShillenSilent_core.features.heists.agency.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -16,7 +16,7 @@ local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 local actions = {}
 
 local function config()
-	return offsets.feature("agency")
+	return offsets.agency or {}
 end
 
 local text = i18n.t
@@ -219,13 +219,13 @@ function actions.instant_finish_new()
 		end
 		util.yield(1000)
 
-		local flags = safe_access.get_local_int(script_name, finish.step3_offset, 0)
+		local flags = safe_access.get_local_int_variants(script_name, finish.step3_offset, 0)
 		flags = flags | (1 << 9)
 		flags = flags | (1 << 16)
 
-		local ok1 = safe_access.set_local_int(script_name, finish.step1_offset, 5)
-		local ok2 = safe_access.set_local_int(script_name, finish.step2_offset, 999999)
-		local ok3 = safe_access.set_local_int(script_name, finish.step3_offset, flags)
+		local ok1 = safe_access.set_local_int_variants(script_name, finish.step1_offset, 5)
+		local ok2 = safe_access.set_local_int_variants(script_name, finish.step2_offset, 999999)
+		local ok3 = safe_access.set_local_int_variants(script_name, finish.step3_offset, flags)
 
 		push((ok1 and ok2 and ok3) and "agency.notify.finish_ok" or "agency.notify.finish_failed", 2200)
 	end, function()

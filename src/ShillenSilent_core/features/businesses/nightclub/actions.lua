@@ -2,7 +2,7 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local data = require("ShillenSilent_core.features.businesses.nightclub.data")
@@ -11,7 +11,7 @@ local state = require("ShillenSilent_core.features.businesses.nightclub.state")
 local actions = {}
 
 local function cfg()
-	return offsets.feature(data.feature_id)
+	return offsets[data.feature_id] or {}
 end
 
 local t = i18n.t
@@ -272,7 +272,12 @@ function actions.safe_fill()
 	local max_value = tonumber(limits.safe_max) or 250000
 	local ok = safe_access.set_mp_stat_int(stats.safe_cash_value, max_value)
 	if globals.safe_top_range then
-		for idx = globals.safe_top_range.first, globals.safe_top_range.last do
+		local first = globals.safe_top_range.first
+		local last = globals.safe_top_range.last
+		for idx = first.ee, last.ee do
+			ok = safe_access.set_global_int(idx, max_value) and ok
+		end
+		for idx = first.legacy, last.legacy do
 			ok = safe_access.set_global_int(idx, max_value) and ok
 		end
 	end
@@ -358,8 +363,19 @@ function actions.safe_unbrick()
 	local globals = cfg().globals or {}
 	local stats = cfg().stats or {}
 	local any_ok = false
-	for idx = globals.safe_top_range.first, globals.safe_top_range.last do
-		any_ok = safe_access.set_global_int(idx, 1) or any_ok
+	local first = globals.safe_top_range and globals.safe_top_range.first
+	local last = globals.safe_top_range and globals.safe_top_range.last
+	if type(first) == "table" and type(last) == "table" then
+		for idx = first.ee, last.ee do
+			any_ok = safe_access.set_global_int(idx, 1) or any_ok
+		end
+		for idx = first.legacy, last.legacy do
+			any_ok = safe_access.set_global_int(idx, 1) or any_ok
+		end
+	elseif type(first) == "number" and type(last) == "number" then
+		for idx = first, last do
+			any_ok = safe_access.set_global_int(idx, 1) or any_ok
+		end
 	end
 	safe_access.set_mp_stat_int(stats.safe_pay_time_left, -1)
 	util.yield(3000)

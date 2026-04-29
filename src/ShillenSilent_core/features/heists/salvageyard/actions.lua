@@ -3,7 +3,7 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.salvageyard.data")
 local state = require("ShillenSilent_core.features.heists.salvageyard.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -16,7 +16,7 @@ local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 local actions = {}
 
 local function config()
-	return offsets.feature("salvageyard")
+	return offsets.salvageyard or {}
 end
 
 local text = i18n.t

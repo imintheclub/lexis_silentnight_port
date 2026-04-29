@@ -1,0 +1,149 @@
+local safe_access = require("ShillenSilent_core.core.safe_access")
+
+local business_runtime = {}
+
+function business_runtime.write_packed_bool(idx, value, slots, native_hash)
+	if not (invoker and invoker.call and type(native_hash) == "number" and type(idx) == "number") then
+		return false
+	end
+
+	local ok_any = false
+	for _, slot in ipairs(slots or { 0 }) do
+		local ok = pcall(function()
+			invoker.call(native_hash, idx, value and true or false, slot)
+		end)
+		ok_any = ok or ok_any
+	end
+	return ok_any
+end
+
+function business_runtime.write_packed_bool_range(first_idx, last_idx, value, slots, native_hash)
+	local first = tonumber(first_idx)
+	local last = tonumber(last_idx)
+	if not first or not last then
+		return false
+	end
+
+	local ok_any = false
+	for idx = first, last do
+		ok_any = business_runtime.write_packed_bool(idx, value, slots, native_hash) or ok_any
+	end
+	return ok_any
+end
+
+function business_runtime.write_packed_int(idx, value, slots, native_hash)
+	if not (invoker and invoker.call and type(native_hash) == "number" and type(idx) == "number") then
+		return false
+	end
+
+	local ok_any = false
+	for _, slot in ipairs(slots or { 0 }) do
+		local ok = pcall(function()
+			invoker.call(native_hash, idx, math.floor(tonumber(value) or 0), slot)
+		end)
+		ok_any = ok or ok_any
+	end
+	return ok_any
+end
+
+function business_runtime.read_packed_int(idx, slot, native_hash)
+	if not (memory and invoker and invoker.call and memory.alloc_int and memory.read_int) then
+		return nil
+	end
+	if type(native_hash) ~= "number" or type(idx) ~= "number" then
+		return nil
+	end
+
+	local buf = memory.alloc_int()
+	if not buf then
+		return nil
+	end
+
+	local value = nil
+	local ok_call = pcall(function()
+		invoker.call(native_hash, idx, buf, slot or 0)
+	end)
+	if ok_call then
+		local ok_read, read_value = pcall(memory.read_int, buf)
+		if ok_read then
+			value = tonumber(read_value)
+		end
+	end
+
+	if memory.free then
+		pcall(memory.free, buf)
+	elseif memory.free_int then
+		pcall(memory.free_int, buf)
+	end
+
+	return value
+end
+
+function business_runtime.apply_tunables(tunables, value)
+	local ok = true
+	for _, tunable in ipairs(tunables or {}) do
+		if tunable.type == "float" then
+			ok = safe_access.set_tunable_float(tunable.name, value) and ok
+		else
+			ok = safe_access.set_tunable_int(tunable.name, value) and ok
+		end
+	end
+	return ok
+end
+
+function business_runtime.restore_tunables(tunables)
+	local ok = true
+	for _, tunable in ipairs(tunables or {}) do
+		local default = tunable.default
+		if tunable.type == "float" then
+			ok = safe_access.set_tunable_float(tunable.name, default) and ok
+		else
+			ok = safe_access.set_tunable_int(tunable.name, default) and ok
+		end
+	end
+	return ok
+end
+
+function business_runtime.set_xp_multiplier(enabled, tunable_name)
+	if not tunable_name then
+		return true
+	end
+	return safe_access.set_tunable_float(tunable_name, enabled and 0.0 or 1.0)
+end
+
+function business_runtime.player_id()
+	local me = players and players.me and players.me()
+	return me and tonumber(me.id) or 0
+end
+
+function business_runtime.start_script(script_cfg)
+	if type(script_cfg) ~= "table" or type(script_cfg.name) ~= "string" then
+		return false
+	end
+	if safe_access.is_script_running(script_cfg.name) then
+		return true
+	end
+
+	local ok, native_api = pcall(require, "natives")
+	if ok and native_api then
+		if type(native_api.request_script) == "function" then
+			pcall(native_api.request_script, script_cfg.name)
+			util.yield(100)
+		end
+		if type(native_api.start_new_script) == "function" then
+			local result_ok, result =
+				pcall(native_api.start_new_script, script_cfg.name, tonumber(script_cfg.stack) or 4592)
+			return result_ok and tonumber(result) ~= 0
+		end
+	end
+
+	if invoker and invoker.call then
+		local call_ok, result =
+			pcall(invoker.call, 0xE81651AD79516E48, script_cfg.name, tonumber(script_cfg.stack) or 4592)
+		return call_ok and result and tonumber(result.int) ~= 0
+	end
+
+	return false
+end
+
+return business_runtime

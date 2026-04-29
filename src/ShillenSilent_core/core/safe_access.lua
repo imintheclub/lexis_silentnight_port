@@ -319,4 +319,111 @@ function safe_access.set_stat_pairs_for_all_characters(pairs_to_write)
 	return ok
 end
 
+function safe_access.set_global_string_variants(field, value)
+	if type(field) == "number" then
+		return safe_access.set_global_string(field, value)
+	end
+	local ee_ok = safe_access.set_global_string(field.ee, value)
+	local legacy_ok = safe_access.set_global_string(field.legacy, value)
+	return ee_ok or legacy_ok
+end
+
+function safe_access.set_local_float_variants(script_name, field, value)
+	if type(field) == "number" then
+		return safe_access.set_local_float(script_name, field, value)
+	end
+	local ee_ok = safe_access.set_local_float(script_name, field.ee, value)
+	local legacy_ok = safe_access.set_local_float(script_name, field.legacy, value)
+	return ee_ok or legacy_ok
+end
+
+function safe_access.set_global_int_strided_variants(field, index, value)
+	if type(field) == "number" then
+		return safe_access.set_global_int(field, value)
+	end
+	local ee_offset = field.ee + (index * field.ee_stride)
+	local legacy_offset = field.legacy + (index * field.legacy_stride)
+	local ee_ok = safe_access.set_global_int(ee_offset, value)
+	local legacy_ok = safe_access.set_global_int(legacy_offset, value)
+	return ee_ok or legacy_ok
+end
+
+function safe_access.get_global_int_variants(field, fallback)
+	if type(field) == "number" then
+		return safe_access.get_global_int(field, fallback)
+	end
+	local val = safe_access.get_global_int(field.ee, nil)
+	if val ~= nil then
+		return val
+	end
+	val = safe_access.get_global_int(field.legacy, nil)
+	if val ~= nil then
+		return val
+	end
+	return fallback
+end
+
+function safe_access.set_global_int_variants(field, value)
+	if type(field) == "number" then
+		return safe_access.set_global_int(field, value)
+	end
+	local ee_ok = safe_access.set_global_int(field.ee, value)
+	local legacy_ok = safe_access.set_global_int(field.legacy, value)
+	return ee_ok or legacy_ok
+end
+
+function safe_access.get_local_int_variants(script_name, field, fallback)
+	if type(field) == "number" then
+		return safe_access.get_local_int(script_name, field, fallback)
+	end
+	local val = safe_access.get_local_int(script_name, field.ee, nil)
+	if val ~= nil then
+		return val
+	end
+	val = safe_access.get_local_int(script_name, field.legacy, nil)
+	if val ~= nil then
+		return val
+	end
+	return fallback
+end
+
+function safe_access.set_local_int_variants(script_name, field, value)
+	if type(field) == "number" then
+		return safe_access.set_local_int(script_name, field, value)
+	end
+	local ee_ok = safe_access.set_local_int(script_name, field.ee, value)
+	local legacy_ok = safe_access.set_local_int(script_name, field.legacy, value)
+	return ee_ok or legacy_ok
+end
+
+function safe_access.set_tunable_int_variants(field, value)
+	if type(field) == "string" then
+		return safe_access.set_tunable_int(field, value)
+	end
+	local any = false
+	for _, name in pairs(field) do
+		if type(name) == "string" then
+			any = safe_access.set_tunable_int(name, value) or any
+		end
+	end
+	return any
+end
+
+function safe_access.get_global_int_strided_variants(field, index, fallback)
+	if type(field) == "number" then
+		return safe_access.get_global_int(field, fallback)
+	end
+	local ee_offset = field.ee + (index * field.ee_stride)
+	local legacy_offset = field.legacy + (index * field.legacy_stride)
+	local val = safe_access.get_global_int(ee_offset, nil)
+	if val ~= nil then
+		return val
+	end
+	val = safe_access.get_global_int(legacy_offset, nil)
+	if val ~= nil then
+		return val
+	end
+	return fallback
+end
+
 return safe_access

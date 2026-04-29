@@ -5,20 +5,21 @@ local state = require("ShillenSilent_core.features.businesses.moneyfronts.state"
 local actions = require("ShillenSilent_core.features.businesses.moneyfronts.actions")
 
 local click = {}
-local refs = {}
-local config = require("ShillenSilent_core.ui.click.config")
+local refs = {
+	front_heat = {},
+	front_lock = {},
+}
 
 local t = i18n.t
 
 function click.refresh()
-	if refs.location_dropdown then
-		refs.location_dropdown.value = state.config.location_index
-	end
-	if refs.heat_slider then
-		refs.heat_slider.value = state.config.heat_editor_value
-	end
-	if refs.heat_lock_toggle then
-		refs.heat_lock_toggle.state = state.flags.heat_lock_active == true
+	for _, key in ipairs(data.front_keys) do
+		if refs.front_heat[key] then
+			refs.front_heat[key].value = state.config.front_heat[key]
+		end
+		if refs.front_lock[key] then
+			refs.front_lock[key].state = state.flags.front_heat_lock[key] == true
+		end
 	end
 	return true
 end
@@ -30,62 +31,60 @@ function click.register(heist_tab, manifest)
 
 	local subtab = (manifest and manifest.display_group) or data.feature_id
 
-	local group = ui.group(heist_tab, t("feature.moneyfronts.name"), nil, nil, nil, nil, subtab)
-	ui.label(group, t("feature.moneyfronts.name"), config.colors.accent)
-	local locations = data.localized_locations(t)
-	refs.location_dropdown = ui.dropdown(
-		group,
-		"mf_loc",
-		t("moneyfronts.field.location"),
-		data.option_names(locations),
-		state.config.location_index,
-		function(opt)
-			state.set_location_index(data.option_value_by_name(locations, opt, state.config.location_index))
-			click.refresh()
+	for _, key in ipairs(data.front_keys) do
+		local loc = data.location_by_key(key)
+		local front = ui.group(heist_tab, t(loc.heat_label_key), nil, nil, nil, nil, subtab)
+		ui.button(front, "mf_" .. key .. "_entrance", t("moneyfronts.action.teleport_entrance"), function()
+			actions.teleport_front(key)
+		end)
+		ui.button(front, "mf_" .. key .. "_laptop", t("moneyfronts.action.teleport_laptop"), function()
+			actions.teleport_laptop(key)
+		end)
+		if key == "car_wash" then
+			ui.button(
+				front,
+				"mf_carwash_safe_collect",
+				t("moneyfronts.action.collect_car_wash_safe"),
+				actions.car_wash_collect_safe
+			)
 		end
-	)
-	ui.button(group, "mf_teleport", t("moneyfronts.action.teleport"), actions.teleport)
-	refs.heat_slider = ui.slider(
-		group,
-		"mf_heat_value",
-		t("moneyfronts.field.heat"),
-		data.heat.min,
-		data.heat.max,
-		state.config.heat_editor_value,
-		function(value)
-			actions.set_heat_editor_value(value)
+		refs.front_heat[key] = ui.slider(
+			front,
+			"mf_" .. key .. "_heat",
+			t("moneyfronts.field.heat"),
+			data.heat.min,
+			data.heat.max,
+			state.config.front_heat[key],
+			function(value)
+				actions.set_front_heat_value(key, value)
+				click.refresh()
+			end,
+			t("moneyfronts.tooltip.heat"),
+			data.heat.step
+		)
+		ui.button(front, "mf_" .. key .. "_apply", t("moneyfronts.action.apply_heat"), function()
+			actions.apply_front_heat_value(key)
 			click.refresh()
-		end,
-		t("moneyfronts.tooltip.heat"),
-		data.heat.step
-	)
-	ui.button(group, "mf_heat_apply", t("moneyfronts.action.apply_heat"), actions.apply_heat_editor_value)
-	ui.button(group, "mf_heat_reset", t("moneyfronts.action.set_heat_zero"), function()
-		actions.reset_heat()
-		click.refresh()
-	end)
-	refs.heat_lock_toggle = ui.toggle(
-		group,
-		"mf_heat_lock",
-		t("moneyfronts.action.lock_heat_zero"),
-		actions.get_heat_lock_active(),
-		function(enabled)
-			actions.set_heat_lock_active(enabled)
+		end)
+		ui.button(front, "mf_" .. key .. "_max", t("moneyfronts.action.max_heat"), function()
+			actions.max_front_heat(key)
 			click.refresh()
-		end
-	)
-	ui.button(
-		group,
-		"mf_reset_safe_prod",
-		t("moneyfronts.action.reset_safe_production"),
-		actions.reset_safe_production_state
-	)
-	ui.button(
-		group,
-		"mf_carwash_safe_collect",
-		t("moneyfronts.action.collect_car_wash_safe"),
-		actions.car_wash_collect_safe
-	)
+		end)
+		ui.button(front, "mf_" .. key .. "_min", t("moneyfronts.action.min_heat"), function()
+			actions.min_front_heat(key)
+			click.refresh()
+		end)
+		refs.front_lock[key] = ui.toggle(
+			front,
+			"mf_" .. key .. "_lock",
+			t("moneyfronts.action.lock_heat"),
+			actions.get_front_heat_lock_active(key),
+			function(enabled)
+				actions.set_front_heat_lock_active(key, enabled)
+				click.refresh()
+			end
+		)
+	end
 
 	click.refresh()
 	return heist_tab

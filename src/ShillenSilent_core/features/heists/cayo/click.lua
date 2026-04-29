@@ -115,11 +115,18 @@ function click.register(heist_tab)
 		return nil
 	end
 
-	local info = ui.group(heist_tab, t("cayo.group.info"), nil, nil, nil, 140, "cayo")
+	local info = ui.group(heist_tab, t("cayo.group.info"), nil, nil, nil, nil, "cayo")
 	ui.label(info, t("cayo.info.title"), config.colors.accent)
-	ui.label(info, t("cayo.info.max_transaction"), config.colors.text_main)
-	ui.label(info, t("cayo.info.transaction_cooldown"), config.colors.text_sec)
-	ui.label(info, t("cayo.info.heist_cooldown"), config.colors.text_sec)
+	ui.info(info, t("cayo.info.max_transaction"), config.colors.text_main)
+	ui.info(info, t("cayo.info.transaction_cooldown"), config.colors.text_sec)
+	ui.info(info, t("cayo.info.heist_cooldown"), config.colors.text_sec)
+	ui.info(info, t("cayo.tip.womans_bag"), config.colors.text_sec)
+	ui.info(info, t("cayo.tip.poi_on_apply"), config.colors.text_sec)
+	ui.info(info, t("cayo.tip.compound_island"), config.colors.text_sec)
+	ui.info(info, t("cayo.tip.danger_solo_team"), config.colors.text_sec)
+	ui.info(info, t("cayo.tip.max_payout"), config.colors.text_sec)
+	ui.info(info, t("cayo.tip.remove_crew_cuts"), config.colors.text_sec)
+	ui.spacer(info, config.space.x4)
 
 	preset_ui.click_group(heist_tab, {
 		feature_id = "cayo",
@@ -285,7 +292,6 @@ function click.register(heist_tab)
 	ui.button(tools, "cayo_tool_drainage", t("cayo.action.drainage"), actions.bypass_drainage_pipe)
 	ui.button(tools, "cayo_tool_finish", t("cayo.action.instant_finish"), actions.instant_finish)
 	ui.button(tools, "cayo_force_ready", t("cayo.action.force_ready"), actions.force_ready)
-	ui.button(tools, "cayo_fix_board", t("cayo.action.fix_board"), actions.reload_planning_screen)
 	ui.button(tools, "cayo_skip_cutscene", t("cayo.action.skip_cutscene"), actions.skip_cutscene)
 	ui.button(tools, "cayo_tool_reload", t("cayo.action.reload_planning"), actions.reload_planning_screen)
 

@@ -132,11 +132,16 @@ function click.register(heist_tab)
 		return nil
 	end
 
-	local info = ui.group(heist_tab, t("casino.group.info"), nil, nil, nil, 140, "casino")
+	local info = ui.group(heist_tab, t("casino.group.info"), nil, nil, nil, nil, "casino")
 	ui.label(info, t("casino.info.title"), config.colors.accent)
 	ui.label(info, t("casino.info.max_transaction"), config.colors.text_main)
 	ui.label(info, t("casino.info.transaction_cooldown"), config.colors.text_sec)
 	ui.label(info, t("casino.info.heist_cooldown"), config.colors.text_sec)
+	ui.info(info, t("casino.tip.autograbber"), config.colors.text_sec)
+	ui.info(info, t("casino.tip.fix_keycards"), config.colors.text_sec)
+	ui.info(info, t("casino.tip.team_lives"), config.colors.text_sec)
+	ui.info(info, t("casino.tip.max_payout"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
 
 	preset_ui.click_group(heist_tab, {
 		feature_id = data.feature_id,

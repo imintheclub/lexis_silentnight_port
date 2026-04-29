@@ -19,6 +19,18 @@ return {
 			fn = "tick_fill_cargo",
 		},
 		{
+			id = "hangar.sale_price",
+			interval_ms = 1000,
+			module = "ShillenSilent_core.features.businesses.hangar.actions",
+			fn = "tick_sale_price",
+		},
+		{
+			id = "hangar.supplier",
+			interval_ms = 1000,
+			module = "ShillenSilent_core.features.businesses.hangar.actions",
+			fn = "tick_supplier",
+		},
+		{
 			id = "hangar.refresh_click_ui",
 			interval_ms = 250,
 			module = "ShillenSilent_core.features.businesses.hangar.click",

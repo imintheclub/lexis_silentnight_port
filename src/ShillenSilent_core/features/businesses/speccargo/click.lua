@@ -18,6 +18,24 @@ function click.refresh()
 	if refs.fill_toggle then
 		refs.fill_toggle.state = state.fill.active == true
 	end
+	if refs.sale_price_toggle then
+		refs.sale_price_toggle.state = state.config.sale_price_active == true
+	end
+	if refs.no_xp_toggle then
+		refs.no_xp_toggle.state = state.config.no_xp == true
+	end
+	if refs.no_crateback_toggle then
+		refs.no_crateback_toggle.state = state.config.no_crateback == true
+	end
+	if refs.supplier_toggle then
+		refs.supplier_toggle.state = state.config.supplier_active == true
+	end
+	if refs.crate_slider then
+		refs.crate_slider.value = state.config.crate_amount
+	end
+	if refs.cooldowns_toggle then
+		refs.cooldowns_toggle.state = state.config.cooldowns_active == true
+	end
 	if refs.raids_toggle then
 		refs.raids_toggle.state = state.protections.raids_active == true
 	end
@@ -43,6 +61,60 @@ function click.register(heist_tab)
 		config.colors.text_sec
 	)
 	ui.button(stock, "sc_instant_sell", t("speccargo.action.instant_sell"), actions.instant_sell)
+	refs.sale_price_toggle = ui.toggle(
+		stock,
+		"sc_sale_price",
+		t("speccargo.action.sale_price_loop"),
+		actions.get_sale_price_loop_active(),
+		function(enabled)
+			actions.set_sale_price_loop(enabled)
+			click.refresh()
+		end
+	)
+	refs.no_xp_toggle = ui.toggle(stock, "sc_no_xp", t("speccargo.action.no_xp"), actions.get_no_xp(), function(enabled)
+		actions.set_no_xp(enabled)
+		click.refresh()
+	end)
+	refs.no_crateback_toggle = ui.toggle(
+		stock,
+		"sc_no_crateback",
+		t("speccargo.action.no_crateback"),
+		actions.get_no_crateback(),
+		function(enabled)
+			actions.set_no_crateback(enabled)
+			click.refresh()
+		end
+	)
+	ui.button(stock, "sc_supply", t("speccargo.action.supply_crates"), actions.supply_crates)
+	refs.supplier_toggle = ui.toggle(
+		stock,
+		"sc_supplier",
+		t("speccargo.action.supplier_loop"),
+		actions.get_supplier_loop_active(),
+		function(enabled)
+			actions.set_supplier_loop(enabled)
+			click.refresh()
+		end
+	)
+	refs.crate_slider = ui.slider(
+		stock,
+		"sc_crate_amount",
+		t("speccargo.field.crate_amount"),
+		data.crates.min,
+		data.crates.max,
+		state.config.crate_amount,
+		function(value)
+			actions.set_crate_amount(value)
+			click.refresh()
+		end,
+		nil,
+		data.crates.step
+	)
+	ui.button(stock, "sc_crate_max", t("speccargo.action.max_crates"), function()
+		actions.max_crate_amount()
+		click.refresh()
+	end)
+	ui.button(stock, "sc_buy", t("speccargo.action.instant_buy"), actions.instant_buy)
 	refs.fill_toggle = ui.toggle(
 		stock,
 		"sc_fill_loop",
@@ -81,6 +153,14 @@ function click.register(heist_tab)
 	)
 
 	local teleport = ui.group(heist_tab, t("speccargo.group.teleport"), nil, nil, nil, nil, "speccargo")
+	ui.button(teleport, "sc_office", t("speccargo.action.teleport_office"), actions.teleport_office)
+	ui.button(teleport, "sc_computer", t("speccargo.action.teleport_computer"), actions.teleport_computer)
+	ui.button(
+		teleport,
+		"sc_warehouse_blip",
+		t("speccargo.action.teleport_warehouse_blip"),
+		actions.teleport_warehouse_blip
+	)
 	local locations = actions.get_locations()
 	local localized_locations = data.localized_locations(locations, t)
 	if #localized_locations > 0 then
@@ -102,6 +182,19 @@ function click.register(heist_tab)
 	else
 		ui.label(teleport, t("speccargo.notify.no_owned_warehouses"), config.colors.muted_text)
 	end
+
+	local danger = ui.group(heist_tab, t("speccargo.group.danger"), nil, nil, nil, nil, "speccargo")
+	ui.label(danger, t("speccargo.warning.use_with_caution"), config.colors.danger_text)
+	refs.cooldowns_toggle = ui.toggle(
+		danger,
+		"sc_cooldowns",
+		t("speccargo.action.kill_cooldowns"),
+		actions.get_cooldowns_active(),
+		function(enabled)
+			actions.set_cooldowns(enabled)
+			click.refresh()
+		end
+	)
 
 	click.refresh()
 	return heist_tab

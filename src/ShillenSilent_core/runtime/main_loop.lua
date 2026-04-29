@@ -32,6 +32,23 @@ local function subscribe_scroll_handler()
 		local scroll_speed = 30
 		local delta = e.offset * scroll_speed
 
+		if state.active_dropdown then
+			local dropdown_id = state.active_dropdown
+			local max_y = state.dropdown_scroll_max or 0
+			if max_y > 0 then
+				state.dropdown_scroll = state.dropdown_scroll or {}
+				local next_y = (state.dropdown_scroll[dropdown_id] or 0) + delta
+				if next_y < 0 then
+					next_y = 0
+				end
+				if next_y > max_y then
+					next_y = max_y
+				end
+				state.dropdown_scroll[dropdown_id] = next_y
+			end
+			return
+		end
+
 		local m = input.mouse_position()
 		local mx, my = m.x, m.y
 

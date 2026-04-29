@@ -43,6 +43,7 @@ function controller.register(parent_menu)
 		end
 	)
 	common.add_button(teleport, t("bailoffice.action.teleport"), actions.teleport)
+	common.add_button(teleport, t("bailoffice.action.teleport_computer"), actions.teleport_computer)
 
 	local tools = root:submenu(t("bailoffice.group.tools"))
 	common.add_button(tools, t("bailoffice.action.collect_safe"), actions.collect_safe)

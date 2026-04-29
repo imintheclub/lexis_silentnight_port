@@ -11,23 +11,23 @@ return {
 	apartment = {
 		globals = {
 			ready = {
-				player2 = 2659033,
-				player3 = 2659501,
-				player4 = 2659969,
+				player2 = { ee = 2658294 + 1 + (1 * 468) + 270, legacy = 2658291 + 1 + (1 * 468) + 270 },
+				player3 = { ee = 2658294 + 1 + (2 * 468) + 270, legacy = 2658291 + 1 + (2 * 468) + 270 },
+				player4 = { ee = 2658294 + 1 + (3 * 468) + 270, legacy = 2658291 + 1 + (3 * 468) + 270 },
 			},
 			cooldown = {
-				step1 = 1877303 + 1 + 76,
+				step1 = { ee = 1877303 + 1 + 76, legacy = 1877158 + 1 + 76 },
 				step2 = 2635125 + 1,
 				player_stride = 77,
 			},
 			reload = {
 				step1 = 2635124,
-				step2 = 1937981 + 2768,
+				step2 = { ee = 1937981 + 2768, legacy = 1937504 + 2768 },
 			},
 			root_content = {
-				step1 = 1941591 + 10,
+				step1 = { ee = 1941591 + 10, legacy = 1941114 + 10 },
 				step2 = 2635125 + 2,
-				step3 = 1936048 + 1787,
+				step3 = { ee = 1936048 + 1787, legacy = 1935571 + 1787 },
 			},
 			world_apartment_id = {
 				ee = 1845299 + 1 + 260 + 37,
@@ -36,14 +36,14 @@ return {
 				legacy_stride = 880,
 			},
 			cuts = {
-				host_balance = 1936013 + 1 + 1,
-				player2_balance = 1936013 + 1 + 2,
-				player3_balance = 1936013 + 1 + 3,
-				player4_balance = 1936013 + 1 + 4,
-				player1 = 1937981 + 3008 + 1,
-				player2 = 1937981 + 3008 + 2,
-				player3 = 1937981 + 3008 + 3,
-				player4 = 1937981 + 3008 + 4,
+				host_balance = { ee = 1936013 + 1 + 1, legacy = 1935536 + 1 + 1 },
+				player2_balance = { ee = 1936013 + 1 + 2, legacy = 1935536 + 1 + 2 },
+				player3_balance = { ee = 1936013 + 1 + 3, legacy = 1935536 + 1 + 3 },
+				player4_balance = { ee = 1936013 + 1 + 4, legacy = 1935536 + 1 + 4 },
+				player1 = { ee = 1937981 + 3008 + 1, legacy = 1937504 + 3008 + 1 },
+				player2 = { ee = 1937981 + 3008 + 2, legacy = 1937504 + 3008 + 2 },
+				player3 = { ee = 1937981 + 3008 + 3, legacy = 1937504 + 3008 + 3 },
+				player4 = { ee = 1937981 + 3008 + 4, legacy = 1937504 + 3008 + 4 },
 			},
 		},
 		stats = {
@@ -78,18 +78,18 @@ return {
 			},
 		},
 		locals = {
-			fleeca_hack = 12223 + 24,
-			fleeca_drill = 10511 + 11,
-			pacific_hack = 10217,
-			pacific_finish_status = 21457,
-			pacific_finish_percent = 22136,
-			finish_take_1 = 23081,
-			finish_take_2 = 29017,
-			finish_take_3 = 32541,
-			other_finish_status = 20395,
-			launcher_value = 20056 + 34,
-			launcher_required_players = 20056 + 15,
-			launcher_flags = 20297,
+			fleeca_hack = { ee = 12223 + 24, legacy = 11821 + 24 },
+			fleeca_drill = { ee = 10511 + 11, legacy = 10109 + 11 },
+			pacific_hack = { ee = 10217, legacy = 9815 },
+			pacific_finish_status = { ee = 20395 + 1062, legacy = 19791 + 1062 },
+			pacific_finish_percent = { ee = 20395 + 1740 + 1, legacy = 19791 + 1740 + 1 },
+			finish_take_1 = { ee = 20395 + 2686, legacy = 19791 + 2686 },
+			finish_take_2 = { ee = 29016 + 1, legacy = 28412 + 1 },
+			finish_take_3 = { ee = 32472 + 1 + 68, legacy = 31668 + 1 + 68 },
+			other_finish_status = { ee = 20395, legacy = 19791 },
+			launcher_value = { ee = 20056 + 34, legacy = 20054 + 34 },
+			launcher_required_players = { ee = 20056 + 15, legacy = 20054 + 15 },
+			launcher_flags = { ee = 20297, legacy = 20295 },
 		},
 		launcher = {
 			player_count_base = 794954 + 4 + 1,
@@ -99,7 +99,7 @@ return {
 				player_count_1 = 4718592 + 3539,
 				player_count_2 = 4718592 + 3540,
 				flow = 4718592 + 3542 + 1,
-				extra = 4718592 + 192451 + 1,
+				extra = { ee = 4718592 + 192451 + 1, legacy = 4718592 + 185951 + 1 },
 				flags = 4718592 + 3536,
 			},
 		},
@@ -107,19 +107,19 @@ return {
 	cayo = {
 		globals = {
 			cuts = {
-				host = 1980923,
-				player2 = 1980924,
-				player3 = 1980925,
-				player4 = 1980926,
+				host = { ee = 1980035 + 831 + 56 + 1, legacy = 1978756 + 831 + 56 + 1 },
+				player2 = { ee = 1980035 + 831 + 56 + 2, legacy = 1978756 + 831 + 56 + 2 },
+				player3 = { ee = 1980035 + 831 + 56 + 3, legacy = 1978756 + 831 + 56 + 3 },
+				player4 = { ee = 1980035 + 831 + 56 + 4, legacy = 1978756 + 831 + 56 + 4 },
 			},
 			ready = {
-				player2 = 1981184,
-				player3 = 1981212,
-				player4 = 1981240,
+				player2 = { ee = 1981147 + 1 + (1 * 27) + 7 + 2, legacy = 1979868 + 1 + (1 * 27) + 7 + 2 },
+				player3 = { ee = 1981147 + 1 + (2 * 27) + 7 + 3, legacy = 1979868 + 1 + (2 * 27) + 7 + 3 },
+				player4 = { ee = 1981147 + 1 + (3 * 27) + 7 + 4, legacy = 1979868 + 1 + (3 * 27) + 7 + 4 },
 			},
 			kosatka_request = {
-				2733138 + 613,
-				2733002 + 613,
+				ee = 2733138 + 613,
+				legacy = 2733002 + 613,
 			},
 		},
 		stats = {
@@ -156,13 +156,13 @@ return {
 			controller = "fm_mission_controller_2020",
 		},
 		locals = {
-			planning_reload = 1570,
+			planning_reload = { ee = 1570, legacy = 1568 },
 			voltlab_complete = 10166 + 24,
-			password_complete = 26486,
-			plasma_cutter = 32589 + 3,
-			drainage_pipe = 31349,
-			finish_status = 56223,
-			finish_cash_take = 58000,
+			password_complete = { ee = 26486, legacy = 26084 },
+			plasma_cutter = { ee = 32589 + 3, legacy = 32187 + 3 },
+			drainage_pipe = { ee = 31349, legacy = 30947 },
+			finish_status = { ee = 56223, legacy = 55789 },
+			finish_cash_take = { ee = 56223 + 1776 + 1, legacy = 55789 + 1776 + 1 },
 		},
 		blips = {
 			kosatka = 760,
@@ -195,20 +195,20 @@ return {
 			arcade = 740,
 		},
 		globals = {
-			buyer = 1975747,
-			finale_flag = 2685153 + 21,
-			finale_target = 1973198,
-			big_con_approach = 1973219,
+			buyer = { ee = 1973231 + 1497 + 1019, legacy = 1971952 + 1497 + 1019 },
+			finale_flag = { ee = 2685153 + 21, legacy = 2685150 + 21 },
+			finale_target = { ee = 1973197 + 1, legacy = 1971918 + 1 },
+			big_con_approach = { ee = 1973197 + 22, legacy = 1971918 + 22 },
 			cuts = {
-				host = 1975557,
-				player2 = 1975558,
-				player3 = 1975559,
-				player4 = 1975560,
+				host = { ee = 1973231 + 1497 + 736 + 92 + 1, legacy = 1971952 + 1497 + 736 + 92 + 1 },
+				player2 = { ee = 1973231 + 1497 + 736 + 92 + 2, legacy = 1971952 + 1497 + 736 + 92 + 2 },
+				player3 = { ee = 1973231 + 1497 + 736 + 92 + 3, legacy = 1971952 + 1497 + 736 + 92 + 3 },
+				player4 = { ee = 1973231 + 1497 + 736 + 92 + 4, legacy = 1971952 + 1497 + 736 + 92 + 4 },
 			},
 			ready = {
-				player2 = 1977672,
-				player3 = 1977741,
-				player4 = 1977810,
+				player2 = { ee = 1977594 + 1 + (1 * 68) + 7 + 2, legacy = 1976315 + 1 + (1 * 68) + 7 + 2 },
+				player3 = { ee = 1977594 + 1 + (2 * 68) + 7 + 3, legacy = 1976315 + 1 + (2 * 68) + 7 + 3 },
+				player4 = { ee = 1977594 + 1 + (3 * 68) + 7 + 4, legacy = 1976315 + 1 + (3 * 68) + 7 + 4 },
 			},
 		},
 		stats = {
@@ -249,15 +249,15 @@ return {
 			launcher = "fmmc_launcher",
 		},
 		locals = {
-			planning_reload = { 210, 212 },
+			planning_reload = { ee = 212, legacy = 210 },
 			planning_reload_value = 2,
-			autograbber_grab = 10697,
-			autograbber_speed = 10697 + 14,
+			autograbber_grab = { ee = 10697, legacy = 10295 },
+			autograbber_speed = { ee = 10697 + 14, legacy = 10295 + 14 },
 			keycards_fix = 63638,
-			objective_flags = 20397,
-			fingerprint_hack = 54042,
-			keypad_hack = 55108,
-			vault_drill_base = 10551,
+			objective_flags = { ee = 20395 + 2, legacy = 19791 + 2 },
+			fingerprint_hack = { ee = 54042, legacy = 53132 },
+			keypad_hack = { ee = 55108, legacy = 54198 },
+			vault_drill_base = { ee = 10551, legacy = 10149 },
 			vault_drill_first = 7,
 			vault_drill_second = 37,
 			team_lives = 22126,
@@ -329,17 +329,17 @@ return {
 			},
 		},
 		finish = {
-			aggressive_step1 = 20395,
-			silent_step2 = 20395 + 1062,
-			step3 = 20395 + 1740 + 1,
-			step4_money = 20395 + 2686,
-			step5 = 29016 + 1,
-			step6 = 32472 + 1 + 68,
+			aggressive_step1 = { ee = 20395, legacy = 19791 },
+			silent_step2 = { ee = 20395 + 1062, legacy = 19791 + 1062 },
+			step3 = { ee = 20395 + 1740 + 1, legacy = 19791 + 1740 + 1 },
+			step4_money = { ee = 20395 + 2686, legacy = 19791 + 2686 },
+			step5 = { ee = 29016 + 1, legacy = 28412 + 1 },
+			step6 = { ee = 32472 + 1 + 68, legacy = 31668 + 1 + 68 },
 		},
 		launcher = {
-			value_offset = 20056 + 34,
-			required_players_offset = 20056 + 15,
-			flags_offset = 20297,
+			value_offset = { ee = 20056 + 34, legacy = 20054 + 34 },
+			required_players_offset = { ee = 20056 + 15, legacy = 20054 + 15 },
+			flags_offset = { ee = 20297, legacy = 20295 },
 			player_count_base = 794954 + 4 + 1,
 			player_count_stride = 95,
 			player_count_offset = 75,
@@ -347,7 +347,7 @@ return {
 				player_count_1 = 4718592 + 3539,
 				player_count_2 = 4718592 + 3540,
 				flow = 4718592 + 3542 + 1,
-				extra = 4718592 + 192451 + 1,
+				extra = { ee = 4718592 + 192451 + 1, legacy = 4718592 + 185951 + 1 },
 				flags = 4718592 + 3536,
 			},
 		},
@@ -387,14 +387,14 @@ return {
 		},
 		finish = {
 			fm_mission_controller = {
-				step1_offset = 20395 + 1062,
-				step2_offset = 20395 + 1232 + 1,
-				step3_offset = 20395 + 1,
+				step1_offset = { ee = 20395 + 1062, legacy = 19791 + 1062 },
+				step2_offset = { ee = 20395 + 1232 + 1, legacy = 19791 + 1232 + 1 },
+				step3_offset = { ee = 20395 + 1, legacy = 19791 + 1 },
 			},
 			fm_mission_controller_2020 = {
-				step1_offset = 56223 + 1589,
-				step2_offset = 56223 + 1776 + 1,
-				step3_offset = 56223 + 1,
+				step1_offset = { ee = 56223 + 1589, legacy = 55789 + 1589 },
+				step2_offset = { ee = 56223 + 1776 + 1, legacy = 55789 + 1776 + 1 },
+				step3_offset = { ee = 56223 + 1, legacy = 55789 + 1 },
 			},
 		},
 	},
@@ -511,16 +511,23 @@ return {
 		blips = {
 			entrance = 900,
 		},
+		coords = {
+			computer = { x = 749.337, y = -995.654, z = -46.376, heading = 50.750 },
+		},
 		globals = {
 			safe_collect = 2708883,
 		},
 		stats = {
 			safe_cash_value = "HDEN24_SAFE_CASH_VALUE",
+			gen_bs = "HACKER24_GEN_BS",
 		},
 	},
 	bailoffice = {
 		blips = {
 			entrance = 893,
+		},
+		coords = {
+			computer = { x = 562.959, y = -2705.590, z = -48.997, heading = 31.983 },
 		},
 		globals = {
 			safe_collect = 2708868,
@@ -530,6 +537,19 @@ return {
 		},
 	},
 	moneyfronts = {
+		blips = {
+			car_wash = 931,
+			car_wash_hot = 933,
+			weed_shop = 925,
+			weed_shop_hot = 927,
+			heli_tours = 928,
+			heli_tours_hot = 930,
+		},
+		coords = {
+			car_wash = { x = 23.684, y = -1400.633, z = -73.999, heading = 357.518 },
+			weed_shop = { x = -1160.636, y = -1535.462, z = -48.994, heading = 180.271 },
+			heli_tours = { x = -1160.599, y = -1535.585, z = -48.999, heading = 177.268 },
+		},
 		stats = {
 			owned = {
 				car_wash = "SB_CAR_WASH_OWNED",
@@ -546,7 +566,11 @@ return {
 			stat_get_packed_int = 0x0BC900A27CBBAC55,
 		},
 		packed_stats = {
-			heat_indices = { 24924, 24925, 24926 },
+			heat_indices = {
+				car_wash = 24924,
+				weed_shop = 24925,
+				heli_tours = 24926,
+			},
 			character_slots = { 0, 1 },
 		},
 	},
@@ -558,13 +582,13 @@ return {
 			max_capacity = 160,
 		},
 		supply = {
-			base = 1673814,
+			base = { ee = 1673814, legacy = 1673807 },
 			slot = 7,
 			fill_repeats = 7,
 			fill_yield_ms = 5,
 		},
 		production = {
-			timer_root = 2708936 - ((6 - 1) * 2) - 1,
+			timer_root = { ee = 2708936 - ((6 - 1) * 2) - 1, legacy = 2708790 },
 		},
 		scripts = {
 			freemode = "freemode",
@@ -581,6 +605,9 @@ return {
 		blips = {
 			entrance = 557,
 		},
+		coords = {
+			laptop = { x = 907.515, y = -3207.357, z = -97.187, heading = 245.099 },
+		},
 		stats = {
 			stock = "PRODTOTALFORFACTORY5",
 			owned = "FACTORYSLOT5",
@@ -589,26 +616,40 @@ return {
 			max_capacity = 100,
 		},
 		supply = {
-			base = 1673814,
+			base = { ee = 1673814, legacy = 1673807 },
 			slot = 6,
 			fill_repeats = 7,
 			fill_yield_ms = 5,
 		},
 		production = {
-			timer_root = 2708936 - ((6 - 1) * 2) - 1,
+			timer_root = { ee = 2708936 - ((6 - 1) * 2) - 1, legacy = 2708790 },
 		},
 		scripts = {
+			laptop = {
+				name = "appbunkerbusiness",
+				stack = 4592,
+			},
 			sell = {
 				name = "gb_gunrunning",
-				offset = 1268 + 774,
+				offset = { ee = 1268 + 774, legacy = 1266 + 774 },
 				value = 0,
 			},
 		},
 		tunables = {
+			xp_multiplier = "XP_MULTIPLIER",
+			sale_price = {
+				product_value = "GR_MANU_PRODUCT_VALUE",
+				staff_upgraded = "GR_MANU_PRODUCT_VALUE_STAFF_UPGRADE",
+				equipment_upgraded = "GR_MANU_PRODUCT_VALUE_EQUIPMENT_UPGRADE",
+			},
 			disable_raids = "BIKER_DISABLE_DEFEND_POLICE_RAID",
 			reminders = "BIKER_PRODUCT_REMINDER_COOLDOWN",
 		},
 		defaults = {
+			product_value = 5000,
+			staff_upgraded = 1000,
+			equipment_upgraded = 1000,
+			xp_multiplier = 1.0,
 			raids_default = 0,
 			raids_disabled = 1,
 			reminder_cooldown_disabled = 86400000,
@@ -618,6 +659,9 @@ return {
 	hangar = {
 		blips = {
 			entrance = 569,
+		},
+		coords = {
+			laptop = { x = -1239.059, y = -3001.454, z = -42.867, heading = 146.258 },
 		},
 		stats = {
 			owned = "HANGAR_OWNED",
@@ -633,6 +677,42 @@ return {
 			cargo_available = 36828,
 			character_slots = { 0, 1 },
 		},
+		globals = {
+			cargo_limit_base = {
+				ee = 1845299 + 1 + 260 + 304 + 3,
+				legacy = 1845250 + 1 + 260 + 304 + 3,
+				ee_stride = 883,
+				legacy_stride = 880,
+			},
+		},
+		scripts = {
+			laptop = {
+				name = "appsmuggler",
+				stack = 4592,
+			},
+			sell = {
+				name = "gb_smuggler",
+				delivered_offset = { ee = 1991 + 1078, legacy = 1989 + 1078 },
+				to_deliver_offset = { ee = 1991 + 1035, legacy = 1989 + 1035 },
+			},
+		},
+		tunables = {
+			xp_multiplier = "XP_MULTIPLIER",
+			price = "SMUG_SELL_PRICE_PER_CRATE_MIXED",
+			rons_cut = "SMUG_SELL_RONS_CUT",
+			cooldowns = {
+				{ name = "SMUG_STEAL_EASY_COOLDOWN_TIMER", default = 120000 },
+				{ name = "SMUG_STEAL_MED_COOLDOWN_TIMER", default = 180000 },
+				{ name = "SMUG_STEAL_HARD_COOLDOWN_TIMER", default = 240000 },
+				{ name = "SMUG_STEAL_ADDITIONAL_CRATE_COOLDOWN_TIME", default = 60000 },
+				{ name = "SMUG_SELL_SELL_COOLDOWN_TIMER", default = 180000 },
+			},
+		},
+		defaults = {
+			price = 30000,
+			rons_cut = 0.025,
+			xp_multiplier = 1.0,
+		},
 	},
 	speccargo = {
 		stats = {
@@ -647,20 +727,63 @@ return {
 			supply_last = 32363,
 			character_slots = { 0, 1 },
 		},
+		blips = {
+			office = 475,
+			warehouse = 473,
+		},
+		coords = {
+			computer = { x = -81.345, y = -802.471, z = 243.387, heading = 278.402 },
+		},
 		scripts = {
+			buy = {
+				name = "gb_contraband_buy",
+				amount_offset = { ee = 627 + 1, legacy = 625 + 1 },
+				finish1_offset = { ee = 627 + 5, legacy = 625 + 5 },
+				finish2_offset = { ee = 627 + 191, legacy = 625 + 191 },
+				finish3_offset = { ee = 627 + 192, legacy = 625 + 192 },
+			},
 			sell = {
 				name = "gb_contraband_sell",
-				timer_offset = 569 + 1,
+				timer_offset = { ee = 569 + 1, legacy = 567 + 1 },
 				timer_value = 67230,
-				state_offset = 569 + 7,
+				state_offset = { ee = 569 + 7, legacy = 567 + 7 },
 				state_value = 7,
 			},
 		},
 		tunables = {
+			xp_multiplier = "XP_MULTIPLIER",
+			price_thresholds = {
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD1", default = 10000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD2", default = 11000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD3", default = 12000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD4", default = 13000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD5", default = 13500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD6", default = 14000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD7", default = 14500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD8", default = 15000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD9", default = 15500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD10", default = 16000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD11", default = 16500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD12", default = 17000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD13", default = 17500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD14", default = 17750 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD15", default = 18000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD16", default = 18250 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD17", default = 18500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD18", default = 18750 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD19", default = 19000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD20", default = 19500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD21", default = 20000 },
+			},
+			cooldowns = {
+				{ name = "EXEC_BUY_COOLDOWN", default = 300000 },
+				{ name = "EXEC_SELL_COOLDOWN", default = 1800000 },
+			},
 			disable_raids = "BIKER_DISABLE_DEFEND_POLICE_RAID",
 			reminders = "BIKER_PRODUCT_REMINDER_COOLDOWN",
 		},
 		defaults = {
+			xp_multiplier = 1.0,
 			raids_default = 0,
 			raids_disabled = 1,
 			reminder_cooldown_disabled = 86400000,
@@ -670,6 +793,9 @@ return {
 	nightclub = {
 		blips = {
 			entrance = 614,
+		},
+		coords = {
+			computer = { x = -1618.249, y = -3013.507, z = -75.205, heading = 257.431 },
 		},
 		stats = {
 			owned = "NIGHTCLUB_OWNED",
@@ -684,11 +810,42 @@ return {
 		globals = {
 			safe_collect = 2708832,
 			safe_top_range = {
-				first = 262145 + 23750,
-				last = 262145 + 23769,
+				first = { ee = 262145 + 23750, legacy = 262145 + 23746 },
+				last = { ee = 262145 + 23769, legacy = 262145 + 23765 },
+			},
+		},
+		natives = {
+			stat_set_packed_bool = 0xDB8A58AEAA67CD07,
+		},
+		packed_stats = {
+			setup = {
+				staff = 18161,
+				equipment = 22067,
+				dj = 22068,
+			},
+			character_slots = { 0, 1 },
+		},
+		scripts = {
+			laptop = {
+				name = "appbusinesshub",
+				stack = 4592,
 			},
 		},
 		tunables = {
+			price = {
+				weapons = "BB_BUSINESS_BASIC_VALUE_WEAPONS",
+				coke = "BB_BUSINESS_BASIC_VALUE_COKE",
+				meth = "BB_BUSINESS_BASIC_VALUE_METH",
+				weed = "BB_BUSINESS_BASIC_VALUE_WEED",
+				docs = "BB_BUSINESS_BASIC_VALUE_FORGED_DOCUMENTS",
+				cash = "BB_BUSINESS_BASIC_VALUE_COUNTERFEIT_CASH",
+				cargo = "BB_BUSINESS_BASIC_VALUE_CARGO",
+			},
+			cooldowns = {
+				{ name = "BB_CLUB_MANAGEMENT_CLUB_MANAGEMENT_MISSION_COOLDOWN", default = 300000 },
+				{ name = "BB_SELL_MISSIONS_MISSION_COOLDOWN", default = 300000 },
+				{ name = "BB_SELL_MISSIONS_DELIVERY_VEHICLE_COOLDOWN_AFTER_SELL_MISSION", default = 300000 },
+			},
 			disable_raids = "BIKER_DISABLE_DEFEND_POLICE_RAID",
 			reminders = "BIKER_PRODUCT_REMINDER_COOLDOWN",
 			accrue_by_target = {
@@ -737,17 +894,17 @@ return {
 			},
 		},
 		supply = {
-			base = 1673814,
+			base = { ee = 1673814, legacy = 1673807 },
 			fill_repeats = 7,
 			fill_yield_ms = 5,
 		},
 		production = {
-			timer_root = 2708936 - ((6 - 1) * 2) - 1,
+			timer_root = { ee = 2708936 - ((6 - 1) * 2) - 1, legacy = 2708790 },
 		},
 		scripts = {
 			sell = {
 				name = "gb_biker_contraband_sell",
-				offset = 731 + 122,
+				offset = { ee = 731 + 122, legacy = 729 + 122 },
 				value = 15,
 			},
 		},
@@ -788,8 +945,7 @@ return {
 			gen_bs = "TUNER_GEN_BS",
 		},
 		tunables = {
-			cooldown = "TUNER_ROBBERY_COOLDOWN_TIME",
-			cooldown_legacy = "TUNER_ROBBERY_COOLDOWN",
+			cooldown = { ee = "TUNER_ROBBERY_COOLDOWN_TIME", legacy = "TUNER_ROBBERY_COOLDOWN" },
 			contact_fee = "TUNER_ROBBERY_CONTACT_FEE",
 			leader_rewards = {
 				"TUNER_ROBBERY_LEADER_CASH_REWARD0",
@@ -804,15 +960,15 @@ return {
 		},
 		finish = {
 			old = {
-				step1_offset = 56223 + 1,
-				step2_offset = 56223 + 1776 + 1,
+				step1_offset = { ee = 56223 + 1, legacy = 55789 + 1 },
+				step2_offset = { ee = 56223 + 1776 + 1, legacy = 55789 + 1776 + 1 },
 				step1_value = 51338977,
 				step2_value = 101,
 			},
 			current = {
-				step1_offset = 56223 + 1589,
-				step2_offset = 56223 + 1776 + 1,
-				step3_offset = 56223 + 1,
+				step1_offset = { ee = 56223 + 1589, legacy = 55789 + 1589 },
+				step2_offset = { ee = 56223 + 1776 + 1, legacy = 55789 + 1776 + 1 },
+				step3_offset = { ee = 56223 + 1, legacy = 55789 + 1 },
 			},
 		},
 	},
@@ -827,7 +983,7 @@ return {
 			mission_controller = "fm_mission_controller",
 		},
 		planning = {
-			reload_offset = 211,
+			reload_offset = { ee = 211, legacy = 209 },
 		},
 		screen = {
 			heading = 325.726,
@@ -839,8 +995,17 @@ return {
 		},
 		globals = {
 			difficulty = 4718592 + 3538,
-			ready_players = { 1883089, 1883405, 1883721 },
-			cuts = { 1969406, 1969407, 1969408, 1969409 },
+			ready_players = {
+				{ ee = 1882717 + 1 + (1 * 315) + 43 + 11 + 2, legacy = 1882572 + 1 + (1 * 315) + 43 + 11 + 2 },
+				{ ee = 1882717 + 1 + (2 * 315) + 43 + 11 + 3, legacy = 1882572 + 1 + (2 * 315) + 43 + 11 + 3 },
+				{ ee = 1882717 + 1 + (3 * 315) + 43 + 11 + 4, legacy = 1882572 + 1 + (3 * 315) + 43 + 11 + 4 },
+			},
+			cuts = {
+				{ ee = 1968543 + 812 + 50 + 1, legacy = 1967983 + 812 + 50 + 1 },
+				{ ee = 1968543 + 812 + 50 + 2, legacy = 1967983 + 812 + 50 + 2 },
+				{ ee = 1968543 + 812 + 50 + 3, legacy = 1967983 + 812 + 50 + 3 },
+				{ ee = 1968543 + 812 + 50 + 4, legacy = 1967983 + 812 + 50 + 4 },
+			},
 		},
 		payouts = {
 			[503] = { 975000, 1218750 },
@@ -849,23 +1014,23 @@ return {
 		},
 		hacks = {
 			data = {
-				offset = 1541,
+				offset = { ee = 1541, legacy = 1539 },
 			},
 			doomsday = {
-				offset = 1298 + 135,
+				offset = { ee = 1298 + 135, legacy = 1296 + 135 },
 			},
 		},
 		finish = {
 			controllers = {
 				["fm_mission_controller"] = {
-					status_offset = 20395 + 1062,
-					cash_take_offset = 20395 + 1232 + 1,
-					flags_offset = 20395 + 1,
+					status_offset = { ee = 20395 + 1062, legacy = 19791 + 1062 },
+					cash_take_offset = { ee = 20395 + 1232 + 1, legacy = 19791 + 1232 + 1 },
+					flags_offset = { ee = 20395 + 1, legacy = 19791 + 1 },
 				},
 				["fm_mission_controller_2020"] = {
-					status_offset = 56223 + 1589,
-					cash_take_offset = 56223 + 1776 + 1,
-					flags_offset = 56223 + 1,
+					status_offset = { ee = 56223 + 1589, legacy = 55789 + 1589 },
+					cash_take_offset = { ee = 56223 + 1776 + 1, legacy = 55789 + 1776 + 1 },
+					flags_offset = { ee = 56223 + 1, legacy = 55789 + 1 },
 				},
 			},
 		},

@@ -36,8 +36,10 @@ function controller.register(parent_menu)
 		controller.refresh_controls()
 	end)
 	common.add_button(teleport, t("garment.action.teleport_entrance"), actions.teleport)
+	common.add_button(teleport, t("garment.action.teleport_computer"), actions.teleport_computer)
 
 	local tools = root:submenu(t("garment.group.tools"))
+	common.add_button(tools, t("garment.action.unbrick_computer"), actions.unbrick_computer)
 	common.add_button(tools, t("garment.action.collect_safe"), actions.collect_safe)
 
 	controller.refresh_controls()

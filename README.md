@@ -18,7 +18,7 @@ ShillenSilent is a Lexis Lua script for GTA V heist and business-management work
 ## Usage
 - Press `T` to open or close the click UI.
 - Use the drawer to switch between Info, heist features, and business features.
-- Change UI mode, theme, and language from the Info feature. UI mode and language changes apply on the next script load.
+- Change UI mode, theme, and language from the Settings feature. UI mode and language changes apply on the next script load.
 - Use controller mode from Lexis if you prefer the native menu-style interface.
 
 ## FAQ
@@ -48,13 +48,13 @@ ShillenSilent is a Lexis Lua script for GTA V heist and business-management work
 
 7. **How do I switch from Click UI to controller mode?**
 
-   Go to the settings tab, click `Toggle UI Mode`, and reload the script. After reloading, open the Lexis menu and go to `Scripts` > `Loaded Scripts` > `ShillenSilent`.
+   Go to the Settings tab, change the `UI Mode` dropdown to `controller`, and reload the script. After reloading, open the Lexis menu and go to `Scripts` > `Loaded Scripts` > `ShillenSilent`.
 
 8. **My mouse is not working. What should I do?**
 
    Turn off frame generation in GTA graphics settings, then try switching mouse input mode to the opposite of your current setting, such as `Raw Input` or `Windows`.
 
-   If that does not work, open `%USERPROFILE%\Lexis\Grand Theft Auto V\scripts\ShillenSilent_core`, set `ui_mode.txt` to only the word `controller`, and reload the script. If `ui_mode.txt` does not exist, create it. You can then use the controller/keyboard menu from `Lexis` > `Scripts` > `Loaded Scripts` > `ShillenSilent`.
+   If that does not work, open `%USERPROFILE%\Lexis\Grand Theft Auto V\scripts\ShillenSilent_core`, open `config.json` in a text editor, and set `"ui_mode"` to `"controller"` (e.g. `{"ui_mode": "controller"}`). If `config.json` does not exist, create it with that content. Reload the script and then use the controller/keyboard menu from `Lexis` > `Scripts` > `Loaded Scripts` > `ShillenSilent`.
 
    More context on GTA V mouse input modes: <https://www.reddit.com/r/GrandTheftAutoV_PC/comments/32v7kb/psa_raw_mouse_input_may_not_be_the_best_option/>
 
@@ -106,16 +106,24 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 
 # Changelog
 ## v0.1.4
-- Added internationalization support across the UI, feature labels, and notifications.
-- Added full locale tables for English, Spanish, German, French, Italian, Polish, Portuguese (Brazil), Russian.
-  - The localization for Chinese, Japanese, and Korean are present, but I cannot get the font to render them. 
-- Added persistent settings for UI mode, theme, and language, all configurable from the Info tab.
-- Added a much larger theme selector, including dark/light plus Dracula, Solarized, Monokai, One Dark, Gruvbox, Nord, Material, Tokyo Night, Night Owl, Cobalt2, Catppuccin, Rose Pine, Shades of Purple, Everforest, Ayu, and Synthwave84.
-- Reworked the click UI into a drawer-based layout with cleaner feature navigation, improved dropdown/label alignment, and more consistent controls.
+- **v0 LEGACY SUPPORT IS HERE**
+- **Added i18n; English, Spanish, German, French, Italian, Polish, Portuguese (Brazil), Russian.**
+  - The localization for Chinese, Japanese, and Korean are present, but I cannot get the font to render them.
+- **Added hella themes.**
+- MADE APP SKINNIER BY DEFAULT AND MADE ALL CARDS SKINNIER TOO **TO TAKE LESS SPACE ON SCREEN** 
+- Added hints on each tab for what some of the non-obvious functionality does.
+- Expanded business manager functionality:
+  - Added more Bunker, Hangar, Nightclub, and Special Cargo controls for max sale price, supplier loops, cooldown removal, and optional no XP on instant sells.
+  - Added Hangar instant sell, plus Special Cargo instant buy/sell, crate amount, max crates, and get crates.
+  - Added more business laptop/computer shortcuts and teleports for Bunker, Hangar, Nightclub, Special Cargo, Bail Office, Garment Factory, and Money Fronts.
+  - Money Fronts now have separate heat controls for Car Wash, Weed Shop, and Heli Tours, with apply, max/min, and lock options.
+  - Added Nightclub setup skip and min popularity, plus a Garment Factory computer unbrick button.
+- JSON settings file for UI mode, theme, and language, all configurable from the Settings tab.
+- Fixed issue where dropdowns clip off of page by making the long ones scrollable.
+- Moved to hamburger menu.
 - Added JSON preset support to controller menu.
-- Fixed safe collect behavior so Arcade, Bail Office, Car Wash, Garment Factory, and Nightclub use the proper safe collect globals and guard against empty safes before collecting.
+- Fixed safe collection transaction error bug when empty.
 - Unified production tick UI/status behavior across Hangar, Special Cargo, Nightclub, and MC business controls.
-- Fixed Info/settings save behavior for language/UI settings and added validation scripts for locale key parity and feature manifests.
 
 ## v0.1.3-beta
 - MC businesses — Production ticks, refills, fast-production, and new teleport all should be fixed now.

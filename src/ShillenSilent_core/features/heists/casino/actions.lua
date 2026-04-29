@@ -1,10 +1,11 @@
 local core_state = require("ShillenSilent_core.shared.runtime_state")
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.casino.data")
 local state = require("ShillenSilent_core.features.heists.casino.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
@@ -17,7 +18,7 @@ local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 local actions = {}
 
 local function cfg()
-	return offsets.feature(data.feature_id)
+	return offsets[data.feature_id] or {}
 end
 
 local t = i18n.t
@@ -36,12 +37,11 @@ end
 
 local function reload_planning_screen()
 	local c = cfg()
-	local ok = true
-	for i = 1, #c.locals.planning_reload do
-		ok = safe_access.set_local_int(c.scripts.planning, c.locals.planning_reload[i], c.locals.planning_reload_value)
-			and ok
-	end
-	return ok
+	return safe_access.set_local_int_variants(
+		c.scripts.planning,
+		c.locals.planning_reload,
+		c.locals.planning_reload_value
+	)
 end
 
 function actions.get_max_payout_cut_details()
@@ -69,7 +69,7 @@ function actions.get_max_payout_cut_details()
 		}
 	end
 
-	local buyer = safe_access.get_global_int(c.globals.buyer, 0)
+	local buyer = safe_access.get_global_int_variants(c.globals.buyer, 0)
 	local gunman = safe_access.get_active_mp_stat_int(c.stats.crew_weapon, config.crew_weapon)
 	local driver = safe_access.get_active_mp_stat_int(c.stats.crew_driver, config.crew_driver)
 	local hacker = safe_access.get_active_mp_stat_int(c.stats.crew_hacker, config.crew_hacker)
@@ -109,12 +109,13 @@ end
 
 function actions.apply_cuts()
 	local c = cfg()
-	local ok = true
-	for player_key, offset in pairs(c.globals.cuts) do
-		local enabled = state.cut_enabled[player_key]
-		local cut = enabled and state.cuts[player_key] or 0
-		ok = safe_access.set_global_int(offset, data.clamp_cut(cut)) and ok
-	end
+	local ok = heist_cuts.write_player_globals({
+		player_keys = data.player_keys,
+		offsets = c.globals.cuts,
+		cuts = state.cuts,
+		enabled = state.cut_enabled,
+		clamp = data.clamp_cut,
+	})
 	push(ok and "casino.notify.cuts_ok" or "casino.notify.cuts_failed", 2000)
 	return ok
 end
@@ -228,11 +229,11 @@ function actions.autograbber_tick()
 		return false
 	end
 
-	local grab = safe_access.get_local_int(c.scripts.controller, c.locals.autograbber_grab, 0)
+	local grab = safe_access.get_local_int_variants(c.scripts.controller, c.locals.autograbber_grab, 0)
 	if grab == 3 then
-		return safe_access.set_local_int(c.scripts.controller, c.locals.autograbber_grab, 4)
+		return safe_access.set_local_int_variants(c.scripts.controller, c.locals.autograbber_grab, 4)
 	elseif grab == 4 then
-		return safe_access.set_local_float(c.scripts.controller, c.locals.autograbber_speed, 2.0)
+		return safe_access.set_local_float_variants(c.scripts.controller, c.locals.autograbber_speed, 2.0)
 	end
 	return false
 end
@@ -314,32 +315,34 @@ end
 
 function actions.skip_objective()
 	local c = cfg()
-	local value = safe_access.get_local_int(c.scripts.controller, c.locals.objective_flags, 0)
-	local ok = safe_access.set_local_int(c.scripts.controller, c.locals.objective_flags, value | (1 << 17))
+	local value = safe_access.get_local_int_variants(c.scripts.controller, c.locals.objective_flags, 0)
+	local ok = safe_access.set_local_int_variants(c.scripts.controller, c.locals.objective_flags, value | (1 << 17))
 	tool_push(ok and "casino.notify.objective_ok" or "casino.notify.objective_failed", 2000)
 	return ok
 end
 
 function actions.fingerprint_hack()
 	local c = cfg()
-	local ok = safe_access.set_local_int(c.scripts.controller, c.locals.fingerprint_hack, 5)
+	local ok = safe_access.set_local_int_variants(c.scripts.controller, c.locals.fingerprint_hack, 5)
 	tool_push(ok and "casino.notify.fingerprint_ok" or "casino.notify.fingerprint_failed", 2000)
 	return ok
 end
 
 function actions.instant_keypad_hack()
 	local c = cfg()
-	local ok = safe_access.set_local_int(c.scripts.controller, c.locals.keypad_hack, 5)
+	local ok = safe_access.set_local_int_variants(c.scripts.controller, c.locals.keypad_hack, 5)
 	tool_push(ok and "casino.notify.keypad_ok" or "casino.notify.keypad_failed", 2000)
 	return ok
 end
 
 function actions.instant_vault_drill()
 	local c = cfg()
-	local vd2 =
-		safe_access.get_local_int(c.scripts.controller, c.locals.vault_drill_base + c.locals.vault_drill_second, 0)
-	local ok =
-		safe_access.set_local_int(c.scripts.controller, c.locals.vault_drill_base + c.locals.vault_drill_first, vd2)
+	local base = c.locals.vault_drill_base
+	local drill_second =
+		{ ee = base.ee + c.locals.vault_drill_second, legacy = base.legacy + c.locals.vault_drill_second }
+	local drill_first = { ee = base.ee + c.locals.vault_drill_first, legacy = base.legacy + c.locals.vault_drill_first }
+	local vd2 = safe_access.get_local_int_variants(c.scripts.controller, drill_second, 0)
+	local ok = safe_access.set_local_int_variants(c.scripts.controller, drill_first, vd2)
 	tool_push(ok and "casino.notify.vault_drill_ok" or "casino.notify.vault_drill_failed", 2000)
 	return ok
 end
@@ -382,14 +385,14 @@ function actions.instant_finish()
 		local finish = c.finish
 		local ok = true
 		if approach == 3 then
-			ok = safe_access.set_local_int(c.scripts.controller, finish.aggressive_step1, 12) and ok
+			ok = safe_access.set_local_int_variants(c.scripts.controller, finish.aggressive_step1, 12) and ok
 		else
-			ok = safe_access.set_local_int(c.scripts.controller, finish.silent_step2, 5) and ok
+			ok = safe_access.set_local_int_variants(c.scripts.controller, finish.silent_step2, 5) and ok
 		end
-		ok = safe_access.set_local_int(c.scripts.controller, finish.step3, 80) and ok
-		ok = safe_access.set_local_int(c.scripts.controller, finish.step4_money, 10000000) and ok
-		ok = safe_access.set_local_int(c.scripts.controller, finish.step5, 99999) and ok
-		ok = safe_access.set_local_int(c.scripts.controller, finish.step6, 99999) and ok
+		ok = safe_access.set_local_int_variants(c.scripts.controller, finish.step3, 80) and ok
+		ok = safe_access.set_local_int_variants(c.scripts.controller, finish.step4_money, 10000000) and ok
+		ok = safe_access.set_local_int_variants(c.scripts.controller, finish.step5, 99999) and ok
+		ok = safe_access.set_local_int_variants(c.scripts.controller, finish.step6, 99999) and ok
 		tool_push(ok and "casino.notify.finish_ok" or "casino.notify.finish_failed", 2000)
 	end, function()
 		tool_push("casino.notify.finish_running", 1500)
@@ -402,9 +405,9 @@ function actions.force_ready()
 		safe_access.force_host(c.scripts.controller)
 		util.yield(1000)
 		local ok = true
-		ok = safe_access.set_global_int(c.globals.ready.player2, 1) and ok
-		ok = safe_access.set_global_int(c.globals.ready.player3, 1) and ok
-		ok = safe_access.set_global_int(c.globals.ready.player4, 1) and ok
+		ok = safe_access.set_global_int_variants(c.globals.ready.player2, 1) and ok
+		ok = safe_access.set_global_int_variants(c.globals.ready.player3, 1) and ok
+		ok = safe_access.set_global_int_variants(c.globals.ready.player4, 1) and ok
 		launch_push(ok and "casino.notify.ready_ok" or "casino.notify.ready_failed", 2000)
 	end, function()
 		launch_push("casino.notify.ready_running", 1500)
@@ -416,7 +419,7 @@ local function launcher_value()
 	if not safe_access.is_script_running(c.scripts.launcher) then
 		return nil
 	end
-	local value = safe_access.get_local_int(c.scripts.launcher, c.launcher.value_offset, nil)
+	local value = safe_access.get_local_int_variants(c.scripts.launcher, c.launcher.value_offset, nil)
 	if not value or value == 0 then
 		return nil
 	end
@@ -437,13 +440,13 @@ local function solo_launch_generic()
 
 	local ok = true
 	ok = safe_access.set_global_int(solo_launch_player_count_global(value), 1) and ok
-	ok = safe_access.set_local_int(c.scripts.launcher, c.launcher.required_players_offset, 1) and ok
+	ok = safe_access.set_local_int_variants(c.scripts.launcher, c.launcher.required_players_offset, 1) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.player_count_1, 1) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.player_count_2, 1) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.flow, 1) and ok
-	ok = safe_access.set_global_int(c.launcher.globals.extra, 0) and ok
+	ok = safe_access.set_global_int_variants(c.launcher.globals.extra, 0) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.flags, 1) and ok
-	ok = safe_access.set_local_int(c.scripts.launcher, c.launcher.flags_offset, 0) and ok
+	ok = safe_access.set_local_int_variants(c.scripts.launcher, c.launcher.flags_offset, 0) and ok
 	return ok
 end
 
@@ -452,7 +455,7 @@ local function solo_launch_setup()
 	if not safe_access.is_script_running(c.scripts.controller) then
 		return false
 	end
-	local is_finale = safe_access.get_global_int(c.globals.finale_flag, nil)
+	local is_finale = safe_access.get_global_int_variants(c.globals.finale_flag, nil)
 	if not is_finale or is_finale ~= 1 then
 		return false
 	end
@@ -460,11 +463,11 @@ local function solo_launch_setup()
 	if not approach then
 		return false
 	end
-	if approach == 2 and not safe_access.set_global_int(c.globals.big_con_approach, 3) then
+	if approach == 2 and not safe_access.set_global_int_variants(c.globals.big_con_approach, 3) then
 		return false
 	end
 	local target = safe_access.get_mp_stat_int(c.stats.target, 0)
-	return safe_access.set_global_int(c.globals.finale_target, target)
+	return safe_access.set_global_int_variants(c.globals.finale_target, target)
 end
 
 local function solo_launch_reset()
@@ -476,11 +479,11 @@ local function solo_launch_reset()
 
 	local ok = true
 	ok = safe_access.set_global_int(solo_launch_player_count_global(value), 2) and ok
-	ok = safe_access.set_local_int(c.scripts.launcher, c.launcher.required_players_offset, 2) and ok
+	ok = safe_access.set_local_int_variants(c.scripts.launcher, c.launcher.required_players_offset, 2) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.player_count_1, 1) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.player_count_2, 1) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.flow, 2) and ok
-	ok = safe_access.set_global_int(c.launcher.globals.extra, 11) and ok
+	ok = safe_access.set_global_int_variants(c.launcher.globals.extra, 11) and ok
 	return ok
 end
 

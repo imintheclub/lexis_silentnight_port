@@ -16,10 +16,10 @@ return {
 	},
 	jobs = {
 		{
-			id = "moneyfronts.heat_lock",
+			id = "moneyfronts.front_heat_locks",
 			interval_ms = 1000,
 			module = "ShillenSilent_core.features.businesses.moneyfronts.actions",
-			fn = "tick_heat_lock",
+			fn = "tick_front_heat_locks",
 		},
 		{
 			id = "moneyfronts.refresh_click_ui",

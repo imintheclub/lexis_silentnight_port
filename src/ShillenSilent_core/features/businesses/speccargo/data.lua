@@ -54,6 +54,17 @@ data.warehouse_cap_by_id = {
 	[22] = 111,
 }
 
+data.crates = {
+	min = 0,
+	max = 111,
+	default = 0,
+	step = 1,
+}
+
+function data.clamp_crate_amount(value)
+	return number_helpers.clamp_int(value, data.crates.min, data.crates.max, data.crates.default)
+end
+
 function data.infer_warehouse_cap(warehouse_id, crates)
 	local cap = data.warehouse_cap_by_id[warehouse_id]
 	if cap then

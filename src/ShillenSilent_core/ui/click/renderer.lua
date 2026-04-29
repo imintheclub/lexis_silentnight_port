@@ -288,8 +288,99 @@ local function text_with_ellipsis(value, max_width, draw_size)
 	return output
 end
 
+local function wrap_text_lines(text, max_w, scale)
+	if not text or text == "" then
+		return { "" }
+	end
+	if max_w <= 0 then
+		return { text }
+	end
+	local total_w = measure_text_width(text, scale)
+	if total_w and total_w <= max_w then
+		return { text }
+	end
+	local words = {}
+	for word in text:gmatch("%S+") do
+		words[#words + 1] = word
+	end
+	if #words == 0 then
+		return { text }
+	end
+	local lines = {}
+	local current = ""
+	for _, word in ipairs(words) do
+		local candidate = current == "" and word or (current .. " " .. word)
+		local w = measure_text_width(candidate, scale)
+		if w and w > max_w and current ~= "" then
+			lines[#lines + 1] = current
+			current = word
+		else
+			current = candidate
+		end
+	end
+	if current ~= "" then
+		lines[#lines + 1] = current
+	end
+	return #lines > 0 and lines or { text }
+end
+
+local function measure_wrapped_text_height(text, max_w, scale)
+	if gui.text_size then
+		local size = gui.text_size(tostring(text or ""), scale, { wrap = max_w, font = state.fonts.regular })
+		if size and size.y and size.y > 0 then
+			return size.y
+		end
+	end
+	local lines = wrap_text_lines(text, max_w, scale)
+	return math.max(1, #lines) * config.space.x6
+end
+
+local function info_item_text(item)
+	return "· " .. ((item and item.text) or "")
+end
+
+local function info_item_height(text, max_w, scale)
+	if not max_w or max_w <= 0 then
+		return config.space.x6
+	end
+	return config.space.x3 + math.ceil(measure_wrapped_text_height(text, max_w, scale)) + config.space.x2
+end
+
+local function button_line_count(label, btn_w)
+	if not btn_w or btn_w <= 0 then
+		return 1
+	end
+	local pad_x = config.space.x3
+	local draw_size = (config.font_scale_small or 1.0) * 0.9
+	local lines = wrap_text_lines(tostring(label or ""), math.max(1, btn_w - (pad_x * 2)), draw_size)
+	return math.max(1, #lines)
+end
+
+local function button_h_from_lines(n)
+	return config.item_height.button + (n - 1) * config.space.x6
+end
+
+local function button_pair_half_widths(col_w)
+	local pad_x = config.space.x3
+	local gap = config.space.x2_5
+	local totalW = col_w - (pad_x * 2)
+	local innerW = math.max(2, math.floor((totalW - gap) + 0.5))
+	local leftW = math.floor(innerW / 2)
+	return leftW, innerW - leftW
+end
+
 local function lerp(a, b, t)
 	return a + (b - a) * t
+end
+
+local function clamp(value, min_value, max_value)
+	if value < min_value then
+		return min_value
+	end
+	if value > max_value then
+		return max_value
+	end
+	return value
 end
 
 local animator = { values = {}, frame = 0 }
@@ -502,6 +593,20 @@ end
 
 ui.label = function(groupRef, text, color)
 	local item = { type = "label", text = text, color = color }
+	table.insert(groupRef.items, item)
+	mark_layout_dirty()
+	return item
+end
+
+ui.info = function(groupRef, text, color)
+	local item = { type = "info", text = text, color = color }
+	table.insert(groupRef.items, item)
+	mark_layout_dirty()
+	return item
+end
+
+ui.spacer = function(groupRef, height)
+	local item = { type = "spacer", height = math.max(0, height or config.space.x2) }
 	table.insert(groupRef.items, item)
 	mark_layout_dirty()
 	return item
@@ -902,7 +1007,7 @@ local function get_hamburger_rect(bodyY)
 	local size = drawer_cfg.button_size or config.space.x6
 	local header_h = config.header_height or config.content_margin
 	local top_gap = math.max(0, math.floor((header_h - size) / 2))
-	return config.origin_x + config.menu_width - config.content_margin - size, bodyY + top_gap, size, size
+	return config.origin_x + config.content_margin, bodyY + top_gap, size, size
 end
 
 local function set_drawer_open(open)
@@ -1147,13 +1252,26 @@ local function flatten_groups_by_order(activeGroups, heist_subtab)
 	return ordered
 end
 
-local function get_item_height(item)
+local function get_item_height(item, col_w)
 	if item.hidden then
 		return 0
 	end
 	if item.type == "toggle" then
 		return config.item_height.toggle
-	elseif item.type == "button" or item.type == "button_pair" then
+	elseif item.type == "button" then
+		if col_w and col_w > 0 then
+			local pad_x = config.space.x3
+			local n = button_line_count(item.label, col_w - (pad_x * 2))
+			return button_h_from_lines(n)
+		end
+		return config.item_height.button
+	elseif item.type == "button_pair" then
+		if col_w and col_w > 0 then
+			local leftW, rightW = button_pair_half_widths(col_w)
+			local nl = button_line_count(item.left and item.left.label, leftW)
+			local nr = button_line_count(item.right and item.right.label, rightW)
+			return button_h_from_lines(math.max(nl, nr))
+		end
 		return config.item_height.button
 	elseif item.type == "slider" then
 		return config.item_height.slider
@@ -1161,6 +1279,15 @@ local function get_item_height(item)
 		return get_dropdown_item_height(item)
 	elseif item.type == "label" then
 		return config.space.x6
+	elseif item.type == "info" then
+		local pad_x = config.space.x3
+		local max_w = (col_w or 0) - (pad_x * 2)
+		if max_w <= 0 then
+			return config.space.x6
+		end
+		return info_item_height(info_item_text(item), max_w, config.font_scale_small)
+	elseif item.type == "spacer" then
+		return math.max(0, item.height or 0)
 	end
 	return 0
 end
@@ -1184,8 +1311,9 @@ local function next_auto_pair_button_index(items, start_index)
 	return nil
 end
 
-local function get_group_actual_height(group)
-	if group._cached_h and group._cached_rev == layout_cache_revision then
+local function get_group_actual_height(group, col_w)
+	local cache_rev = tostring(layout_cache_revision) .. ":" .. tostring(col_w or 0)
+	if group._cached_h and group._cached_rev == cache_rev then
 		return group._cached_h
 	end
 
@@ -1196,7 +1324,7 @@ local function get_group_actual_height(group)
 
 	while i <= #items do
 		local item = items[i]
-		local item_h = get_item_height(item)
+		local item_h = get_item_height(item, col_w)
 		if item_h > 0 then
 			if visible_count > 0 then
 				h = h + (config.item_gap or 0)
@@ -1208,6 +1336,14 @@ local function get_group_actual_height(group)
 		if is_auto_pairable_button(item) then
 			local pair_index = next_auto_pair_button_index(items, i)
 			if pair_index then
+				local pair_item = items[pair_index]
+				if col_w and col_w > 0 then
+					local leftW, rightW = button_pair_half_widths(col_w)
+					local nl = button_line_count(item.label, leftW)
+					local nr = button_line_count(pair_item.label, rightW)
+					local pair_h = button_h_from_lines(math.max(nl, nr))
+					h = h - item_h + pair_h
+				end
 				i = pair_index
 			end
 		end
@@ -1219,7 +1355,7 @@ local function get_group_actual_height(group)
 		h = min_h
 	end
 	group._cached_h = h
-	group._cached_rev = layout_cache_revision
+	group._cached_rev = cache_rev
 	return h
 end
 
@@ -1547,32 +1683,45 @@ local BUTTON_LABEL_SCALE = 0.9
 local function render_button_label(label, btnX, btnY, btnW, btnH, textColor)
 	local pad_x = config.space.x3
 	local draw_size = config.font_scale_small * BUTTON_LABEL_SCALE
-	local text = text_with_ellipsis(tostring(label or ""), math.max(1, btnW - (pad_x * 2)), draw_size)
-	render_text_in_rect(text, btnX + pad_x, btnY, btnW - (pad_x * 2), btnH, draw_size, textColor, "left", true)
+	local max_w = math.max(1, btnW - (pad_x * 2))
+	local lines = wrap_text_lines(tostring(label or ""), max_w, draw_size)
+	local n = math.max(1, #lines)
+	local tx = btnX + pad_x
+
+	if n == 1 then
+		local ty = centered_text_y(btnY, btnH, lines[1], draw_size)
+		render_text(lines[1], tx, ty, draw_size, textColor)
+	else
+		local line_h = config.space.x6
+		local block_h = n * line_h
+		local start_y = btnY + math.floor((btnH - block_h) / 2)
+		for i, line in ipairs(lines) do
+			render_text(line, tx, start_y + (i - 1) * line_h, draw_size, textColor)
+		end
+	end
 end
 
 local function draw_button_item(item, x, y, w)
 	local pad_x = config.space.x3
-	local btnH = config.item_height.button - config.space.x1
 	local btnW = w - (pad_x * 2)
 	local btnX = x + pad_x
 	local btnY = y + config.space.x1
+	local n = button_line_count(item.label, btnW)
+	local btnH = button_h_from_lines(n) - config.space.x1
 
 	local style = draw_button_surface(item, btnX, btnY, btnW, btnH, "ui.disabled.instant_finish")
-
 	render_button_label(item.label, btnX, btnY, btnW, btnH, style.text)
 end
 
 local function draw_button_pair_item(item, x, y, w)
 	local pad_x = config.space.x3
-	local btnH = config.item_height.button - config.space.x1
-	local totalW = w - (pad_x * 2)
 	local baseX = x + pad_x
 	local btnY = y + config.space.x1
+	local leftW, rightW = button_pair_half_widths(w)
+	local nl = button_line_count(item.left and item.left.label, leftW)
+	local nr = button_line_count(item.right and item.right.label, rightW)
+	local btnH = button_h_from_lines(math.max(nl, nr)) - config.space.x1
 	local gap = config.space.x2_5
-	local innerW = math.max(2, math.floor((totalW - gap) + 0.5))
-	local leftW = math.floor(innerW / 2)
-	local rightW = innerW - leftW
 
 	local function draw_half(btn, btnX, btnW)
 		local style = draw_button_surface(btn, btnX, btnY, btnW, btnH, "ui.disabled.action")
@@ -1693,10 +1842,15 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 		if is_active_dropdown then
 			item.isOpen = false
 			state.active_dropdown = nil
+			state.dropdown_scroll_max = 0
 		elseif not state.active_dropdown then
 			item.isOpen = true
 			state.active_dropdown = item.id
 			state.dropdown_just_opened = true
+			state.dropdown_scroll = state.dropdown_scroll or {}
+			state.dropdown_scroll_init = state.dropdown_scroll_init or {}
+			state.dropdown_scroll[item.id] = nil
+			state.dropdown_scroll_init[item.id] = false
 		end
 	end
 
@@ -1754,6 +1908,8 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 			x = boxX,
 			y = boxY + boxH + config.space.x1,
 			w = boxW,
+			control_y = boxY,
+			control_h = boxH,
 			open_t = open_t,
 			interactive = (target_open > 0.5) and (open_t > 0.95),
 		}
@@ -1766,6 +1922,38 @@ local function draw_label_item(item, x, y, pad_x)
 	return y + config.space.x6
 end
 
+local function draw_info_item(item, x, y, pad_x, group_w)
+	local text_col = item.color or config.colors.text_sec
+	local scale = config.font_scale_small
+	local max_w = group_w - (pad_x * 2)
+	local text = info_item_text(item)
+	local item_h = info_item_height(text, max_w, scale)
+
+	if gui.text and max_w > 0 then
+		local ox, oy = state._frame_ox, state._frame_oy
+		local t = gui.text(text)
+			:position(vec(snap(x + pad_x + ox), snap(y + config.space.x3 + oy)))
+			:color(to_gui_color(text_col, true))
+			:scale(scale)
+
+		if state.fonts.regular then
+			t:font(state.fonts.regular)
+		end
+		if t.wrap then
+			t:wrap(max_w)
+			t:draw()
+			return y + item_h
+		end
+	end
+
+	local lines = wrap_text_lines(text, max_w, scale)
+	local line_h = config.space.x6
+	for i, line in ipairs(lines) do
+		render_text(line, x + pad_x, y + config.space.x3 + (i - 1) * line_h, scale, text_col)
+	end
+	return y + item_h
+end
+
 local function render_group_item(item, group_x, item_y, group_w, pad_x)
 	if item.type == "toggle" then
 		draw_toggle_item(item, group_x, item_y, group_w, item_y)
@@ -1773,11 +1961,11 @@ local function render_group_item(item, group_x, item_y, group_w, pad_x)
 	end
 	if item.type == "button" then
 		draw_button_item(item, group_x, item_y, group_w)
-		return item_y + config.item_height.button, nil
+		return item_y + get_item_height(item, group_w), nil
 	end
 	if item.type == "button_pair" then
 		draw_button_pair_item(item, group_x, item_y, group_w)
-		return item_y + config.item_height.button, nil
+		return item_y + get_item_height(item, group_w), nil
 	end
 	if item.type == "slider" then
 		draw_slider_item(item, group_x, item_y, group_w, item_y)
@@ -1790,29 +1978,33 @@ local function render_group_item(item, group_x, item_y, group_w, pad_x)
 	if item.type == "label" then
 		return draw_label_item(item, group_x, item_y, pad_x), nil
 	end
+	if item.type == "info" then
+		return draw_info_item(item, group_x, item_y, pad_x, group_w), nil
+	end
+	if item.type == "spacer" then
+		return item_y + math.max(0, item.height or 0), nil
+	end
 	return item_y, nil
 end
 
 local function render_button_pair_row(left_button, right_button, group_x, item_y, group_w)
 	if right_button then
-		draw_button_pair_item({
-			type = "button_pair",
-			left = left_button,
-			right = right_button,
-		}, group_x, item_y, group_w)
+		local pair = { type = "button_pair", left = left_button, right = right_button }
+		draw_button_pair_item(pair, group_x, item_y, group_w)
+		return item_y + get_item_height(pair, group_w)
 	else
 		draw_button_item(left_button, group_x, item_y, group_w)
+		return item_y + get_item_height(left_button, group_w)
 	end
-	return item_y + config.item_height.button
 end
 
 local function render_background_watermarks(header_h, body_h)
 	local version_label = i18n.t("app.version")
-	local wm_x = config.origin_x + math.floor(config.menu_width / 2)
+	local wm_x = config.origin_x + config.menu_width - config.content_margin
 	local wm_scale = config.font_scale_small or 1.0
 	local wm_y = centered_text_y(config.origin_y, header_h, version_label, wm_scale)
 	local wm_col = config.colors.text_main
-	render_text(version_label, wm_x, wm_y, wm_scale, wm_col, "center")
+	render_text(version_label, wm_x, wm_y, wm_scale, wm_col, "right")
 
 	local credits_x = config.origin_x + config.space.x2
 	local credits_y = config.origin_y + body_h - (config.space.x2 * 2)
@@ -2059,6 +2251,8 @@ ui.render = function()
 			.. ":"
 			.. tostring(column_count)
 			.. ":"
+			.. tostring(col_w)
+			.. ":"
 			.. tostring(layout_cache_revision)
 		if
 			render_cache.layout_dirty
@@ -2072,7 +2266,7 @@ ui.render = function()
 			end
 			for i = 1, #ordered do
 				local group = ordered[i].group
-				group_heights[group] = get_group_actual_height(group)
+				group_heights[group] = get_group_actual_height(group, col_w)
 			end
 			distribute_groups_by_column(ordered, groups_by_column, column_count, group_heights)
 			render_cache.layout_key = layout_key
@@ -2090,7 +2284,7 @@ ui.render = function()
 			for _, entry in ipairs(groups_by_column[col]) do
 				local group = entry.group
 				local gY = col_y
-				local actual_h = entry.h or get_group_actual_height(group)
+				local actual_h = entry.h or get_group_actual_height(group, col_w)
 				local subkey = HEIST_SUBTAB_KEYS[state.heist_subtab] or tostring(state.heist_subtab or 0)
 				local anim_key = "group:"
 					.. subkey
@@ -2146,7 +2340,7 @@ ui.render = function()
 							item_index = item_index + 1
 							goto continue_item
 						end
-						local item_h = get_item_height(item)
+						local item_h = get_item_height(item, col_w)
 						local pair_index = nil
 						local pair_item = nil
 						if is_auto_pairable_button(item) then
@@ -2234,22 +2428,58 @@ ui.render = function()
 			local itemHeight = config.space.x9
 			local fullOptsH = #dd.item.options * itemHeight
 			local open_t = dd.open_t or 1.0
-			local optsH = math.max(1, math.floor(fullOptsH * open_t))
+			local screen_h = game.resolution().y
+			local screen_margin = config.space.x2
+			local max_visible_items =
+				math.max(1, math.floor((config.control and config.control.dropdown_max_visible_items) or 10))
+			local min_visible_items =
+				math.max(1, math.floor((config.control and config.control.dropdown_min_visible_items) or 3))
+			local max_list_h = itemHeight * max_visible_items
+			local min_list_h = math.min(fullOptsH, itemHeight * min_visible_items)
+			local screen_list_h = math.max(1, screen_h - (screen_margin * 2))
+			local below_space = screen_h - (dd.y + oy) - screen_margin
+			local above_space = (dd.control_y + oy) - screen_margin
+			local open_above = above_space > below_space and below_space < math.min(fullOptsH, max_list_h)
+			local available_space = open_above and above_space or below_space
+			local visible_full_h = math.min(fullOptsH, max_list_h, screen_list_h, math.max(min_list_h, available_space))
+			visible_full_h = math.max(1, visible_full_h)
+			local optsH = math.max(1, math.floor(visible_full_h * open_t))
+			local panel_y = dd.y
+			if open_above then
+				panel_y = dd.control_y - config.space.x1 - optsH
+			end
+			panel_y = clamp(panel_y, screen_margin - oy, screen_h - oy - screen_margin - optsH)
+			local max_scroll_y = math.max(0, fullOptsH - visible_full_h)
+			local dropdown_id = dd.item.id
+			state.dropdown_scroll = state.dropdown_scroll or {}
+			state.dropdown_scroll_init = state.dropdown_scroll_init or {}
+			if not state.dropdown_scroll_init[dropdown_id] then
+				local selected_y = math.max(0, ((dd.item.value or 1) - 1) * itemHeight)
+				state.dropdown_scroll[dropdown_id] =
+					clamp(selected_y - math.floor((visible_full_h - itemHeight) / 2), 0, max_scroll_y)
+				state.dropdown_scroll_init[dropdown_id] = true
+			end
+			local scroll_y = clamp(state.dropdown_scroll[dropdown_id] or 0, 0, max_scroll_y)
+			state.dropdown_scroll[dropdown_id] = scroll_y
+			state.dropdown_scroll_max = max_scroll_y
 			local can_interact = dd.interactive and (open_t > 0.95)
 
 			state.render_alpha_mul = open_t
-			render_card(dd.x, dd.y, dd.w, optsH, config.colors.bg_panel, config.colors.border, config.radius.md)
-			gui.push_clip(vec(dd.x + ox, dd.y + oy), vec(dd.w, optsH))
+			render_card(dd.x, panel_y, dd.w, optsH, config.colors.bg_panel, config.colors.border, config.radius.md)
+			gui.push_clip(vec(dd.x + ox, panel_y + oy), vec(dd.w, optsH))
 
 			for i, opt in ipairs(dd.item.options) do
-				local optY = dd.y + (i - 1) * itemHeight
+				local optY = panel_y + (i - 1) * itemHeight - scroll_y
 				local optTextCol = config.colors.text_main
-				if can_interact and is_hovered(dd.x, optY, dd.w, itemHeight) then
+				local visible = optY + itemHeight >= panel_y and optY <= panel_y + optsH
+				if visible and can_interact and is_hovered(dd.x, optY, dd.w, itemHeight) then
 					render_rect(dd.x, optY, dd.w, itemHeight, config.colors.accent, config.radius.none)
 					if state.mouse.clicked and not state.dropdown_just_opened then
 						dd.item.value = i
 						dd.item.isOpen = false
 						state.active_dropdown = nil
+						state.dropdown_scroll_max = 0
+						state.dropdown_scroll_init[dropdown_id] = false
 						state.window.is_dragging = false
 						if dd.item.onChange then
 							safe_call_ui_handler("dropdown", dd.item.id, dd.item.onChange, opt)
@@ -2257,40 +2487,66 @@ ui.render = function()
 					end
 					optTextCol = config.colors.text_on_accent
 				end
-				local option_max_w = dd.w - config.space.x6
-				local option_text = text_with_ellipsis(opt, option_max_w, config.font_scale_body)
-				render_text_in_rect(
-					option_text,
-					dd.x + config.space.x3,
-					optY,
-					option_max_w,
-					itemHeight,
-					config.font_scale_body,
-					optTextCol,
-					"left"
-				)
+				if visible then
+					local option_max_w = dd.w - config.space.x6
+					if max_scroll_y > 0 then
+						option_max_w = option_max_w - config.space.x2
+					end
+					local option_text = text_with_ellipsis(opt, option_max_w, config.font_scale_body)
+					render_text_in_rect(
+						option_text,
+						dd.x + config.space.x3,
+						optY,
+						option_max_w,
+						itemHeight,
+						config.font_scale_body,
+						optTextCol,
+						"left"
+					)
+				end
 			end
 
 			gui.pop_clip()
+			if max_scroll_y > 0 then
+				local track_w = config.scrollbar.w or config.space.x1
+				local track_x = dd.x + dd.w - config.space.x2
+				local thumb_h = math.max(config.control.scrollbar_min_thumb, (visible_full_h / fullOptsH) * optsH)
+				local thumb_y = panel_y
+				if max_scroll_y > 0 then
+					thumb_y = panel_y + (scroll_y / max_scroll_y) * (optsH - thumb_h)
+				end
+				render_rect(
+					track_x,
+					thumb_y + config.space.x1,
+					track_w,
+					math.max(1, thumb_h - config.space.x2),
+					config.colors.accent,
+					config.radius.full
+				)
+			end
 			state.render_alpha_mul = 1.0
 
 			if
 				can_interact
 				and state.mouse.clicked
 				and not state.dropdown_just_opened
-				and not is_hovered(dd.x, dd.y, dd.w, fullOptsH)
+				and not is_hovered(dd.x, panel_y, dd.w, optsH)
 			then
 				dd.item.isOpen = false
 				state.active_dropdown = nil
+				state.dropdown_scroll_max = 0
+				state.dropdown_scroll_init[dropdown_id] = false
 				state.window.is_dragging = false
 			end
 		end
 		state.dropdown_just_opened = false
+	else
+		state.dropdown_scroll_max = 0
 	end
 
 	state.mouse.clicked = raw_mouse_clicked and not consumed_nav_click
-	render_drawer(bodyY, bodyH, drawer_t)
 	render_hamburger_button(hamburger_x, hamburger_y, hamburger_size, hamburger_hovered)
+	render_drawer(bodyY, bodyH, drawer_t)
 	state.mouse.clicked = raw_mouse_clicked
 end
 

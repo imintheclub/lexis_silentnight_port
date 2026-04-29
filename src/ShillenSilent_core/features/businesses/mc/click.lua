@@ -43,6 +43,13 @@ function click.register(heist_tab)
 		return nil
 	end
 
+	local info = ui.group(heist_tab, t("mc.group.info"), nil, nil, nil, nil, "mc")
+	ui.label(info, t("feature.mc.name"), config.colors.accent)
+	ui.info(info, t("mc.tip.global_loop"), config.colors.text_sec)
+	ui.info(info, t("mc.tip.sub_loop"), config.colors.text_sec)
+	ui.info(info, t("mc.tip.black_screen"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
+
 	local global = ui.group(heist_tab, t("mc.group.all_businesses"), nil, nil, nil, nil, "mc")
 	ui.label(global, t("feature.mc.name"), config.colors.accent)
 	refs.fast_status_label =

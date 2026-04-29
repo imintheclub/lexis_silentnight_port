@@ -117,6 +117,8 @@ local function init_config()
 			slider_thumb_grow = tw(2),
 			scrollbar_min_thumb = tw(8),
 			scrollbar_grab_pad = tw(1),
+			dropdown_max_visible_items = 10,
+			dropdown_min_visible_items = 3,
 			toggle_track_border_thickness = s(2),
 			toggle_thumb_border_thickness = s(1.25),
 		},

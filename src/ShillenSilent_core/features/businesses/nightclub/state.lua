@@ -5,6 +5,8 @@ local state = {
 		location_index = 1,
 		fast_prod_target = "all",
 		popularity_editor_value = data.popularity.default,
+		sale_price_active = false,
+		cooldowns_active = false,
 	},
 	fast_production = {
 		active = false,
@@ -23,6 +25,14 @@ local state = {
 
 function state.set_location_index(value)
 	state.config.location_index = data.clamp_location_index(value)
+end
+
+function state.set_sale_price_active(enabled)
+	state.config.sale_price_active = enabled == true
+end
+
+function state.set_cooldowns_active(enabled)
+	state.config.cooldowns_active = enabled == true
 end
 
 function state.set_fast_prod_target(value)

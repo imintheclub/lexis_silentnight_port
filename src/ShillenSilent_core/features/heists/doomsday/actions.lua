@@ -1,9 +1,10 @@
 -- luacheck: globals invoker util
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.doomsday.data")
 local state = require("ShillenSilent_core.features.heists.doomsday.state")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
@@ -16,7 +17,7 @@ local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 local actions = {}
 
 local function config()
-	return offsets.feature(data.feature_id)
+	return offsets[data.feature_id] or {}
 end
 
 local t = i18n.t
@@ -27,7 +28,7 @@ function actions.reload_board(show_missing_notice)
 	local cfg = config()
 	local planning = cfg.scripts and cfg.scripts.planning
 	if planning and safe_access.is_script_running(planning) then
-		return safe_access.set_local_int(planning, cfg.planning.reload_offset, data.values.board_reload)
+		return safe_access.set_local_int_variants(planning, cfg.planning.reload_offset, data.values.board_reload)
 	end
 
 	if show_missing_notice then
@@ -108,7 +109,7 @@ function actions.force_ready()
 		local ready = cfg.globals and cfg.globals.ready_players or {}
 		local ok = true
 		for i = 1, #ready do
-			ok = safe_access.set_global_int(ready[i], data.values.force_ready) and ok
+			ok = safe_access.set_global_int_variants(ready[i], data.values.force_ready) and ok
 		end
 
 		push(ok and "doomsday.notify.force_ready_ok" or "doomsday.notify.force_ready_failed", 2000)
@@ -216,17 +217,13 @@ function actions.apply_cuts(cuts)
 
 	local cfg = config()
 	local cut_globals = cfg.globals and cfg.globals.cuts or {}
-	local values = {
-		state.cut_enabled.player1 and data.clamp_cut(state.cuts.player1) or 0,
-		state.cut_enabled.player2 and data.clamp_cut(state.cuts.player2) or 0,
-		state.cut_enabled.player3 and data.clamp_cut(state.cuts.player3) or 0,
-		state.cut_enabled.player4 and data.clamp_cut(state.cuts.player4) or 0,
-	}
-
-	local ok = true
-	for i = 1, #values do
-		ok = safe_access.set_global_int(cut_globals[i], values[i]) and ok
-	end
+	local ok = heist_cuts.write_player_globals({
+		player_keys = data.player_keys,
+		offsets = cut_globals,
+		cuts = state.cuts,
+		enabled = state.cut_enabled,
+		clamp = data.clamp_cut,
+	})
 
 	push(ok and "doomsday.notify.cuts_ok" or "doomsday.notify.cuts_failed", ok and 2000 or 2200)
 	return ok
@@ -267,7 +264,7 @@ function actions.data_hack()
 	local hack = cfg.hacks and cfg.hacks.data
 	local script_name = cfg.scripts and cfg.scripts.mission_controller
 	if script_name and safe_access.is_script_running(script_name) and hack then
-		local ok = safe_access.set_local_int(script_name, hack.offset, data.values.data_hack_complete)
+		local ok = safe_access.set_local_int_variants(script_name, hack.offset, data.values.data_hack_complete)
 		push(ok and "doomsday.notify.data_hack_ok" or "doomsday.notify.data_hack_failed", 2000)
 		return ok
 	end
@@ -281,7 +278,7 @@ function actions.doomsday_hack()
 	local hack = cfg.hacks and cfg.hacks.doomsday
 	local script_name = cfg.scripts and cfg.scripts.mission_controller
 	if script_name and safe_access.is_script_running(script_name) and hack then
-		local ok = safe_access.set_local_int(script_name, hack.offset, data.values.doomsday_hack_complete)
+		local ok = safe_access.set_local_int_variants(script_name, hack.offset, data.values.doomsday_hack_complete)
 		push(ok and "doomsday.notify.doomsday_hack_ok" or "doomsday.notify.doomsday_hack_failed", 2000)
 		return ok
 	end
@@ -315,10 +312,11 @@ function actions.instant_finish_new()
 		end
 		util.yield(1000)
 
-		local bits = safe_access.get_local_int(script_name, finish.flags_offset, 0) | data.flags.finish_win
-		local ok1 = safe_access.set_local_int(script_name, finish.status_offset, data.values.finish_status)
-		local ok2 = safe_access.set_local_int(script_name, finish.cash_take_offset, data.values.finish_cash_take)
-		local ok3 = safe_access.set_local_int(script_name, finish.flags_offset, bits)
+		local bits = safe_access.get_local_int_variants(script_name, finish.flags_offset, 0) | data.flags.finish_win
+		local ok1 = safe_access.set_local_int_variants(script_name, finish.status_offset, data.values.finish_status)
+		local ok2 =
+			safe_access.set_local_int_variants(script_name, finish.cash_take_offset, data.values.finish_cash_take)
+		local ok3 = safe_access.set_local_int_variants(script_name, finish.flags_offset, bits)
 
 		push((ok1 and ok2 and ok3) and "doomsday.notify.finish_ok" or "doomsday.notify.finish_failed", 2200)
 	end, function()

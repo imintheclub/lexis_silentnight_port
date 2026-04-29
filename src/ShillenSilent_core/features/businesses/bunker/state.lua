@@ -3,6 +3,9 @@ local data = require("ShillenSilent_core.features.businesses.bunker.data")
 local state = {
 	config = {
 		location_index = 1,
+		sale_price_active = false,
+		no_xp = false,
+		supplier_active = false,
 	},
 	fast_production = {
 		active = false,
@@ -18,6 +21,18 @@ local state = {
 
 function state.set_location_index(value)
 	state.config.location_index = data.clamp_location_index(value)
+end
+
+function state.set_sale_price_active(enabled)
+	state.config.sale_price_active = enabled == true
+end
+
+function state.set_no_xp(enabled)
+	state.config.no_xp = enabled == true
+end
+
+function state.set_supplier_active(enabled)
+	state.config.supplier_active = enabled == true
 end
 
 function state.set_fast_production(enabled)

@@ -54,6 +54,8 @@ function click.register(heistTab)
 	ui.label(info, t("doomsday.info.transaction_cooldown"), config.colors.text_sec)
 	ui.label(info, t("doomsday.info.transaction_note"), config.colors.text_sec)
 	ui.label(info, t("doomsday.info.heist_cooldown"), config.colors.text_sec)
+	ui.info(info, t("doomsday.tip.max_payout"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
 
 	preset_ui.click_group(heistTab, {
 		feature_id = data.feature_id,

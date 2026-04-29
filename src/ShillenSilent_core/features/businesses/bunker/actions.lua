@@ -1,33 +1,47 @@
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
-local offsets = require("ShillenSilent_core.data.offsets.resolver")
+local offsets = require("ShillenSilent_core.data.offsets.current")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
+local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local data = require("ShillenSilent_core.features.businesses.bunker.data")
 local state = require("ShillenSilent_core.features.businesses.bunker.state")
 
 local actions = {}
 
 local function cfg()
-	return offsets.feature(data.feature_id)
+	return offsets[data.feature_id] or {}
 end
 
 local t = i18n.t
 
 local push = notify_core.feature("feature.bunker.name")
 
+local function offset_with_delta(field, delta)
+	delta = tonumber(delta) or 0
+	if type(field) == "number" then
+		return field + delta
+	end
+	if type(field) == "table" then
+		return { ee = field.ee + delta, legacy = field.legacy + delta }
+	end
+	return nil
+end
+
 local function fill_supply_slot()
 	local supply = cfg().supply or {}
 	local base = supply.base
 	local slot = supply.slot
-	if type(base) ~= "number" or type(slot) ~= "number" then
+	local offset = offset_with_delta(base, slot)
+	if not offset or type(slot) ~= "number" then
 		return false
 	end
 
 	local ok = true
 	for _ = 1, tonumber(supply.fill_repeats) or 7 do
-		ok = safe_access.set_global_int(base + slot, 1) and ok
+		ok = safe_access.set_global_int_variants(offset, 1) and ok
 		util.yield(tonumber(supply.fill_yield_ms) or 5)
 	end
 	return ok
@@ -39,16 +53,55 @@ local function apply_production_tick()
 	local base = supply.base
 	local slot = supply.slot
 	local timer_root = production.timer_root
-	if type(base) ~= "number" or type(slot) ~= "number" or type(timer_root) ~= "number" then
+	if type(slot) ~= "number" then
 		return false
 	end
 
-	local trig1 = timer_root + 1 + (slot - 1) * 2
-	local trig2 = trig1 + 1
+	local supply_offset = offset_with_delta(base, slot)
+	local trig1 = offset_with_delta(timer_root, 1 + (slot - 1) * 2)
+	local trig2 = offset_with_delta(trig1, 1)
+	if not supply_offset or not trig1 or not trig2 then
+		return false
+	end
 	local ok = true
-	ok = safe_access.set_global_int(base + slot, 1) and ok
-	ok = safe_access.set_global_int(trig1, 0) and ok
-	ok = safe_access.set_global_int(trig2, 1) and ok
+	ok = safe_access.set_global_int_variants(supply_offset, 1) and ok
+	ok = safe_access.set_global_int_variants(trig1, 0) and ok
+	ok = safe_access.set_global_int_variants(trig2, 1) and ok
+	return ok
+end
+
+local function apply_sale_price()
+	local offsets_cfg = cfg()
+	local stats = offsets_cfg.stats or {}
+	local tunables = offsets_cfg.tunables or {}
+	local sale = tunables.sale_price or {}
+	local stock = safe_access.get_mp_stat_int(stats.stock, 0) or 0
+	if stock <= 0 then
+		apply_production_tick()
+		util.yield(1000)
+		stock = safe_access.get_mp_stat_int(stats.stock, 0) or 0
+	end
+	if stock <= 0 then
+		return false
+	end
+
+	local target = math.floor((2500000 / 1.5) / stock)
+	local ok = true
+	ok = safe_access.set_tunable_int(sale.product_value, target) and ok
+	ok = safe_access.set_tunable_int(sale.staff_upgraded, 0) and ok
+	ok = safe_access.set_tunable_int(sale.equipment_upgraded, 0) and ok
+	return ok and stats.stock ~= nil
+end
+
+local function restore_sale_price()
+	local offsets_cfg = cfg()
+	local tunables = offsets_cfg.tunables or {}
+	local sale = tunables.sale_price or {}
+	local defaults = offsets_cfg.defaults or {}
+	local ok = true
+	ok = safe_access.set_tunable_int(sale.product_value, defaults.product_value) and ok
+	ok = safe_access.set_tunable_int(sale.staff_upgraded, defaults.staff_upgraded) and ok
+	ok = safe_access.set_tunable_int(sale.equipment_upgraded, defaults.equipment_upgraded) and ok
 	return ok
 end
 
@@ -115,6 +168,79 @@ function actions.refill_supplies()
 	end)
 end
 
+function actions.set_sale_price_loop(enabled, silent)
+	state.set_sale_price_active(enabled == true)
+	if not state.config.sale_price_active then
+		local ok = restore_sale_price()
+		if not silent then
+			push(ok and "bunker.notify.sale_price_off" or "bunker.notify.sale_price_failed", 2000)
+		end
+		return false
+	end
+	local ok = apply_sale_price()
+	if not silent then
+		push(ok and "bunker.notify.sale_price_on" or "bunker.notify.sale_price_failed", 2200)
+	end
+	return state.config.sale_price_active
+end
+
+function actions.get_sale_price_loop_active()
+	return state.config.sale_price_active == true
+end
+
+function actions.tick_sale_price()
+	if not state.config.sale_price_active then
+		return false
+	end
+	return apply_sale_price()
+end
+
+function actions.set_no_xp(enabled, silent)
+	state.set_no_xp(enabled == true)
+	if not silent then
+		push(state.config.no_xp and "bunker.notify.no_xp_on" or "bunker.notify.no_xp_off", 2000)
+	end
+	return state.config.no_xp
+end
+
+function actions.get_no_xp()
+	return state.config.no_xp == true
+end
+
+function actions.set_supplier_loop(enabled, silent)
+	state.set_supplier_active(enabled == true)
+	if not state.config.supplier_active then
+		local supply = cfg().supply or {}
+		local offset = offset_with_delta(supply.base, supply.slot)
+		if offset and type(supply.slot) == "number" then
+			safe_access.set_global_int_variants(offset, 0)
+		end
+		if not silent then
+			push("bunker.notify.supplier_off", 2000)
+		end
+		return false
+	end
+	if not silent then
+		push("bunker.notify.supplier_on", 2000)
+	end
+	return true
+end
+
+function actions.get_supplier_loop_active()
+	return state.config.supplier_active == true
+end
+
+function actions.tick_supplier()
+	if not state.config.supplier_active then
+		return false
+	end
+	local laptop = cfg().scripts and cfg().scripts.laptop or {}
+	if safe_access.is_script_running(laptop.name) then
+		return false
+	end
+	return apply_production_tick()
+end
+
 function actions.instant_sell()
 	return jobs.run_guarded_job("bunker_sell", function()
 		local sell = cfg().scripts and cfg().scripts.sell or {}
@@ -123,11 +249,35 @@ function actions.instant_sell()
 			return
 		end
 
-		local ok = safe_access.set_local_int(sell.name, sell.offset, sell.value)
+		local tunables = cfg().tunables or {}
+		business_runtime.set_xp_multiplier(state.config.no_xp, tunables.xp_multiplier)
+		local ok = safe_access.set_local_int_variants(sell.name, sell.offset, sell.value)
 		push(ok and "bunker.notify.sell_ok" or "bunker.notify.sell_failed", 2200)
 	end, function()
 		push("bunker.notify.sell_running", 1500)
 	end)
+end
+
+function actions.teleport_laptop()
+	local coords = cfg().coords and cfg().coords.laptop
+	if not coords then
+		return false
+	end
+	return coords_teleport.run_coords_teleport(
+		t("feature.bunker.name"),
+		t("bunker.notify.teleported_laptop"),
+		coords.x,
+		coords.y,
+		coords.z,
+		false,
+		nil
+	)
+end
+
+function actions.open_laptop()
+	local ok = business_runtime.start_script(cfg().scripts and cfg().scripts.laptop)
+	push(ok and "bunker.notify.open_laptop_ok" or "bunker.notify.open_laptop_failed", 2000)
+	return ok
 end
 
 function actions.set_disable_raids(enabled, silent)
@@ -229,6 +379,8 @@ end
 
 function actions.apply_current_state(silent)
 	state.set_location_index(state.config.location_index)
+	actions.set_sale_price_loop(state.config.sale_price_active, true)
+	actions.set_supplier_loop(state.config.supplier_active, true)
 	actions.set_disable_raids(state.protections.raids_active, true)
 	actions.set_disable_reminders(state.protections.reminders_active, true)
 	actions.set_fast_production(state.fast_production.active, true)

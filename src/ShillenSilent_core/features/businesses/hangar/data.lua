@@ -12,8 +12,36 @@ data.locations = {
 	{ id = 5, label_key = "hangar.location.zancudo_3499", x = -1889.0, y = 2979.0, z = 32.0 },
 }
 
+data.supplier = {
+	default_delay = 1.0,
+	min_delay = 0.0,
+	max_delay = 5.0,
+	delay_step = 0.1,
+	default_stop_at = 0,
+	max_stop_at = 100000,
+	stop_step = 50,
+}
+
 function data.clamp_location_index(value)
 	return number_helpers.clamp_int(value, 1, #data.locations, 1)
+end
+
+function data.clamp_stop_at(value)
+	return number_helpers.clamp_int(value, 0, data.supplier.max_stop_at, data.supplier.default_stop_at)
+end
+
+function data.clamp_delay(value)
+	local number = tonumber(value)
+	if not number then
+		return data.supplier.default_delay
+	end
+	if number < data.supplier.min_delay then
+		return data.supplier.min_delay
+	end
+	if number > data.supplier.max_delay then
+		return data.supplier.max_delay
+	end
+	return number
 end
 
 function data.location_by_id(id)

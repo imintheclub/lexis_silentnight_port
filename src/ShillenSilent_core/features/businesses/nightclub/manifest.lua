@@ -19,6 +19,12 @@ return {
 			fn = "tick_fast_production",
 		},
 		{
+			id = "nightclub.sale_price",
+			interval_ms = 1000,
+			module = "ShillenSilent_core.features.businesses.nightclub.actions",
+			fn = "tick_sale_price",
+		},
+		{
 			id = "nightclub.popularity_lock",
 			interval_ms = 1000,
 			module = "ShillenSilent_core.features.businesses.nightclub.actions",

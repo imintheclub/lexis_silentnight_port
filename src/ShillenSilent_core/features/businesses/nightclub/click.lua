@@ -70,7 +70,7 @@ function click.register(heist_tab)
 			click.refresh()
 		end
 	)
-	ui.button(prod, "nc_tick_once", t("nightclub.action.production_tick"), actions.production_tick_all)
+	ui.button(prod, "nc_tick_once", t("nightclub.action.production_tick"), actions.production_tick)
 
 	local safe = ui.group(heist_tab, t("nightclub.group.safe"), nil, nil, nil, nil, "nightclub")
 	ui.button(safe, "nc_safe_collect", t("nightclub.action.collect_safe"), actions.safe_collect)

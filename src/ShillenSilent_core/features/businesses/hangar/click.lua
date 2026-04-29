@@ -14,6 +14,9 @@ function click.refresh()
 		refs.fill_toggle_label.text =
 			t(state.fill.active and "hangar.status.fill_running" or "hangar.status.fill_stopped")
 	end
+	if refs.fill_toggle then
+		refs.fill_toggle.state = state.fill.active == true
+	end
 	return true
 end
 
@@ -29,12 +32,18 @@ function click.register(heist_tab)
 		t(state.fill.active and "hangar.status.fill_running" or "hangar.status.fill_stopped"),
 		config.colors.text_sec
 	)
-	ui.button(stock, "hangar_fill", t("hangar.action.fill_cargo"), function()
-		actions.fill_cargo()
-		click.refresh()
-	end)
-	ui.button(stock, "hangar_fill_stop", t("hangar.action.stop_fill"), function()
-		actions.stop_fill()
+	refs.fill_toggle = ui.toggle(
+		stock,
+		"hangar_fill_loop",
+		t("hangar.action.fill_loop"),
+		actions.get_fill_active(),
+		function(enabled)
+			actions.set_fill_loop(enabled)
+			click.refresh()
+		end
+	)
+	ui.button(stock, "hangar_fill_tick", t("hangar.action.fill_tick"), function()
+		actions.fill_tick_once()
 		click.refresh()
 	end)
 

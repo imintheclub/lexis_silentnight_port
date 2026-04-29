@@ -62,7 +62,7 @@ function controller.register(parent_menu)
 		actions.set_fast_production(enabled)
 		controller.refresh_controls()
 	end)
-	common.add_button(prod, t("nightclub.action.production_tick"), actions.production_tick_all)
+	common.add_button(prod, t("nightclub.action.production_tick"), actions.production_tick)
 
 	local safe = root:submenu(t("nightclub.group.safe"))
 	common.add_button(safe, t("nightclub.action.collect_safe"), actions.safe_collect)

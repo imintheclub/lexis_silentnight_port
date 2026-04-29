@@ -28,6 +28,16 @@ local function product_stat(slot)
 	return tostring(stats.product_base or "") .. tostring(slot)
 end
 
+local function product_by_key(key)
+	for i = 1, #data.product_slots do
+		local product = data.product_slots[i]
+		if product.key == key then
+			return product
+		end
+	end
+	return nil
+end
+
 local function selected_tunables()
 	local tunables = cfg().tunables or {}
 	local target = state.config.fast_prod_target
@@ -92,6 +102,32 @@ function actions.production_tick_all()
 	return any_ok
 end
 
+function actions.production_tick()
+	local target = state.config.fast_prod_target
+	if target == "all" then
+		return actions.production_tick_all()
+	end
+
+	local product = product_by_key(target)
+	if not product then
+		return actions.production_tick_all()
+	end
+
+	local cur = safe_access.get_mp_stat_int(product_stat(product.slot), 0) or 0
+	if cur >= product.cap then
+		push("nightclub.notify.production_tick_target_full", 2000, { target = t(product.label_key) })
+		return false
+	end
+
+	local ok = safe_access.set_mp_stat_int(product_stat(product.slot), math.min(cur + 1, product.cap))
+	push(
+		ok and "nightclub.notify.production_tick_target_ok" or "nightclub.notify.production_tick_failed",
+		2000,
+		{ target = t(product.label_key) }
+	)
+	return ok
+end
+
 function actions.set_fast_production(enabled, silent)
 	enabled = enabled == true
 	if not enabled then
@@ -154,8 +190,16 @@ function actions.set_fast_prod_target(target)
 end
 
 function actions.safe_collect()
-	local globals = cfg().globals or {}
-	local ok = safe_access.set_global_int(globals.safe_collect, 1)
+	local offsets_cfg = cfg()
+	local stats = offsets_cfg.stats or {}
+	local value = safe_access.get_mp_stat_int(stats.safe_cash_value, 0) or 0
+	if value <= 0 then
+		push("nightclub.notify.safe_empty", 2000)
+		return false
+	end
+
+	local globals = offsets_cfg.globals or {}
+	local ok = safe_access.set_global_bool(globals.safe_collect, true)
 	push(ok and "nightclub.notify.safe_collect_ok" or "nightclub.notify.safe_collect_failed", 2000)
 	return ok
 end

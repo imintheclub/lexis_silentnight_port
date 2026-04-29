@@ -200,8 +200,16 @@ function actions.tick_heat_lock()
 end
 
 function actions.car_wash_collect_safe()
-	local globals = cfg().globals or {}
-	local ok = safe_access.set_global_int(globals.car_wash_safe_collect, 1)
+	local offsets_cfg = cfg()
+	local stats = offsets_cfg.stats or {}
+	local value = safe_access.get_mp_stat_int(stats.car_wash_safe_cash_value, 0) or 0
+	if value <= 0 then
+		push("moneyfronts.notify.car_wash_safe_empty", 2000)
+		return false
+	end
+
+	local globals = offsets_cfg.globals or {}
+	local ok = safe_access.set_global_bool(globals.car_wash_safe_collect, true)
 	push(ok and "moneyfronts.notify.car_wash_safe_ok" or "moneyfronts.notify.car_wash_safe_failed", 2000)
 	return ok
 end

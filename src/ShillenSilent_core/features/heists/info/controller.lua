@@ -28,7 +28,7 @@ function controller.refresh_controls()
 	common.set_control_value(
 		ctx,
 		controls.language_combo,
-		data.option_index_by_value(data.languages, state.config.language, 1)
+		data.option_index_by_value(data.visible_languages, state.config.language, 1)
 	)
 	return true
 end
@@ -76,7 +76,7 @@ function controller.register(parent_menu)
 		ctx,
 		root,
 		t("info.field.language"),
-		data.localized_options(data.languages, t),
+		data.localized_options(data.visible_languages, t),
 		function()
 			return state.config.language
 		end,

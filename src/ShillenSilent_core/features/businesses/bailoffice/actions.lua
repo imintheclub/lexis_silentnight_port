@@ -56,7 +56,7 @@ function actions.collect_safe()
 		return false
 	end
 	local globals = offsets_cfg.globals or {}
-	local ok = safe_access.set_global_int(globals.safe_collect, 1)
+	local ok = safe_access.set_global_bool(globals.safe_collect, true)
 	push(ok and "bailoffice.notify.safe_collect_ok" or "bailoffice.notify.safe_collect_failed", 2000)
 	return ok
 end

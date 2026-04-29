@@ -20,6 +20,7 @@ jobs:
         with:
           files: |
             src/**/*.lua
+            scripts/**/*.lua
 
       - name: Setup StyLua
         if: steps.changed.outputs.any_changed == 'true'
@@ -38,10 +39,54 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y lua5.4
 
-      - name: Syntax check all src Lua files
+      - name: Syntax check Lua files
         shell: bash
         run: |
           set -euo pipefail
           while IFS= read -r -d '' file; do
             luac5.4 -p "$file"
-          done < <(find src -type f -name '*.lua' -print0)
+          done < <(find src scripts -type f -name '*.lua' -print0)
+
+      - name: Install Lua language server
+        shell: bash
+        run: |
+          set -euo pipefail
+          luals_url="$(python3 - <<'PY'
+          import json
+          import urllib.request
+
+          with urllib.request.urlopen("https://api.github.com/repos/LuaLS/lua-language-server/releases/latest") as response:
+              release = json.load(response)
+
+          for asset in release["assets"]:
+              name = asset["name"]
+              if name.endswith("linux-x64.tar.gz"):
+                  print(asset["browser_download_url"])
+                  break
+          else:
+              raise SystemExit("No linux-x64 Lua language server release asset found")
+          PY
+          )"
+          curl -L "$luals_url" -o lua-language-server.tar.gz
+          mkdir lua-language-server
+          tar -xzf lua-language-server.tar.gz -C lua-language-server
+
+      - name: Lua language server error check
+        shell: bash
+        run: |
+          set -euo pipefail
+          log_path="$(pwd)/.tmp-luals-log"
+          rm -rf "$log_path"
+          ./lua-language-server/bin/lua-language-server \
+            --check=src \
+            --check_format=pretty \
+            --checklevel=Error \
+            --logpath="$log_path" \
+            --configpath=.luarc.json
+          rm -rf "$log_path"
+
+      - name: Check locale keys
+        run: lua5.4 scripts/check_locale_keys.lua
+
+      - name: Check feature manifests
+        run: lua5.4 scripts/check_feature_manifests.lua

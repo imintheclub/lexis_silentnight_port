@@ -500,6 +500,9 @@ return {
 		},
 	},
 	arcade = {
+		stats = {
+			safe_cash_value = "ARCADE_SAFE_CASH_VALUE",
+		},
 		globals = {
 			safe_collect = 2708841,
 		},
@@ -510,6 +513,9 @@ return {
 		},
 		globals = {
 			safe_collect = 2708883,
+		},
+		stats = {
+			safe_cash_value = "HDEN24_SAFE_CASH_VALUE",
 		},
 	},
 	bailoffice = {
@@ -530,6 +536,7 @@ return {
 				heli_tours = "SB_HELI_TOURS_OWNED",
 				weed_shop = "SB_WEED_SHOP_OWNED",
 			},
+			car_wash_safe_cash_value = "CWASH_SAFE_CASH_VALUE",
 		},
 		globals = {
 			car_wash_safe_collect = 2708890,

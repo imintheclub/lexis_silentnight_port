@@ -16,6 +16,15 @@ function click.refresh()
 	if refs.fast_toggle then
 		refs.fast_toggle.state = state.fast_production.active == true
 	end
+	if refs.sale_price_toggle then
+		refs.sale_price_toggle.state = state.config.sale_price_active == true
+	end
+	if refs.no_xp_toggle then
+		refs.no_xp_toggle.state = state.config.no_xp == true
+	end
+	if refs.supplier_toggle then
+		refs.supplier_toggle.state = state.config.supplier_active == true
+	end
 	if refs.raids_toggle then
 		refs.raids_toggle.state = state.protections.raids_active == true
 	end
@@ -49,6 +58,32 @@ function click.register(heist_tab)
 	)
 	ui.button(production, "bunker_tick", t("bunker.action.production_tick"), actions.production_tick)
 	ui.button(production, "bunker_refill", t("bunker.action.refill_supplies"), actions.refill_supplies)
+	refs.supplier_toggle = ui.toggle(
+		production,
+		"bunker_supplier",
+		t("bunker.action.supplier_loop"),
+		actions.get_supplier_loop_active(),
+		function(enabled)
+			actions.set_supplier_loop(enabled)
+			click.refresh()
+		end
+	)
+
+	local sale = ui.group(heist_tab, t("bunker.group.sale"), nil, nil, nil, nil, "bunker")
+	refs.sale_price_toggle = ui.toggle(
+		sale,
+		"bunker_sale_price",
+		t("bunker.action.sale_price_loop"),
+		actions.get_sale_price_loop_active(),
+		function(enabled)
+			actions.set_sale_price_loop(enabled)
+			click.refresh()
+		end
+	)
+	refs.no_xp_toggle = ui.toggle(sale, "bunker_no_xp", t("bunker.action.no_xp"), actions.get_no_xp(), function(enabled)
+		actions.set_no_xp(enabled)
+		click.refresh()
+	end)
 	ui.button(production, "bunker_sell", t("bunker.action.instant_sell"), actions.instant_sell)
 
 	local protect = ui.group(heist_tab, t("bunker.group.protections"), nil, nil, nil, nil, "bunker")
@@ -75,6 +110,8 @@ function click.register(heist_tab)
 
 	local teleport = ui.group(heist_tab, t("bunker.group.teleport"), nil, nil, nil, nil, "bunker")
 	ui.button(teleport, "bunker_teleport", t("bunker.action.teleport"), actions.teleport)
+	ui.button(teleport, "bunker_laptop_tp", t("bunker.action.teleport_laptop"), actions.teleport_laptop)
+	ui.button(teleport, "bunker_laptop_open", t("bunker.action.open_laptop"), actions.open_laptop)
 
 	click.refresh()
 	return heist_tab

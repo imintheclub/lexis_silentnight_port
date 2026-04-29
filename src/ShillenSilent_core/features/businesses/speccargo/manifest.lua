@@ -19,6 +19,18 @@ return {
 			fn = "tick_fill_cargo",
 		},
 		{
+			id = "speccargo.sale_price",
+			interval_ms = 1000,
+			module = "ShillenSilent_core.features.businesses.speccargo.actions",
+			fn = "tick_sale_price",
+		},
+		{
+			id = "speccargo.supplier",
+			interval_ms = 1000,
+			module = "ShillenSilent_core.features.businesses.speccargo.actions",
+			fn = "tick_supplier",
+		},
+		{
 			id = "speccargo.refresh_click_ui",
 			interval_ms = 1000,
 			module = "ShillenSilent_core.features.businesses.speccargo.click",

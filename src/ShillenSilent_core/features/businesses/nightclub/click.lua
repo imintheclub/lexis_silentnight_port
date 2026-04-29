@@ -21,6 +21,12 @@ function click.refresh()
 	if refs.fast_toggle then
 		refs.fast_toggle.state = state.fast_production.active == true
 	end
+	if refs.sale_price_toggle then
+		refs.sale_price_toggle.state = state.config.sale_price_active == true
+	end
+	if refs.cooldowns_toggle then
+		refs.cooldowns_toggle.state = state.config.cooldowns_active == true
+	end
 	if refs.popularity_slider then
 		refs.popularity_slider.value = state.config.popularity_editor_value
 	end
@@ -71,6 +77,16 @@ function click.register(heist_tab)
 		end
 	)
 	ui.button(prod, "nc_tick_once", t("nightclub.action.production_tick"), actions.production_tick)
+	refs.sale_price_toggle = ui.toggle(
+		prod,
+		"nc_sale_price",
+		t("nightclub.action.sale_price_loop"),
+		actions.get_sale_price_loop_active(),
+		function(enabled)
+			actions.set_sale_price_loop(enabled)
+			click.refresh()
+		end
+	)
 
 	local safe = ui.group(heist_tab, t("nightclub.group.safe"), nil, nil, nil, nil, "nightclub")
 	ui.button(safe, "nc_safe_collect", t("nightclub.action.collect_safe"), actions.safe_collect)
@@ -95,6 +111,10 @@ function click.register(heist_tab)
 	ui.button(pop, "nc_pop_apply", t("nightclub.action.apply_popularity"), actions.apply_popularity_editor_value)
 	ui.button(pop, "nc_pop_max", t("nightclub.action.max_popularity"), function()
 		actions.set_popularity_max()
+		click.refresh()
+	end)
+	ui.button(pop, "nc_pop_min", t("nightclub.action.min_popularity"), function()
+		actions.set_popularity_min()
 		click.refresh()
 	end)
 	refs.popularity_lock_toggle = ui.toggle(
@@ -132,6 +152,19 @@ function click.register(heist_tab)
 
 	local teleport = ui.group(heist_tab, t("nightclub.group.teleport"), nil, nil, nil, nil, "nightclub")
 	ui.button(teleport, "nc_teleport", t("nightclub.action.teleport"), actions.teleport)
+	ui.button(teleport, "nc_computer_tp", t("nightclub.action.teleport_computer"), actions.teleport_computer)
+	ui.button(teleport, "nc_computer_open", t("nightclub.action.open_computer"), actions.open_computer)
+	ui.button(teleport, "nc_setup", t("nightclub.action.skip_setup"), actions.skip_setup)
+	refs.cooldowns_toggle = ui.toggle(
+		teleport,
+		"nc_cooldowns",
+		t("nightclub.action.kill_cooldowns"),
+		actions.get_cooldowns_active(),
+		function(enabled)
+			actions.set_cooldowns(enabled)
+			click.refresh()
+		end
+	)
 
 	click.refresh()
 	return heist_tab

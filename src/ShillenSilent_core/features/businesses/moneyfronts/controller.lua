@@ -6,7 +6,10 @@ local actions = require("ShillenSilent_core.features.businesses.moneyfronts.acti
 
 local controller = {
 	ctx = { syncing = false },
-	controls = {},
+	controls = {
+		front_heat = {},
+		front_lock = {},
+	},
 }
 
 local t = i18n.t
@@ -14,9 +17,10 @@ local t = i18n.t
 function controller.refresh_controls()
 	local ctx = controller.ctx
 	local controls = controller.controls
-	common.set_control_value(ctx, controls.location_combo, state.config.location_index)
-	common.set_control_value(ctx, controls.heat_number, state.config.heat_editor_value)
-	common.set_control_value(ctx, controls.heat_lock_toggle, state.flags.heat_lock_active == true)
+	for _, key in ipairs(data.front_keys) do
+		common.set_control_value(ctx, controls.front_heat[key], state.config.front_heat[key])
+		common.set_control_value(ctx, controls.front_lock[key], state.flags.front_heat_lock[key] == true)
+	end
 	return true
 end
 
@@ -28,60 +32,55 @@ function controller.register(parent_menu)
 	local ctx = controller.ctx
 	local controls = controller.controls
 
-	local root = parent_menu:submenu(t("feature.moneyfronts.name"))
-	root:breaker(t("feature.moneyfronts.name"))
-
-	local teleport = root:submenu(t("moneyfronts.group.teleport"))
-	local locations = data.localized_locations(t)
-	controls.location_combo = common.add_combo_options(
-		ctx,
-		teleport,
-		t("moneyfronts.field.location"),
-		locations,
-		function()
-			return state.config.location_index
-		end,
-		function(value)
-			state.set_location_index(value)
-			controller.refresh_controls()
+	for _, key in ipairs(data.front_keys) do
+		local loc = data.location_by_key(key)
+		local front = parent_menu:submenu(t(loc.heat_label_key))
+		common.add_button(front, t("moneyfronts.action.teleport_entrance"), function()
+			actions.teleport_front(key)
+		end)
+		common.add_button(front, t("moneyfronts.action.teleport_laptop"), function()
+			actions.teleport_laptop(key)
+		end)
+		if key == "car_wash" then
+			common.add_button(front, t("moneyfronts.action.collect_car_wash_safe"), actions.car_wash_collect_safe)
 		end
-	)
-	common.add_button(teleport, t("moneyfronts.action.teleport"), actions.teleport)
-
-	local heat = root:submenu(t("moneyfronts.group.heat"))
-	controls.heat_number = common.add_number_int(
-		ctx,
-		heat,
-		t("moneyfronts.field.heat"),
-		data.heat.min,
-		data.heat.max,
-		data.heat.step,
-		function()
-			return state.config.heat_editor_value
-		end,
-		function(value)
-			actions.set_heat_editor_value(value)
+		controls.front_heat[key] = common.add_number_int(
+			ctx,
+			front,
+			t("moneyfronts.field.heat"),
+			data.heat.min,
+			data.heat.max,
+			data.heat.step,
+			function()
+				return actions.get_front_heat_value(key)
+			end,
+			function(value)
+				actions.set_front_heat_value(key, value)
+				controller.refresh_controls()
+			end
+		)
+		common.add_button(front, t("moneyfronts.action.apply_heat"), function()
+			actions.apply_front_heat_value(key)
 			controller.refresh_controls()
-		end
-	)
-	common.add_button(heat, t("moneyfronts.action.apply_heat"), actions.apply_heat_editor_value)
-	common.add_button(heat, t("moneyfronts.action.set_heat_zero"), function()
-		actions.reset_heat()
-		controller.refresh_controls()
-	end)
-	controls.heat_lock_toggle = common.add_toggle(ctx, heat, t("moneyfronts.action.lock_heat_zero"), function()
-		return actions.get_heat_lock_active()
-	end, function(enabled)
-		actions.set_heat_lock_active(enabled)
-		controller.refresh_controls()
-	end)
-	common.add_button(heat, t("moneyfronts.action.reset_safe_production"), actions.reset_safe_production_state)
-
-	local tools = root:submenu(t("moneyfronts.group.tools"))
-	common.add_button(tools, t("moneyfronts.action.collect_car_wash_safe"), actions.car_wash_collect_safe)
+		end)
+		common.add_button(front, t("moneyfronts.action.max_heat"), function()
+			actions.max_front_heat(key)
+			controller.refresh_controls()
+		end)
+		common.add_button(front, t("moneyfronts.action.min_heat"), function()
+			actions.min_front_heat(key)
+			controller.refresh_controls()
+		end)
+		controls.front_lock[key] = common.add_toggle(ctx, front, t("moneyfronts.action.lock_heat"), function()
+			return actions.get_front_heat_lock_active(key)
+		end, function(enabled)
+			actions.set_front_heat_lock_active(key, enabled)
+			controller.refresh_controls()
+		end)
+	end
 
 	controller.refresh_controls()
-	return root
+	return parent_menu
 end
 
 return controller

@@ -19,6 +19,18 @@ return {
 			fn = "tick_fast_production",
 		},
 		{
+			id = "bunker.sale_price",
+			interval_ms = 1000,
+			module = "ShillenSilent_core.features.businesses.bunker.actions",
+			fn = "tick_sale_price",
+		},
+		{
+			id = "bunker.supplier",
+			interval_ms = 1000,
+			module = "ShillenSilent_core.features.businesses.bunker.actions",
+			fn = "tick_supplier",
+		},
+		{
 			id = "bunker.refresh_click_ui",
 			interval_ms = 250,
 			module = "ShillenSilent_core.features.businesses.bunker.click",

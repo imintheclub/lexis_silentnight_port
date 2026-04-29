@@ -1,5 +1,6 @@
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
@@ -470,23 +471,18 @@ function actions.apply_cuts(cuts_values, auto_force_cuts)
 	end
 
 	local cfg = config()
-	local p1 = data.clamp_cut(cuts_values.player1)
-	local p2 = data.clamp_cut(cuts_values.player2)
-	local p3 = data.clamp_cut(cuts_values.player3)
-	local p4 = data.clamp_cut(cuts_values.player4)
-	local host_global = 100 - (p1 + p2 + p3 + p4)
-	local cuts = cfg.globals.cuts
-	local ok = true
-
-	ok = safe_access.set_global_int(cuts.host_balance, host_global) and ok
-	ok = safe_access.set_global_int(cuts.player2_balance, p2) and ok
-	ok = safe_access.set_global_int(cuts.player3_balance, p3) and ok
-	ok = safe_access.set_global_int(cuts.player4_balance, p4) and ok
-
-	ok = safe_access.set_global_int(cuts.player1, p1) and ok
-	ok = safe_access.set_global_int(cuts.player2, p2) and ok
-	ok = safe_access.set_global_int(cuts.player3, p3) and ok
-	ok = safe_access.set_global_int(cuts.player4, p4) and ok
+	local ok = heist_cuts.write_apartment_globals({
+		player_keys = data.player_keys,
+		offsets = cfg.globals.cuts,
+		cuts = cuts_values,
+		enabled = {
+			player1 = true,
+			player2 = true,
+			player3 = true,
+			player4 = true,
+		},
+		clamp = data.clamp_cut,
+	})
 
 	if auto_force_cuts then
 		force_cut_ui_flow()

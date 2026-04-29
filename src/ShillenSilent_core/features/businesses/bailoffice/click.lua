@@ -39,6 +39,7 @@ function click.register(heist_tab, manifest)
 		end
 	)
 	ui.button(group, "bail_teleport", t("bailoffice.action.teleport"), actions.teleport)
+	ui.button(group, "bail_computer", t("bailoffice.action.teleport_computer"), actions.teleport_computer)
 	ui.button(group, "bail_safe_collect", t("bailoffice.action.collect_safe"), actions.collect_safe)
 	return heist_tab
 end

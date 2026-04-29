@@ -1,6 +1,7 @@
 -- luacheck: globals invoker util
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
 local offsets = require("ShillenSilent_core.data.offsets.resolver")
@@ -216,17 +217,13 @@ function actions.apply_cuts(cuts)
 
 	local cfg = config()
 	local cut_globals = cfg.globals and cfg.globals.cuts or {}
-	local values = {
-		state.cut_enabled.player1 and data.clamp_cut(state.cuts.player1) or 0,
-		state.cut_enabled.player2 and data.clamp_cut(state.cuts.player2) or 0,
-		state.cut_enabled.player3 and data.clamp_cut(state.cuts.player3) or 0,
-		state.cut_enabled.player4 and data.clamp_cut(state.cuts.player4) or 0,
-	}
-
-	local ok = true
-	for i = 1, #values do
-		ok = safe_access.set_global_int(cut_globals[i], values[i]) and ok
-	end
+	local ok = heist_cuts.write_player_globals({
+		player_keys = data.player_keys,
+		offsets = cut_globals,
+		cuts = state.cuts,
+		enabled = state.cut_enabled,
+		clamp = data.clamp_cut,
+	})
 
 	push(ok and "doomsday.notify.cuts_ok" or "doomsday.notify.cuts_failed", ok and 2000 or 2200)
 	return ok

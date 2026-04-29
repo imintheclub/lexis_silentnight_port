@@ -511,16 +511,23 @@ return {
 		blips = {
 			entrance = 900,
 		},
+		coords = {
+			computer = { x = 749.337, y = -995.654, z = -46.376, heading = 50.750 },
+		},
 		globals = {
 			safe_collect = 2708883,
 		},
 		stats = {
 			safe_cash_value = "HDEN24_SAFE_CASH_VALUE",
+			gen_bs = "HACKER24_GEN_BS",
 		},
 	},
 	bailoffice = {
 		blips = {
 			entrance = 893,
+		},
+		coords = {
+			computer = { x = 562.959, y = -2705.590, z = -48.997, heading = 31.983 },
 		},
 		globals = {
 			safe_collect = 2708868,
@@ -530,6 +537,19 @@ return {
 		},
 	},
 	moneyfronts = {
+		blips = {
+			car_wash = 931,
+			car_wash_hot = 933,
+			weed_shop = 925,
+			weed_shop_hot = 927,
+			heli_tours = 928,
+			heli_tours_hot = 930,
+		},
+		coords = {
+			car_wash = { x = 23.684, y = -1400.633, z = -73.999, heading = 357.518 },
+			weed_shop = { x = -1160.636, y = -1535.462, z = -48.994, heading = 180.271 },
+			heli_tours = { x = -1160.599, y = -1535.585, z = -48.999, heading = 177.268 },
+		},
 		stats = {
 			owned = {
 				car_wash = "SB_CAR_WASH_OWNED",
@@ -546,7 +566,11 @@ return {
 			stat_get_packed_int = 0x0BC900A27CBBAC55,
 		},
 		packed_stats = {
-			heat_indices = { 24924, 24925, 24926 },
+			heat_indices = {
+				car_wash = 24924,
+				weed_shop = 24925,
+				heli_tours = 24926,
+			},
 			character_slots = { 0, 1 },
 		},
 	},
@@ -581,6 +605,9 @@ return {
 		blips = {
 			entrance = 557,
 		},
+		coords = {
+			laptop = { x = 907.515, y = -3207.357, z = -97.187, heading = 245.099 },
+		},
 		stats = {
 			stock = "PRODTOTALFORFACTORY5",
 			owned = "FACTORYSLOT5",
@@ -598,6 +625,10 @@ return {
 			timer_root = 2708936 - ((6 - 1) * 2) - 1,
 		},
 		scripts = {
+			laptop = {
+				name = "appbunkerbusiness",
+				stack = 4592,
+			},
 			sell = {
 				name = "gb_gunrunning",
 				offset = 1268 + 774,
@@ -605,10 +636,20 @@ return {
 			},
 		},
 		tunables = {
+			xp_multiplier = "XP_MULTIPLIER",
+			sale_price = {
+				product_value = "GR_MANU_PRODUCT_VALUE",
+				staff_upgraded = "GR_MANU_PRODUCT_VALUE_STAFF_UPGRADE",
+				equipment_upgraded = "GR_MANU_PRODUCT_VALUE_EQUIPMENT_UPGRADE",
+			},
 			disable_raids = "BIKER_DISABLE_DEFEND_POLICE_RAID",
 			reminders = "BIKER_PRODUCT_REMINDER_COOLDOWN",
 		},
 		defaults = {
+			product_value = 5000,
+			staff_upgraded = 1000,
+			equipment_upgraded = 1000,
+			xp_multiplier = 1.0,
 			raids_default = 0,
 			raids_disabled = 1,
 			reminder_cooldown_disabled = 86400000,
@@ -618,6 +659,9 @@ return {
 	hangar = {
 		blips = {
 			entrance = 569,
+		},
+		coords = {
+			laptop = { x = -1239.059, y = -3001.454, z = -42.867, heading = 146.258 },
 		},
 		stats = {
 			owned = "HANGAR_OWNED",
@@ -633,6 +677,38 @@ return {
 			cargo_available = 36828,
 			character_slots = { 0, 1 },
 		},
+		globals = {
+			cargo_limit_base = 1845299 + 1 + 260 + 304 + 3,
+			cargo_limit_stride = 883,
+		},
+		scripts = {
+			laptop = {
+				name = "appsmuggler",
+				stack = 4592,
+			},
+			sell = {
+				name = "gb_smuggler",
+				delivered_offset = 1991 + 1078,
+				to_deliver_offset = 1991 + 1035,
+			},
+		},
+		tunables = {
+			xp_multiplier = "XP_MULTIPLIER",
+			price = "SMUG_SELL_PRICE_PER_CRATE_MIXED",
+			rons_cut = "SMUG_SELL_RONS_CUT",
+			cooldowns = {
+				{ name = "SMUG_STEAL_EASY_COOLDOWN_TIMER", default = 120000 },
+				{ name = "SMUG_STEAL_MED_COOLDOWN_TIMER", default = 180000 },
+				{ name = "SMUG_STEAL_HARD_COOLDOWN_TIMER", default = 240000 },
+				{ name = "SMUG_STEAL_ADDITIONAL_CRATE_COOLDOWN_TIME", default = 60000 },
+				{ name = "SMUG_SELL_SELL_COOLDOWN_TIMER", default = 180000 },
+			},
+		},
+		defaults = {
+			price = 30000,
+			rons_cut = 0.025,
+			xp_multiplier = 1.0,
+		},
 	},
 	speccargo = {
 		stats = {
@@ -647,7 +723,21 @@ return {
 			supply_last = 32363,
 			character_slots = { 0, 1 },
 		},
+		blips = {
+			office = 475,
+			warehouse = 473,
+		},
+		coords = {
+			computer = { x = -81.345, y = -802.471, z = 243.387, heading = 278.402 },
+		},
 		scripts = {
+			buy = {
+				name = "gb_contraband_buy",
+				amount_offset = 627 + 1,
+				finish1_offset = 627 + 5,
+				finish2_offset = 627 + 191,
+				finish3_offset = 627 + 192,
+			},
 			sell = {
 				name = "gb_contraband_sell",
 				timer_offset = 569 + 1,
@@ -657,10 +747,39 @@ return {
 			},
 		},
 		tunables = {
+			xp_multiplier = "XP_MULTIPLIER",
+			price_thresholds = {
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD1", default = 10000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD2", default = 11000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD3", default = 12000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD4", default = 13000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD5", default = 13500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD6", default = 14000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD7", default = 14500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD8", default = 15000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD9", default = 15500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD10", default = 16000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD11", default = 16500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD12", default = 17000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD13", default = 17500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD14", default = 17750 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD15", default = 18000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD16", default = 18250 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD17", default = 18500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD18", default = 18750 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD19", default = 19000 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD20", default = 19500 },
+				{ name = "EXEC_CONTRABAND_SALE_VALUE_THRESHOLD21", default = 20000 },
+			},
+			cooldowns = {
+				{ name = "EXEC_BUY_COOLDOWN", default = 300000 },
+				{ name = "EXEC_SELL_COOLDOWN", default = 1800000 },
+			},
 			disable_raids = "BIKER_DISABLE_DEFEND_POLICE_RAID",
 			reminders = "BIKER_PRODUCT_REMINDER_COOLDOWN",
 		},
 		defaults = {
+			xp_multiplier = 1.0,
 			raids_default = 0,
 			raids_disabled = 1,
 			reminder_cooldown_disabled = 86400000,
@@ -670,6 +789,9 @@ return {
 	nightclub = {
 		blips = {
 			entrance = 614,
+		},
+		coords = {
+			computer = { x = -1618.249, y = -3013.507, z = -75.205, heading = 257.431 },
 		},
 		stats = {
 			owned = "NIGHTCLUB_OWNED",
@@ -688,7 +810,38 @@ return {
 				last = 262145 + 23769,
 			},
 		},
+		natives = {
+			stat_set_packed_bool = 0xDB8A58AEAA67CD07,
+		},
+		packed_stats = {
+			setup = {
+				staff = 18161,
+				equipment = 22067,
+				dj = 22068,
+			},
+			character_slots = { 0, 1 },
+		},
+		scripts = {
+			laptop = {
+				name = "appbusinesshub",
+				stack = 4592,
+			},
+		},
 		tunables = {
+			price = {
+				weapons = "BB_BUSINESS_BASIC_VALUE_WEAPONS",
+				coke = "BB_BUSINESS_BASIC_VALUE_COKE",
+				meth = "BB_BUSINESS_BASIC_VALUE_METH",
+				weed = "BB_BUSINESS_BASIC_VALUE_WEED",
+				docs = "BB_BUSINESS_BASIC_VALUE_FORGED_DOCUMENTS",
+				cash = "BB_BUSINESS_BASIC_VALUE_COUNTERFEIT_CASH",
+				cargo = "BB_BUSINESS_BASIC_VALUE_CARGO",
+			},
+			cooldowns = {
+				{ name = "BB_CLUB_MANAGEMENT_CLUB_MANAGEMENT_MISSION_COOLDOWN", default = 300000 },
+				{ name = "BB_SELL_MISSIONS_MISSION_COOLDOWN", default = 300000 },
+				{ name = "BB_SELL_MISSIONS_DELIVERY_VEHICLE_COOLDOWN_AFTER_SELL_MISSION", default = 300000 },
+			},
 			disable_raids = "BIKER_DISABLE_DEFEND_POLICE_RAID",
 			reminders = "BIKER_PRODUCT_REMINDER_COOLDOWN",
 			accrue_by_target = {

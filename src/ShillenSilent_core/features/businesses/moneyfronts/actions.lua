@@ -1,8 +1,10 @@
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
 local offsets = require("ShillenSilent_core.data.offsets.resolver")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
+local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local data = require("ShillenSilent_core.features.businesses.moneyfronts.data")
 local state = require("ShillenSilent_core.features.businesses.moneyfronts.state")
 
@@ -16,187 +18,126 @@ local t = i18n.t
 
 local push = notify_core.feature("feature.moneyfronts.name")
 
-local function is_location_owned(loc)
-	local owned_stats = cfg().stats and cfg().stats.owned or {}
-	local owned_stat = loc and owned_stats[loc.key] or nil
-	if not owned_stat then
-		return false
-	end
-	local candidates = {
-		safe_access.stat_name(owned_stat),
-		"MPX_" .. owned_stat,
-		owned_stat,
-	}
-	for i = 1, #candidates do
-		local value = safe_access.get_stat_int(candidates[i], 0)
-		if value and value > 0 then
-			return true
-		end
-	end
-	return false
+local function read_packed_int(idx, slot)
+	local natives = cfg().natives or {}
+	return business_runtime.read_packed_int(idx, slot, natives.stat_get_packed_int)
 end
 
-local function pick_owned_location()
-	local selected = data.locations[state.config.location_index]
-	if selected and is_location_owned(selected) then
-		return selected
-	end
-	for i = 1, #data.locations do
-		if is_location_owned(data.locations[i]) then
-			return data.locations[i]
-		end
-	end
-	return nil
-end
-
-local function set_front_heat(value, silent)
-	local heat = data.clamp_heat(value)
+local function set_heat_for_key(key, value, silent)
 	local packed = cfg().packed_stats or {}
 	local natives = cfg().natives or {}
-	local any_ok = false
-
-	if invoker and invoker.call and natives.stat_set_packed_int then
-		for _, idx in ipairs(packed.heat_indices or {}) do
-			if type(idx) == "number" and idx >= 0 then
-				for _, slot in ipairs(packed.character_slots or {}) do
-					local ok = pcall(function()
-						invoker.call(natives.stat_set_packed_int, idx, heat, slot)
-					end)
-					any_ok = ok or any_ok
-				end
-			end
-		end
-	end
-
-	state.set_heat_editor_value(heat)
+	local idx = packed.heat_indices and packed.heat_indices[key]
+	local heat = data.clamp_heat(value)
+	local ok = business_runtime.write_packed_int(idx, heat, packed.character_slots, natives.stat_set_packed_int)
+	state.set_front_heat_value(key, heat)
 	if not silent then
-		push(any_ok and "moneyfronts.notify.heat_set" or "moneyfronts.notify.heat_failed", 2000, {
+		push(ok and "moneyfronts.notify.heat_set" or "moneyfronts.notify.heat_failed", 2000, {
 			value = tostring(heat),
 		})
 	end
-	return any_ok
+	return ok
 end
 
-local function read_packed_int(idx, slot)
-	local natives = cfg().natives or {}
-	if not (memory and invoker and invoker.call and memory.alloc_int and memory.read_int) then
-		return nil
+local function current_heat_for_key(key)
+	local packed = cfg().packed_stats or {}
+	local idx = packed.heat_indices and packed.heat_indices[key]
+	if type(idx) ~= "number" then
+		return state.config.front_heat[key] or 0
 	end
-
-	local buf = memory.alloc_int()
-	if not buf then
-		return nil
-	end
-
-	local value = nil
-	local ok_call = pcall(function()
-		invoker.call(natives.stat_get_packed_int, idx, buf, slot or 0)
-	end)
-	if ok_call then
-		local ok_read, read_value = pcall(memory.read_int, buf)
-		if ok_read then
-			value = tonumber(read_value)
-		end
-	end
-
-	if memory.free then
-		pcall(memory.free, buf)
-	elseif memory.free_int then
-		pcall(memory.free_int, buf)
-	end
-
-	return value
+	return read_packed_int(idx, 0) or state.config.front_heat[key] or 0
 end
 
-function actions.get_locations()
-	return data.locations
-end
-
-function actions.get_selected_loc()
-	return state.config.location_index
-end
-
-function actions.set_selected_loc(idx)
-	state.set_location_index(idx)
-end
-
-function actions.teleport()
-	local loc = pick_owned_location() or data.locations[state.config.location_index]
+function actions.teleport_front(key)
+	local loc = data.location_by_key(key)
 	if not loc then
+		return false
+	end
+	local blips = cfg().blips or {}
+	local heat = current_heat_for_key(key)
+	local blip = heat >= data.heat.max and blips[key .. "_hot"] or blips[key]
+	return blip_teleport.teleport_to_blip_with_job(
+		blip,
+		t("feature.moneyfronts.name"),
+		t("moneyfronts.notify.teleported", { location = t(loc.label_key) }),
+		t("moneyfronts.notify.entrance_missing"),
+		{
+			fallback_coords = loc,
+			fallback_message = t("moneyfronts.notify.teleported", { location = t(loc.label_key) }),
+		}
+	)
+end
+
+function actions.teleport_laptop(key)
+	local loc = data.location_by_key(key)
+	local coords = cfg().coords and cfg().coords[key]
+	if not (loc and coords) then
 		return false
 	end
 	return coords_teleport.run_coords_teleport(
 		t("feature.moneyfronts.name"),
-		t("moneyfronts.notify.teleported", { location = t(loc.label_key) }),
-		loc.x,
-		loc.y,
-		loc.z,
+		t("moneyfronts.notify.teleported_laptop", { location = t(loc.heat_label_key or loc.label_key) }),
+		coords.x,
+		coords.y,
+		coords.z,
 		false,
 		nil
 	)
 end
 
-function actions.get_heat_editor_value()
-	return state.config.heat_editor_value
+function actions.get_front_heat_value(key)
+	return state.config.front_heat[key] or data.heat.default
 end
 
-function actions.set_heat_editor_value(value)
-	state.set_heat_editor_value(value)
+function actions.set_front_heat_value(key, value)
+	state.set_front_heat_value(key, value)
+	return state.config.front_heat[key] or data.heat.default
 end
 
-function actions.apply_heat_editor_value()
-	return set_front_heat(state.config.heat_editor_value, false)
+function actions.apply_front_heat_value(key)
+	return set_heat_for_key(key, state.config.front_heat[key] or data.heat.default, false)
 end
 
-function actions.reset_heat()
-	return set_front_heat(0, false)
+function actions.max_front_heat(key)
+	state.set_front_heat_value(key, data.heat.max)
+	return set_heat_for_key(key, data.heat.max, false)
 end
 
-function actions.reset_safe_production_state()
-	local ok = set_front_heat(0, true)
-	push(
-		ok and "moneyfronts.notify.safe_production_reset_ok" or "moneyfronts.notify.safe_production_reset_failed",
-		2200
-	)
-	return ok
+function actions.min_front_heat(key)
+	state.set_front_heat_value(key, data.heat.min)
+	return set_heat_for_key(key, data.heat.min, false)
 end
 
-function actions.set_heat_lock_active(enabled, silent)
-	state.set_heat_lock_active(enabled == true)
-	if state.flags.heat_lock_active then
-		set_front_heat(0, true)
+function actions.set_front_heat_lock_active(key, enabled, silent)
+	state.set_front_heat_lock_active(key, enabled == true)
+	if state.flags.front_heat_lock[key] then
+		state.set_front_heat_value(key, current_heat_for_key(key))
 	end
 	if not silent then
 		push(
-			state.flags.heat_lock_active and "moneyfronts.notify.heat_lock_on" or "moneyfronts.notify.heat_lock_off",
+			state.flags.front_heat_lock[key] and "moneyfronts.notify.heat_lock_on" or "moneyfronts.notify.heat_lock_off",
 			2000
 		)
 	end
-	return state.flags.heat_lock_active
+	return state.flags.front_heat_lock[key]
 end
 
-function actions.get_heat_lock_active()
-	return state.flags.heat_lock_active == true
+function actions.get_front_heat_lock_active(key)
+	return state.flags.front_heat_lock[key] == true
 end
 
-function actions.tick_heat_lock()
-	if not state.flags.heat_lock_active then
-		return false
-	end
-
+function actions.tick_front_heat_locks()
 	local packed = cfg().packed_stats or {}
-	for _, idx in ipairs(packed.heat_indices or {}) do
-		if type(idx) == "number" and idx >= 0 then
-			for _, slot in ipairs(packed.character_slots or {}) do
-				local value = read_packed_int(idx, slot)
-				if value and value > data.heat.lock_threshold then
-					set_front_heat(0, true)
-					return true
-				end
+	local did_write = false
+	for _, key in ipairs(data.front_keys) do
+		if state.flags.front_heat_lock[key] then
+			local idx = packed.heat_indices and packed.heat_indices[key]
+			local value = state.config.front_heat[key] or data.heat.default
+			if type(idx) == "number" then
+				did_write = set_heat_for_key(key, value, true) or did_write
 			end
 		end
 	end
-	return false
+	return did_write
 end
 
 function actions.car_wash_collect_safe()
@@ -212,16 +153,6 @@ function actions.car_wash_collect_safe()
 	local ok = safe_access.set_global_bool(globals.car_wash_safe_collect, true)
 	push(ok and "moneyfronts.notify.car_wash_safe_ok" or "moneyfronts.notify.car_wash_safe_failed", 2000)
 	return ok
-end
-
-function actions.apply_current_state(silent)
-	state.set_location_index(state.config.location_index)
-	state.set_heat_editor_value(state.config.heat_editor_value)
-	actions.set_heat_lock_active(state.flags.heat_lock_active, true)
-	if not silent then
-		push("moneyfronts.notify.preset_state_applied", 2000)
-	end
-	return true
 end
 
 return actions

@@ -39,6 +39,8 @@ function click.register(heist_tab, manifest)
 		end
 	)
 	ui.button(group, "garment_teleport", t("garment.action.teleport_entrance"), actions.teleport)
+	ui.button(group, "garment_computer", t("garment.action.teleport_computer"), actions.teleport_computer)
+	ui.button(group, "garment_unbrick", t("garment.action.unbrick_computer"), actions.unbrick_computer)
 	ui.button(group, "garment_safe_collect", t("garment.action.collect_safe"), actions.collect_safe)
 	return heist_tab
 end

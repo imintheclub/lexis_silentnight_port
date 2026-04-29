@@ -1,5 +1,6 @@
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
@@ -254,12 +255,13 @@ end
 
 function actions.apply_cuts()
 	local c = cfg()
-	local ok = true
-	for player_key, offset in pairs(c.globals.cuts) do
-		local enabled = state.cut_enabled[player_key]
-		local cut = enabled and state.cuts[player_key] or 0
-		ok = safe_access.set_global_int(offset, data.clamp_cut(cut)) and ok
-	end
+	local ok = heist_cuts.write_player_globals({
+		player_keys = data.player_keys,
+		offsets = c.globals.cuts,
+		cuts = state.cuts,
+		enabled = state.cut_enabled,
+		clamp = data.clamp_cut,
+	})
 	push(ok and "cayo.notify.cuts_ok" or "cayo.notify.cuts_failed", 2000)
 	return ok
 end

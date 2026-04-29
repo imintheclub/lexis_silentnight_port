@@ -17,6 +17,8 @@ data.theme_modes = {
 	{ label_key = "info.theme.dracula", value = "dracula" },
 	{ label_key = "info.theme.google_dark", value = "google_dark" },
 	{ label_key = "info.theme.google_light", value = "google_light" },
+	{ label_key = "info.theme.github_light", value = "github_light" },
+	{ label_key = "info.theme.flexoki_light", value = "flexoki_light" },
 	{ label_key = "info.theme.gruvbox", value = "gruvbox" },
 	{ label_key = "info.theme.nord", value = "nord" },
 	{ label_key = "info.theme.material", value = "material" },
@@ -27,6 +29,8 @@ data.theme_modes = {
 	{ label_key = "info.theme.everforest", value = "everforest" },
 	{ label_key = "info.theme.ayu", value = "ayu" },
 	{ label_key = "info.theme.synthwave84", value = "synthwave84" },
+	{ label_key = "info.theme.kanagawa", value = "kanagawa" },
+	{ label_key = "info.theme.solarized_dark", value = "solarized_dark" },
 }
 
 data.languages = i18n.languages

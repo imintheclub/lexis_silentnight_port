@@ -2,6 +2,7 @@ local config = require("ShillenSilent_core.ui.click.config")
 
 local state = {
 	fonts = {},
+	images = {},
 	logo = nil,
 	font_load_attempted = false,
 	active_dropdown = nil,

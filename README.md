@@ -1,7 +1,5 @@
 # ShillenSilent
 ShillenSilent is a Lexis Lua script for GTA V heist and business-management workflows. It provides a custom click UI and a controller-friendly menu mode for managing heist setups, payout cuts, prep state, teleports, cooldowns, business production, safe collection, and related quality-of-life actions.
-
-## What It Does
 - Heist tools for Cayo Perico, Casino, Doomsday, Apartment, Agency, Auto Shop, Salvage Yard, Cluckin Bell, and KnoWay workflows.
 - Business tools for Acid Lab, Bunker, Hangar, Special Cargo, Nightclub, MC businesses, Arcade, Garment Factory, Bail Office, and Money Fronts.
 - Prep, reset, force-ready, solo-launch, instant-finish, cut, max-payout, cooldown, cutscene-skip, and teleport actions where supported.
@@ -9,8 +7,37 @@ ShillenSilent is a Lexis Lua script for GTA V heist and business-management work
 - Persistent settings for UI mode, theme, language.
 - Internationalized UI.
 
+
+## Screenshots
+### Controller UI
+<img width="455" height="641" alt="image" src="https://github.com/user-attachments/assets/45286189-c95c-4316-921f-143f95bdb740" />
+
+<img width="499" height="677" alt="image" src="https://github.com/user-attachments/assets/4c95d23b-24d5-49c9-8486-85c8f113fa8e" />
+
+
+### Click UI
+<img width="1408" height="873" alt="image" src="https://github.com/user-attachments/assets/415bf56d-4d52-4032-bda6-bb2b07707662" />
+
+<img width="534" height="1145" alt="image" src="https://github.com/user-attachments/assets/2b5ab75f-41c4-4887-99d3-5f929da3b9e1" />
+
+<img width="1480" height="914" alt="image" src="https://github.com/user-attachments/assets/86b8971f-56d9-416b-9d6e-003c24c81a10" />
+
+<img width="1404" height="839" alt="image" src="https://github.com/user-attachments/assets/ef759aeb-1997-4385-a9dd-f30ac1f30025" />
+
+<img width="1333" height="1060" alt="image" src="https://github.com/user-attachments/assets/2cab64a9-fb1b-4e08-8759-32028886cb76" />
+
+<img width="1518" height="1142" alt="image" src="https://github.com/user-attachments/assets/aa573f49-ad21-431e-b60d-b68f0d4b0b76" />
+
+<img width="2218" height="1219" alt="image" src="https://github.com/user-attachments/assets/f3d5c361-4dba-4c4b-8566-8ec06aaaee67" />
+
+<img width="3381" height="1332" alt="image" src="https://github.com/user-attachments/assets/375034a7-3a84-4bfb-8967-9be253b853ae" />
+
+<img width="1345" height="1036" alt="image" src="https://github.com/user-attachments/assets/f562dd19-1535-493b-abfe-ed79278d983f" />
+
+
+
 ## Install
-1. Download the latest release file from the release page and unzip it. You will see a folder called `src/`.
+1. Download the latest release file from the [release page](https://github.com/imintheclub/lexis_silentnight_port/releases) and unzip it. You will see a folder called `src/`.
 2. Press `Windows + R` and type `%USERPROFILE%/Lexis/Grand Theft Auto V/Scripts` and press Enter.
 3. Copy ***the contents*** of the `src` folder (not the WHOLE `src` FOLDER ITSELF) into that `Scripts` folder.
 4. Load `ShillenSilent.lua` from Lexis scripts.

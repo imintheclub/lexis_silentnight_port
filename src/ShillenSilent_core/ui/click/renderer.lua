@@ -672,6 +672,36 @@ local function render_card(x, y, w, h, bg_col, border_col, rounding)
 	render_outline(x, y, w, h, border_col or config.colors.border, 1, r)
 end
 
+local function render_background_tile(x, y, w, h)
+	local image = state.images and state.images.background_tile
+	if not image or not gui.image then
+		return
+	end
+
+	local image_scale = image.scale
+	local tile_w = image_scale and image_scale.x
+	local tile_h = image_scale and image_scale.y
+	if not tile_w or not tile_h or tile_w <= 0 or tile_h <= 0 then
+		return
+	end
+
+	local ox, oy = state._frame_ox, state._frame_oy
+	local alpha = config.background_tile_alpha or 255
+	local tint = color(255, 255, 255, math.floor(alpha * state.animation.progress))
+
+	gui.push_clip(vec(x + ox, y + oy), vec(w, h))
+	local draw_y = y
+	while draw_y < y + h do
+		local draw_x = x
+		while draw_x < x + w do
+			gui.image(image, vec(snap(draw_x + ox), snap(draw_y + oy)), image_scale, tint)
+			draw_x = draw_x + tile_w
+		end
+		draw_y = draw_y + tile_h
+	end
+	gui.pop_clip()
+end
+
 local function button_variant_for(btn)
 	if btn.color == "green" then
 		return "success"
@@ -2144,6 +2174,7 @@ ui.render = function()
 		config.colors.border_strong,
 		config.radius.xl
 	)
+	render_background_tile(config.origin_x, bodyY, config.menu_width, bodyH)
 	render_background_watermarks(header_h, dynamicBodyH)
 
 	-- Bottom-right corner grip to indicate draggable resize area.

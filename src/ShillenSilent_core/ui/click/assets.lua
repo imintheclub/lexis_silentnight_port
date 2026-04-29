@@ -31,6 +31,13 @@ function assets.ensure_assets()
 			break
 		end
 	end
+
+	if config.background_tile_path and config.background_tile_path ~= "" then
+		local status, image = pcall(gui.load_image, config.background_tile_path)
+		if status and image then
+			state.images.background_tile = image
+		end
+	end
 end
 
 return assets

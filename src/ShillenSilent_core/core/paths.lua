@@ -12,6 +12,7 @@ end
 paths_core.script_path = script_path
 paths_core.core_dir = script_path("\\ShillenSilent_core")
 paths_core.fonts_dir = paths_core.core_dir .. "\\fonts"
+paths_core.img_dir = paths_core.core_dir .. "\\img"
 paths_core.preset_dir = script_path("\\ShillenSilent_HeistPresets")
 paths_core.config_path = paths_core.core_dir .. "\\config.json"
 
@@ -21,6 +22,9 @@ function paths_core.ensure()
 	end
 	if not dirs.exists(paths_core.fonts_dir) then
 		dirs.create(paths_core.fonts_dir)
+	end
+	if not dirs.exists(paths_core.img_dir) then
+		dirs.create(paths_core.img_dir)
 	end
 	if not dirs.exists(paths_core.preset_dir) then
 		dirs.create(paths_core.preset_dir)

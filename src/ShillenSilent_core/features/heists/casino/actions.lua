@@ -1,6 +1,7 @@
 local core_state = require("ShillenSilent_core.shared.runtime_state")
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
@@ -301,7 +302,15 @@ function actions.reset_preps()
 end
 
 function actions.skip_arcade_setup()
-	local ok = safe_access.set_stat_bool(cfg().stats.arcade_setup_done, true)
+	local c = cfg()
+	local packed = c.packed_stats or {}
+	local natives = c.natives or {}
+	local ok = business_runtime.write_packed_bool(
+		packed.arcade_setup_done,
+		true,
+		packed.character_slots,
+		natives.stat_set_packed_bool
+	)
 	tool_push(ok and "casino.notify.arcade_setup_ok" or "casino.notify.arcade_setup_failed", 2000)
 	return ok
 end
@@ -459,15 +468,66 @@ local function solo_launch_setup()
 	if not is_finale or is_finale ~= 1 then
 		return false
 	end
-	local approach = safe_access.get_mp_stat_int(c.stats.approach, nil)
+	local approach = safe_access.get_active_mp_stat_int(c.stats.approach, nil)
 	if not approach then
 		return false
 	end
-	if approach == 2 and not safe_access.set_global_int_variants(c.globals.big_con_approach, 3) then
-		return false
+	local target = safe_access.get_active_mp_stat_int(c.stats.target, state.config.target)
+	local hard_approach = safe_access.get_active_mp_stat_int(c.stats.hard_approach, 0)
+	local data_globals = c.globals.finale_data or {}
+	local hard_mode = approach == hard_approach and approach ~= 0
+	local ok = true
+	ok = safe_access.set_global_int_variants(data_globals.target, target) and ok
+	ok = safe_access.set_global_int_variants(data_globals.cameras, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.patrol, 1) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.guards,
+		safe_access.get_active_mp_stat_int(c.stats.disrupt_shipments, state.config.disrupt_shipments)
+	) and ok
+	ok = safe_access.set_global_int_variants(data_globals.nvds, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.drills, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.unknown, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.buyer, math.random(6, 8)) and ok
+	ok = safe_access.set_global_int_variants(data_globals.decoy, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.getaway, 1) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.gunman,
+		safe_access.get_active_mp_stat_int(c.stats.crew_weapon, state.config.crew_weapon)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.weapons,
+		safe_access.get_active_mp_stat_int(c.stats.weapons, state.config.loadout_slot - 1)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.driver,
+		safe_access.get_active_mp_stat_int(c.stats.crew_driver, state.config.crew_driver)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.vehicles,
+		safe_access.get_active_mp_stat_int(c.stats.vehicles, state.config.vehicle_slot - 1)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.hacker,
+		safe_access.get_active_mp_stat_int(c.stats.crew_hacker, state.config.crew_hacker)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.keycards,
+		safe_access.get_active_mp_stat_int(c.stats.key_levels, state.config.key_levels)
+	) and ok
+	ok = safe_access.set_global_int_variants(data_globals.exit, 1) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.masks,
+		safe_access.get_active_mp_stat_int(c.stats.masks, state.config.masks)
+	) and ok
+	if approach == 2 then
+		ok = safe_access.set_global_int_variants(data_globals.van, 3) and ok
 	end
-	local target = safe_access.get_mp_stat_int(c.stats.target, 0)
-	return safe_access.set_global_int_variants(c.globals.finale_target, target)
+	ok = safe_access.set_global_int_variants(data_globals.infested, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.bitset, 2047) and ok
+	ok = safe_access.set_global_int_variants(data_globals.gear, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.hard_mode, hard_mode and 1 or 0) and ok
+	ok = safe_access.set_global_int(c.globals.difficulty, hard_mode and 2 or 1) and ok
+	return ok
 end
 
 local function solo_launch_reset()

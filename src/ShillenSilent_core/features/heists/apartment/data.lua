@@ -72,6 +72,14 @@ data.heist_ids = {
 	pacific_standard = "zCxFg29teE2ReKGnr0L4Bg",
 }
 
+data.heist_options = {
+	{ name = "Fleeca Job", value = "fleeca" },
+	{ name = "Prison Break", value = "prison_break" },
+	{ name = "Humane Labs Raid", value = "humane_labs" },
+	{ name = "Series A Funding", value = "series_a" },
+	{ name = "Pacific Standard", value = "pacific_standard" },
+}
+
 data.preps = {
 	fleeca = {
 		rcont_ids = { -1072870761, "hK5OgJk1BkinXGGXghhTMg", "V7yEdnL6TEyU3i-U1Rv_pQ" },
@@ -202,6 +210,16 @@ end
 
 function data.clamp_cut_preset_index(value)
 	return number_helpers.clamp_int(value, 1, #data.cut_preset_options, #data.cut_preset_options)
+end
+
+function data.resolve_heist_key(value, fallback)
+	local candidate = tostring(value or "")
+	for i = 1, #data.heist_options do
+		if data.heist_options[i].value == candidate then
+			return candidate
+		end
+	end
+	return fallback or data.heist_options[1].value
 end
 
 return data

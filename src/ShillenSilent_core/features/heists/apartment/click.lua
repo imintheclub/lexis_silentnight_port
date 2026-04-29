@@ -36,6 +36,9 @@ function click.refresh()
 	if refs.preset_dropdown then
 		refs.preset_dropdown.value = data.clamp_cut_preset_index(state.flags.cut_preset_index)
 	end
+	if refs.heist_dropdown then
+		refs.heist_dropdown.value = data.option_index_by_value(data.heist_options, state.config.selected_heist, 1)
+	end
 
 	for i = 1, #data.player_keys do
 		local key = data.player_keys[i]
@@ -115,6 +118,16 @@ function click.register(heist_tab)
 	ui.button(launch, "apartment_redraw_board", t("apartment.action.redraw_board"), actions.redraw_board)
 
 	local preps = ui.group(heist_tab, t("apartment.group.preps"), nil, nil, nil, nil, "apartment")
+	refs.heist_dropdown = ui.dropdown(
+		preps,
+		"apartment_heist",
+		t("apartment.group.preps"),
+		data.option_names(data.heist_options),
+		data.option_index_by_value(data.heist_options, state.config.selected_heist, 1),
+		function(opt)
+			state.set_selected_heist(data.option_value_by_name(data.heist_options, opt, state.config.selected_heist))
+		end
+	)
 	ui.button(preps, "apartment_complete_preps", t("apartment.action.complete_preps"), actions.complete_preps)
 	ui.button(preps, "apartment_change_session", t("apartment.action.change_session"), actions.change_session)
 

@@ -8,6 +8,12 @@ return {
 			rank_value = 10,
 		},
 	},
+	session = {
+		globals = {
+			switch = 1574589,
+			quit = 1574589 + 2,
+		},
+	},
 	apartment = {
 		globals = {
 			ready = {
@@ -198,8 +204,32 @@ return {
 		globals = {
 			buyer = { ee = 1973231 + 1497 + 1019, legacy = 1971952 + 1497 + 1019 },
 			finale_flag = { ee = 2685153 + 21, legacy = 2685150 + 21 },
-			finale_target = { ee = 1973197 + 1, legacy = 1971918 + 1 },
-			big_con_approach = { ee = 1973197 + 22, legacy = 1971918 + 22 },
+			difficulty = 4718592 + 3538,
+			finale_data = {
+				target = { ee = 1973197 + 1, legacy = 1971918 + 1 },
+				cameras = { ee = 1973197 + 2, legacy = 1971918 + 2 },
+				patrol = { ee = 1973197 + 3, legacy = 1971918 + 3 },
+				guards = { ee = 1973197 + 4, legacy = 1971918 + 4 },
+				nvds = { ee = 1973197 + 5, legacy = 1971918 + 5 },
+				drills = { ee = 1973197 + 6, legacy = 1971918 + 6 },
+				unknown = { ee = 1973197 + 7, legacy = 1971918 + 7 },
+				buyer = { ee = 1973197 + 8, legacy = 1971918 + 8 },
+				decoy = { ee = 1973197 + 10, legacy = 1971918 + 10 },
+				getaway = { ee = 1973197 + 11, legacy = 1971918 + 11 },
+				gunman = { ee = 1973197 + 13, legacy = 1971918 + 13 },
+				weapons = { ee = 1973197 + 14, legacy = 1971918 + 14 },
+				driver = { ee = 1973197 + 15, legacy = 1971918 + 15 },
+				vehicles = { ee = 1973197 + 16, legacy = 1971918 + 16 },
+				hacker = { ee = 1973197 + 17, legacy = 1971918 + 17 },
+				keycards = { ee = 1973197 + 18, legacy = 1971918 + 18 },
+				exit = { ee = 1973197 + 20, legacy = 1971918 + 20 },
+				masks = { ee = 1973197 + 21, legacy = 1971918 + 21 },
+				van = { ee = 1973197 + 22, legacy = 1971918 + 22 },
+				infested = { ee = 1973197 + 24, legacy = 1971918 + 24 },
+				bitset = { ee = 1973197 + 25, legacy = 1971918 + 25 },
+				gear = { ee = 1973197 + 26, legacy = 1971918 + 26 },
+				hard_mode = { ee = 1973197 + 27, legacy = 1971918 + 27 },
+			},
 			cuts = {
 				host = { ee = 1973231 + 1497 + 736 + 92 + 1, legacy = 1971952 + 1497 + 736 + 92 + 1 },
 				player2 = { ee = 1973231 + 1497 + 736 + 92 + 2, legacy = 1971952 + 1497 + 736 + 92 + 2 },
@@ -242,7 +272,13 @@ return {
 			vehicles_used = "H3_VEHICLESUSED",
 			completed_posix = "H3_COMPLETEDPOSIX",
 			cooldown = "MPPLY_H3_COOLDOWN",
+		},
+		packed_stats = {
 			arcade_setup_done = 27227,
+			character_slots = "active",
+		},
+		natives = {
+			stat_set_packed_bool = 0xDB8A58AEAA67CD07,
 		},
 		scripts = {
 			controller = "fm_mission_controller",
@@ -289,7 +325,7 @@ return {
 				{ "H3OPT_BITSET1", 0 },
 				{ "H3_PARTIALPASS", 0 },
 				{ "CAS_HEIST_NOTS", 0 },
-				{ "CAS_HEIST_FLOW", -1 },
+				{ "CAS_HEIST_FLOW", 0 },
 				{ "H3_LAST_APPROACH", 0 },
 				{ "H3_HARD_APPROACH", 0 },
 				{ "H3_SKIPCOUNT", 0 },
@@ -572,7 +608,7 @@ return {
 				weed_shop = 24925,
 				heli_tours = 24926,
 			},
-			character_slots = { 0, 1 },
+			character_slots = "active",
 		},
 	},
 	acidlab = {
@@ -676,7 +712,7 @@ return {
 		},
 		packed_stats = {
 			cargo_available = 36828,
-			character_slots = { 0, 1 },
+			character_slots = "active",
 		},
 		globals = {
 			cargo_limit_base = {
@@ -726,7 +762,7 @@ return {
 		packed_stats = {
 			supply_first = 32359,
 			supply_last = 32363,
-			character_slots = { 0, 1 },
+			character_slots = "active",
 		},
 		blips = {
 			office = 475,
@@ -746,7 +782,7 @@ return {
 			sell = {
 				name = "gb_contraband_sell",
 				timer_offset = { ee = 569 + 1, legacy = 567 + 1 },
-				timer_value = 67230,
+				timer_value = 99999,
 				state_offset = { ee = 569 + 7, legacy = 567 + 7 },
 				state_value = 7,
 			},
@@ -806,13 +842,26 @@ return {
 			safe_pay_time_left = "CLUB_PAY_TIME_LEFT",
 		},
 		limits = {
-			safe_max = 250000,
+			safe_max = 300000,
 		},
 		globals = {
 			safe_collect = 2708832,
+			safe_value = {
+				ee = 1845299 + 1 + 260 + 364 + 5,
+				legacy = 1845250 + 1 + 260 + 364 + 5,
+				ee_stride = 883,
+				legacy_stride = 880,
+			},
 			safe_top_range = {
 				first = { ee = 262145 + 23750, legacy = 262145 + 23746 },
 				last = { ee = 262145 + 23769, legacy = 262145 + 23765 },
+			},
+		},
+		locals = {
+			safe = {
+				script = "am_mp_nightclub",
+				type = { ee = 208 + 32 + 2, legacy = 206 + 32 + 2 },
+				collect = { ee = 208 + 32 + 19 + 1, legacy = 206 + 32 + 19 + 1 },
 			},
 		},
 		natives = {
@@ -824,7 +873,7 @@ return {
 				equipment = 22067,
 				dj = 22068,
 			},
-			character_slots = { 0, 1 },
+			character_slots = "active",
 		},
 		scripts = {
 			laptop = {
@@ -847,6 +896,7 @@ return {
 				{ name = "BB_SELL_MISSIONS_MISSION_COOLDOWN", default = 300000 },
 				{ name = "BB_SELL_MISSIONS_DELIVERY_VEHICLE_COOLDOWN_AFTER_SELL_MISSION", default = 300000 },
 			},
+			safe_max_capacity = "NIGHTCLUBMAXSAFEVALUE",
 			disable_raids = "BIKER_DISABLE_DEFEND_POLICE_RAID",
 			reminders = "BIKER_PRODUCT_REMINDER_COOLDOWN",
 			accrue_by_target = {
@@ -1065,7 +1115,9 @@ return {
 				"SALV23_SCOPE_BS",
 				"SALV23_FM_PROG",
 			},
-			cooldown = "SALV23_CFR_COOLDOWN",
+		},
+		tunables = {
+			cooldown = "SALV23_CFR_COOLDOWN_TIME",
 		},
 		finish = {
 			script = "fm_mission_controller_2020",

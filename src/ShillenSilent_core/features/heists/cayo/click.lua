@@ -315,6 +315,8 @@ function click.register(heist_tab)
 		false,
 		"danger"
 	)
+	ui.button(danger, "cayo_go_offline", t("cayo.action.go_offline"), actions.go_offline, nil, false, "danger")
+	ui.button(danger, "cayo_go_online", t("cayo.action.go_online"), actions.go_online, nil, false, "danger")
 
 	local in_residence = ui.group(heist_tab, t("cayo.group.teleport_in_residence"), nil, nil, nil, nil, "cayo")
 	ui.button(in_residence, "cayo_tp_target", t("cayo.teleport.main_target"), actions.teleport_main_target)

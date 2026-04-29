@@ -1,5 +1,6 @@
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
@@ -205,7 +206,7 @@ function actions.get_max_payout_cut()
 
 		cut = cut + 1
 		final_payout = math.floor(payout * (cut / 100))
-		if cut > 500 then
+		if cut > data.cuts.max then
 			cut = initial_cut
 			final_payout = math.floor(payout * (cut / 100))
 			difference = difference + 1000
@@ -363,6 +364,20 @@ end
 function actions.remove_cooldown_team()
 	local ok = remove_cooldown(data.cooldown_posix.team)
 	tool_push(ok and "cayo.notify.cooldown_team_ok" or "cayo.notify.cooldown_failed", 2000)
+	return ok
+end
+
+function actions.go_offline()
+	local globals = offsets.session and offsets.session.globals or {}
+	local ok = safe_access.set_global_int(globals.switch, 1)
+	ok = safe_access.set_global_int(globals.quit, -1) and ok
+	tool_push(ok and "cayo.notify.offline_ok" or "cayo.notify.offline_failed", ok and 2000 or 2800)
+	return ok
+end
+
+function actions.go_online()
+	local ok = business_runtime.start_invite_only_session()
+	tool_push(ok and "cayo.notify.online_ok" or "cayo.notify.online_failed", ok and 2000 or 2800)
 	return ok
 end
 
@@ -540,6 +555,8 @@ actions.cayo_bypass_drainage_pipe = actions.bypass_drainage_pipe
 actions.cayo_reload_planning_screen = actions.reload_planning_screen
 actions.cayo_remove_cooldown = actions.remove_cooldown
 actions.cayo_remove_cooldown_team = actions.remove_cooldown_team
+actions.cayo_go_offline = actions.go_offline
+actions.cayo_go_online = actions.go_online
 actions.cayo_instant_finish = actions.instant_finish
 actions.cayo_teleport_residence = actions.teleport_residence
 actions.cayo_teleport_main_target = actions.teleport_main_target

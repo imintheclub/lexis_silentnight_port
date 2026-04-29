@@ -8,7 +8,7 @@ data.safe_payout_target = 3619000
 
 data.cuts = {
 	min = 0,
-	max = 300,
+	max = 999,
 	step = 5,
 	defaults = {
 		host = 100,

@@ -45,10 +45,10 @@ data.locations = {
 
 data.popularity = {
 	min = 0,
-	max = 1000,
-	default = 1000,
-	step = 10,
-	lock_tolerance = 50,
+	max = 100,
+	default = 100,
+	step = 1,
+	stat_multiplier = 10,
 }
 
 function data.status_label_key(status)
@@ -89,6 +89,18 @@ end
 
 function data.clamp_popularity(value)
 	return number_helpers.clamp_int(value, data.popularity.min, data.popularity.max, data.popularity.default)
+end
+
+function data.popularity_to_stat(value)
+	return data.clamp_popularity(value) * data.popularity.stat_multiplier
+end
+
+function data.popularity_from_stat(value)
+	local raw = tonumber(value)
+	if not raw then
+		return data.popularity.default
+	end
+	return data.clamp_popularity(math.floor((raw / data.popularity.stat_multiplier) + 0.5))
 end
 
 function data.localized_options(options, t)

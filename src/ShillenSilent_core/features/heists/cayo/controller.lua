@@ -275,6 +275,8 @@ local function add_danger(root)
 	danger:breaker(t("cayo.warning.use_with_caution"))
 	common.add_button(danger, t("cayo.action.skip_cooldown_solo"), actions.remove_cooldown)
 	common.add_button(danger, t("cayo.action.skip_cooldown_team"), actions.remove_cooldown_team)
+	common.add_button(danger, t("cayo.action.go_offline"), actions.go_offline)
+	common.add_button(danger, t("cayo.action.go_online"), actions.go_online)
 end
 
 function controller.register(parent_menu)

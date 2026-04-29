@@ -5,6 +5,15 @@ local actions = require("ShillenSilent_core.features.heists.casino.actions")
 
 local presets = {}
 
+local function legacy_value(options, index, fallback)
+	local legacy_index = tonumber(index)
+	if legacy_index == nil then
+		return fallback
+	end
+	local option = options[math.floor(legacy_index) + 1]
+	return option and option.value or fallback
+end
+
 local function collect_player(player_key)
 	return {
 		enabled = state.cut_enabled[player_key] and true or false,
@@ -57,11 +66,33 @@ function presets.apply(payload)
 	state.config.key_levels = data.resolve_option_value(options.keycards, payload.keycards, state.config.key_levels)
 	state.config.target = data.resolve_option_value(options.targets, payload.target, state.config.target)
 
+	if payload.presets ~= nil then
+		state.config.difficulty = legacy_value(options.difficulties, payload.difficulty, state.config.difficulty)
+		state.config.approach = legacy_value(options.approaches, payload.approach, state.config.approach)
+		state.config.crew_weapon = legacy_value(options.gunmen, payload.gunman, state.config.crew_weapon)
+		state.config.crew_driver = legacy_value(options.drivers, payload.driver, state.config.crew_driver)
+		state.config.crew_hacker = legacy_value(options.hackers, payload.hacker, state.config.crew_hacker)
+		state.config.masks = legacy_value(options.masks, payload.masks, state.config.masks)
+		state.config.disrupt_shipments = legacy_value(options.guards, payload.guards, state.config.disrupt_shipments)
+		state.config.key_levels = legacy_value(options.keycards, payload.keycards, state.config.key_levels)
+		state.config.target = legacy_value(options.targets, payload.target, state.config.target)
+	end
+
 	if payload.loadout ~= nil then
 		state.config.loadout_slot = data.clamp_int(payload.loadout, 1, 6, state.config.loadout_slot)
 	end
 	if payload.vehicles ~= nil then
 		state.config.vehicle_slot = data.clamp_int(payload.vehicles, 1, 4, state.config.vehicle_slot)
+	end
+	if payload.presets ~= nil then
+		if payload.loadout ~= nil then
+			state.config.loadout_slot =
+				data.clamp_int((tonumber(payload.loadout) or 0) + 1, 1, 6, state.config.loadout_slot)
+		end
+		if payload.vehicles ~= nil then
+			state.config.vehicle_slot =
+				data.clamp_int((tonumber(payload.vehicles) or 0) + 1, 1, 4, state.config.vehicle_slot)
+		end
 	end
 	state.clamp_loadout_slot()
 	state.clamp_vehicle_slot()

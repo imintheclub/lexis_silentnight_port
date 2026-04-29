@@ -10,7 +10,7 @@ data.multiplier = {
 	step = 0.1,
 }
 data.sell_value = {
-	default = data.max_transaction,
+	default = 0,
 	min = 0,
 	max = data.max_transaction,
 	step = 100000,

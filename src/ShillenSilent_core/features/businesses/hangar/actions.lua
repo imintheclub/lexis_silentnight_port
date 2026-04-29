@@ -140,6 +140,7 @@ function actions.fill_cargo()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
+	local was_active = state.config.sale_price_active == true
 	state.set_sale_price_active(enabled == true)
 	if not state.config.sale_price_active then
 		local ok = restore_sale_price()
@@ -147,6 +148,9 @@ function actions.set_sale_price_loop(enabled, silent)
 			push(ok and "hangar.notify.sale_price_off" or "hangar.notify.sale_price_failed", 2000)
 		end
 		return false
+	end
+	if not was_active then
+		business_runtime.start_invite_only_session()
 	end
 	local ok = apply_sale_price()
 	if not silent then
@@ -179,7 +183,7 @@ function actions.get_no_xp()
 end
 
 function actions.set_supplier_loop(enabled, silent)
-	state.set_supplier_active(enabled == true)
+	state.set_supplier_active(enabled == true and not state.config.pocket_active)
 	if not silent then
 		push(state.config.supplier_active and "hangar.notify.supplier_on" or "hangar.notify.supplier_off", 2000)
 	end
@@ -203,7 +207,9 @@ end
 
 function actions.set_pocket_active(enabled, silent)
 	state.set_pocket_active(enabled == true)
-	if not state.config.pocket_active then
+	if state.config.pocket_active then
+		state.set_supplier_active(false)
+	elseif not state.config.pocket_active then
 		state.set_fill_active(false)
 	end
 	if not silent then

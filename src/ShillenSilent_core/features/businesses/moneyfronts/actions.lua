@@ -44,12 +44,25 @@ local function current_heat_for_key(key)
 	if type(idx) ~= "number" then
 		return state.config.front_heat[key] or 0
 	end
-	return read_packed_int(idx, 0) or state.config.front_heat[key] or 0
+	return read_packed_int(idx, business_runtime.active_character_slot()) or state.config.front_heat[key] or 0
+end
+
+function actions.is_front_available(key)
+	local stats = cfg().stats or {}
+	local stat_name = stats.owned and stats.owned[key]
+	if not stat_name then
+		return true
+	end
+	return (safe_access.get_mp_stat_int(stat_name, 0) or 0) ~= 0
 end
 
 function actions.teleport_front(key)
 	local loc = data.location_by_key(key)
 	if not loc then
+		return false
+	end
+	if not actions.is_front_available(key) then
+		push("moneyfronts.notify.front_unavailable", 2000)
 		return false
 	end
 	local blips = cfg().blips or {}
@@ -71,6 +84,10 @@ function actions.teleport_laptop(key)
 	local loc = data.location_by_key(key)
 	local coords = cfg().coords and cfg().coords[key]
 	if not (loc and coords) then
+		return false
+	end
+	if not actions.is_front_available(key) then
+		push("moneyfronts.notify.front_unavailable", 2000)
 		return false
 	end
 	return coords_teleport.run_coords_teleport(
@@ -121,6 +138,59 @@ function actions.set_front_heat_lock_active(key, enabled, silent)
 	return state.flags.front_heat_lock[key]
 end
 
+function actions.set_overall_heat_value(value)
+	state.set_overall_heat_value(value)
+	return state.config.overall_heat
+end
+
+function actions.apply_overall_heat_value()
+	local ok = true
+	for _, key in ipairs(data.front_keys) do
+		ok = set_heat_for_key(key, state.config.overall_heat, true) and ok
+	end
+	push(ok and "moneyfronts.notify.heat_set" or "moneyfronts.notify.heat_failed", 2000, {
+		value = tostring(state.config.overall_heat),
+	})
+	return ok
+end
+
+function actions.max_overall_heat()
+	state.set_overall_heat_value(data.heat.max)
+	return actions.apply_overall_heat_value()
+end
+
+function actions.min_overall_heat()
+	state.set_overall_heat_value(data.heat.min)
+	return actions.apply_overall_heat_value()
+end
+
+function actions.set_overall_heat_lock_active(enabled, silent)
+	state.set_overall_heat_lock_active(enabled == true)
+	for _, key in ipairs(data.front_keys) do
+		actions.set_front_heat_lock_active(key, state.flags.overall_heat_lock and actions.is_front_available(key), true)
+	end
+	if state.flags.overall_heat_lock then
+		local overall = data.heat.min
+		for _, key in ipairs(data.front_keys) do
+			if actions.is_front_available(key) then
+				overall = math.max(overall, state.config.front_heat[key] or data.heat.default)
+			end
+		end
+		state.set_overall_heat_value(overall)
+	end
+	if not silent then
+		push(
+			state.flags.overall_heat_lock and "moneyfronts.notify.heat_lock_on" or "moneyfronts.notify.heat_lock_off",
+			2000
+		)
+	end
+	return state.flags.overall_heat_lock
+end
+
+function actions.get_overall_heat_lock_active()
+	return state.flags.overall_heat_lock == true
+end
+
 function actions.get_front_heat_lock_active(key)
 	return state.flags.front_heat_lock[key] == true
 end
@@ -141,6 +211,10 @@ function actions.tick_front_heat_locks()
 end
 
 function actions.car_wash_collect_safe()
+	if not actions.is_front_available("car_wash") then
+		push("moneyfronts.notify.front_unavailable", 2000)
+		return false
+	end
 	local offsets_cfg = cfg()
 	local stats = offsets_cfg.stats or {}
 	local value = safe_access.get_mp_stat_int(stats.car_wash_safe_cash_value, 0) or 0

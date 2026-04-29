@@ -14,7 +14,7 @@ data.value = {
 
 data.cuts = {
 	min = 0,
-	max = 300,
+	max = 999,
 	step = 5,
 	defaults = {
 		host = 100,

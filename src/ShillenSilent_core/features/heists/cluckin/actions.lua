@@ -33,8 +33,8 @@ end
 function actions.remove_cooldown()
 	return run_guarded_job("cluckin_remove_cooldown", function()
 		local cfg = config()
-		local ok =
-			safe_access.set_stat_for_all_characters(cfg.stats and cfg.stats.cooldown, data.values.complete_bitset)
+		local tunables = cfg.tunables or {}
+		local ok = safe_access.set_tunable_int(tunables.cooldown, 0)
 		push(ok and "cluckin.notify.cooldown_ok" or "cluckin.notify.cooldown_failed", 2000)
 	end, function()
 		push("cluckin.notify.action_running", 1500)

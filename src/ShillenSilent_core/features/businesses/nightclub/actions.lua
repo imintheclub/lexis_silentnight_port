@@ -40,6 +40,95 @@ local function product_by_key(key)
 	return nil
 end
 
+local function safe_local_cfg()
+	local locals = cfg().locals or {}
+	return locals.safe or {}
+end
+
+local function get_strided_global(field, edition, fallback)
+	if type(field) ~= "table" or type(field[edition]) ~= "number" then
+		return fallback
+	end
+
+	local stride = field[edition .. "_stride"]
+	if type(stride) ~= "number" then
+		return fallback
+	end
+
+	return safe_access.get_global_int(field[edition] + (business_runtime.player_id() * stride), fallback)
+end
+
+local function read_safe_value(offsets_cfg)
+	local globals = offsets_cfg.globals or {}
+	local stats = offsets_cfg.stats or {}
+	if globals.safe_value then
+		local ee_value = get_strided_global(globals.safe_value, "ee", nil)
+		if tonumber(ee_value or 0) > 0 then
+			return ee_value, "ee"
+		end
+
+		local legacy_value = get_strided_global(globals.safe_value, "legacy", nil)
+		if tonumber(legacy_value or 0) > 0 then
+			return legacy_value, "legacy"
+		end
+
+		if ee_value ~= nil then
+			return ee_value, "ee"
+		end
+		if legacy_value ~= nil then
+			return legacy_value, "legacy"
+		end
+	end
+	return safe_access.get_mp_stat_int(stats.safe_cash_value, 0) or 0, "stat"
+end
+
+local function collect_safe_ee(globals)
+	if not globals.safe_collect then
+		return false
+	end
+	return safe_access.set_global_bool(globals.safe_collect, true)
+end
+
+local function collect_safe_legacy(safe_locals)
+	if not (safe_locals.script and safe_access.is_script_running(safe_locals.script)) then
+		return false
+	end
+
+	local ok = safe_access.set_local_int_variants(safe_locals.script, safe_locals.type, 3)
+	ok = safe_access.set_local_int_variants(safe_locals.script, safe_locals.collect, 1) and ok
+	return ok
+end
+
+local function collect_safe_with_edition_paths(preferred_edition)
+	local offsets_cfg = cfg()
+	local globals = offsets_cfg.globals or {}
+	local safe_locals = safe_local_cfg()
+
+	if preferred_edition == "legacy" then
+		return collect_safe_legacy(safe_locals)
+	end
+
+	local ok = collect_safe_ee(globals)
+	if ok or preferred_edition == "ee" then
+		return ok
+	end
+
+	return collect_safe_legacy(safe_locals)
+end
+
+local function active_safe_top_range()
+	local globals = cfg().globals or {}
+	local first = globals.safe_top_range and globals.safe_top_range.first
+	local last = globals.safe_top_range and globals.safe_top_range.last
+	if type(first) == "table" and type(last) == "table" then
+		return first.ee, last.ee
+	end
+	if type(first) == "number" and type(last) == "number" then
+		return first, last
+	end
+	return nil, nil
+end
+
 local function selected_tunables()
 	local tunables = cfg().tunables or {}
 	local target = state.config.fast_prod_target
@@ -164,7 +253,11 @@ function actions.production_tick()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
+	local was_active = state.config.sale_price_active == true
 	state.set_sale_price_active(enabled == true)
+	if state.config.sale_price_active and not was_active then
+		business_runtime.start_invite_only_session()
+	end
 	local ok = state.config.sale_price_active and apply_sale_price() or restore_sale_price()
 	if not silent then
 		push(
@@ -251,15 +344,13 @@ end
 
 function actions.safe_collect()
 	local offsets_cfg = cfg()
-	local stats = offsets_cfg.stats or {}
-	local value = safe_access.get_mp_stat_int(stats.safe_cash_value, 0) or 0
+	local value, edition = read_safe_value(offsets_cfg)
 	if value <= 0 then
 		push("nightclub.notify.safe_empty", 2000)
 		return false
 	end
 
-	local globals = offsets_cfg.globals or {}
-	local ok = safe_access.set_global_bool(globals.safe_collect, true)
+	local ok = collect_safe_with_edition_paths(edition)
 	push(ok and "nightclub.notify.safe_collect_ok" or "nightclub.notify.safe_collect_failed", 2000)
 	return ok
 end
@@ -269,16 +360,21 @@ function actions.safe_fill()
 	local stats = offsets_cfg.stats or {}
 	local limits = offsets_cfg.limits or {}
 	local globals = offsets_cfg.globals or {}
+	local tunables = offsets_cfg.tunables or {}
 	local max_value = tonumber(limits.safe_max) or 250000
 	local ok = safe_access.set_mp_stat_int(stats.safe_cash_value, max_value)
+	ok = safe_access.set_mp_stat_int(stats.safe_pay_time_left, -1) and ok
+	ok = safe_access.set_tunable_int(tunables.safe_max_capacity, max_value) and ok
+	if globals.safe_value then
+		ok = safe_access.set_global_int_strided_variants(globals.safe_value, business_runtime.player_id(), max_value)
+			and ok
+	end
 	if globals.safe_top_range then
-		local first = globals.safe_top_range.first
-		local last = globals.safe_top_range.last
-		for idx = first.ee, last.ee do
-			ok = safe_access.set_global_int(idx, max_value) and ok
-		end
-		for idx = first.legacy, last.legacy do
-			ok = safe_access.set_global_int(idx, max_value) and ok
+		local first, last = active_safe_top_range()
+		if first and last then
+			for idx = first, last do
+				ok = safe_access.set_global_int(idx, max_value) and ok
+			end
 		end
 	end
 	push(ok and "nightclub.notify.safe_fill_ok" or "nightclub.notify.safe_fill_failed", 2000)
@@ -288,7 +384,7 @@ end
 function actions.set_popularity_max()
 	state.set_popularity_editor_value(data.popularity.max)
 	local stats = cfg().stats or {}
-	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity.max)
+	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity_to_stat(data.popularity.max))
 	push(ok and "nightclub.notify.popularity_max_ok" or "nightclub.notify.popularity_failed", 2000)
 	return ok
 end
@@ -296,7 +392,7 @@ end
 function actions.set_popularity_min()
 	state.set_popularity_editor_value(data.popularity.min)
 	local stats = cfg().stats or {}
-	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity.min)
+	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity_to_stat(data.popularity.min))
 	push(ok and "nightclub.notify.popularity_min_ok" or "nightclub.notify.popularity_failed", 2000)
 	return ok
 end
@@ -305,7 +401,7 @@ function actions.set_popularity(value, silent)
 	local target = data.clamp_popularity(value)
 	state.set_popularity_editor_value(target)
 	local stats = cfg().stats or {}
-	local ok = safe_access.set_mp_stat_int(stats.popularity, target)
+	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity_to_stat(target))
 	if not silent then
 		push(ok and "nightclub.notify.popularity_ok" or "nightclub.notify.popularity_failed", 2000, {
 			value = tostring(target),
@@ -329,7 +425,12 @@ end
 function actions.set_popularity_lock_active(enabled, silent)
 	state.set_popularity_lock_active(enabled == true)
 	if state.popularity.lock_active then
-		actions.set_popularity(state.config.popularity_editor_value, true)
+		local stats = cfg().stats or {}
+		local current = data.popularity_from_stat(
+			safe_access.get_mp_stat_int(stats.popularity, data.popularity_to_stat(state.config.popularity_editor_value))
+		)
+		state.set_popularity_editor_value(current)
+		actions.set_popularity(current, true)
 	end
 	if not silent then
 		push(
@@ -349,37 +450,27 @@ function actions.popularity_lock_tick()
 	if not state.popularity.lock_active then
 		return false
 	end
-	local stats = cfg().stats or {}
-	local cur = safe_access.get_mp_stat_int(stats.popularity, 0) or 0
 	local target = data.clamp_popularity(state.config.popularity_editor_value)
-	local min_allowed = math.max(data.popularity.min, target - data.popularity.lock_tolerance)
-	if cur < min_allowed then
-		return actions.set_popularity(target, true)
-	end
-	return false
+	return actions.set_popularity(target, true)
 end
 
 function actions.safe_unbrick()
 	local globals = cfg().globals or {}
 	local stats = cfg().stats or {}
+	local safe_locals = safe_local_cfg()
 	local any_ok = false
-	local first = globals.safe_top_range and globals.safe_top_range.first
-	local last = globals.safe_top_range and globals.safe_top_range.last
-	if type(first) == "table" and type(last) == "table" then
-		for idx = first.ee, last.ee do
-			any_ok = safe_access.set_global_int(idx, 1) or any_ok
-		end
-		for idx = first.legacy, last.legacy do
-			any_ok = safe_access.set_global_int(idx, 1) or any_ok
-		end
-	elseif type(first) == "number" and type(last) == "number" then
+	local first, last = active_safe_top_range()
+	if first and last then
 		for idx = first, last do
 			any_ok = safe_access.set_global_int(idx, 1) or any_ok
 		end
 	end
 	safe_access.set_mp_stat_int(stats.safe_pay_time_left, -1)
 	util.yield(3000)
-	any_ok = safe_access.set_global_int(globals.safe_collect, 1) or any_ok
+	any_ok = collect_safe_with_edition_paths() or any_ok
+	if safe_locals.script and safe_access.is_script_running(safe_locals.script) then
+		any_ok = safe_access.set_local_int_variants(safe_locals.script, safe_locals.type, 3) or any_ok
+	end
 	push(any_ok and "nightclub.notify.safe_unbrick_ok" or "nightclub.notify.safe_unbrick_failed", 2200)
 	return any_ok
 end

@@ -220,9 +220,10 @@ function actions.redraw_board()
 	return ok
 end
 
-function actions.complete_preps()
+function actions.complete_preps(heist_key)
 	local cfg = config()
-	local heist_key = current_heist_key()
+	heist_key = data.resolve_heist_key(heist_key or state.config.selected_heist, current_heist_key())
+	state.set_selected_heist(heist_key)
 	local heist = heist_key and data.preps[heist_key] or nil
 	if not heist then
 		push("apartment.notify.preps_no_heist", 2600)

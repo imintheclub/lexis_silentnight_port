@@ -2,13 +2,49 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 
 local business_runtime = {}
 
+local function packed_slots(slots)
+	if slots == "active" then
+		local last_char = safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
+		return { math.floor(tonumber(last_char) or 0) }
+	end
+	return slots or { 0 }
+end
+
+local function native_result_ok(result)
+	if not result then
+		return false
+	end
+	if result.bool ~= nil then
+		return result.bool == true or tonumber(result.bool) == 1
+	end
+	return tonumber(result.int) == 1
+end
+
+function business_runtime.active_character_slot()
+	local last_char = safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
+	return math.floor(tonumber(last_char) or 0)
+end
+
+function business_runtime.start_invite_only_session()
+	if not (invoker and invoker.call) then
+		return false
+	end
+	local result = invoker.call(0xED34C0C02C098BB7, 0, 32)
+	local started = native_result_ok(result)
+	if not started then
+		local fallback = invoker.call(0x6F3D4ED9BEE4E61D, 0, 32, true)
+		started = native_result_ok(fallback)
+	end
+	return started
+end
+
 function business_runtime.write_packed_bool(idx, value, slots, native_hash)
 	if not (invoker and invoker.call and type(native_hash) == "number" and type(idx) == "number") then
 		return false
 	end
 
 	local ok_any = false
-	for _, slot in ipairs(slots or { 0 }) do
+	for _, slot in ipairs(packed_slots(slots)) do
 		local ok = pcall(function()
 			invoker.call(native_hash, idx, value and true or false, slot)
 		end)
@@ -37,7 +73,7 @@ function business_runtime.write_packed_int(idx, value, slots, native_hash)
 	end
 
 	local ok_any = false
-	for _, slot in ipairs(slots or { 0 }) do
+	for _, slot in ipairs(packed_slots(slots)) do
 		local ok = pcall(function()
 			invoker.call(native_hash, idx, math.floor(tonumber(value) or 0), slot)
 		end)

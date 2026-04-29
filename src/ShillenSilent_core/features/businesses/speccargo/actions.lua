@@ -159,6 +159,7 @@ function actions.instant_sell()
 		local ok1 = safe_access.set_local_int_variants(sell.name, sell.timer_offset, sell.timer_value)
 		local ok2 = safe_access.set_local_int_variants(sell.name, sell.state_offset, sell.state_value)
 		util.yield(2000)
+		ok2 = safe_access.set_local_int_variants(sell.name, sell.state_offset, sell.state_value) and ok2
 		ok1 = safe_access.set_local_int_variants(sell.name, sell.timer_offset, sell.timer_value) and ok1
 		push((ok1 and ok2) and "speccargo.notify.sell_ok" or "speccargo.notify.sell_failed", 2200)
 	end, function()
@@ -167,10 +168,14 @@ function actions.instant_sell()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
+	local was_active = state.config.sale_price_active == true
 	state.set_sale_price_active(enabled == true)
 	local tunables = cfg().tunables or {}
 	local ok = true
 	if state.config.sale_price_active then
+		if not was_active then
+			business_runtime.start_invite_only_session()
+		end
 		for i, entry in ipairs(tunables.price_thresholds or {}) do
 			ok = safe_access.set_tunable_int(entry.name, threshold_value(6000000, i)) and ok
 		end

@@ -169,6 +169,7 @@ function actions.refill_supplies()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
+	local was_active = state.config.sale_price_active == true
 	state.set_sale_price_active(enabled == true)
 	if not state.config.sale_price_active then
 		local ok = restore_sale_price()
@@ -176,6 +177,9 @@ function actions.set_sale_price_loop(enabled, silent)
 			push(ok and "bunker.notify.sale_price_off" or "bunker.notify.sale_price_failed", 2000)
 		end
 		return false
+	end
+	if not was_active then
+		business_runtime.start_invite_only_session()
 	end
 	local ok = apply_sale_price()
 	if not silent then

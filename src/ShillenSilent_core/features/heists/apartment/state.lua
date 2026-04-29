@@ -1,6 +1,9 @@
 local data = require("ShillenSilent_core.features.heists.apartment.data")
 
 local state = {
+	config = {
+		selected_heist = data.heist_options[1].value,
+	},
 	cuts = {
 		player1 = data.cuts.defaults.player1,
 		player2 = data.cuts.defaults.player2,
@@ -24,6 +27,11 @@ local state = {
 		max_payout_cache = {},
 	},
 }
+
+function state.set_selected_heist(value)
+	state.config.selected_heist = data.resolve_heist_key(value, state.config.selected_heist)
+	return state.config.selected_heist
+end
 
 function state.set_cut(player_key, value)
 	if not state.cuts[player_key] then

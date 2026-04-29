@@ -67,9 +67,11 @@ function actions.complete_preps(act)
 	local ok1 = safe_access.set_stat_for_all_characters(stats.flow_mission_prog, selected.flow)
 	local ok2 = safe_access.set_stat_for_all_characters(stats.heist_status, selected.status)
 	local ok3 = safe_access.set_stat_for_all_characters(stats.flow_notifications, data.values.flow_notifications)
-	actions.reload_board(false)
 
 	local ok = ok1 and ok2 and ok3
+	if ok then
+		actions.reload_board(false)
+	end
 	push(ok and "doomsday.notify.preps_ok" or "doomsday.notify.preps_failed", 2000)
 	return ok
 end
@@ -80,9 +82,11 @@ function actions.reset_progress()
 	local ok1 = safe_access.set_stat_for_all_characters(stats.flow_mission_prog, data.values.reset_act_flow)
 	local ok2 = safe_access.set_stat_for_all_characters(stats.heist_status, data.values.reset_status)
 	local ok3 = safe_access.set_stat_for_all_characters(stats.flow_notifications, data.values.flow_notifications)
-	actions.reload_board(false)
 
 	local ok = ok1 and ok2 and ok3
+	if ok then
+		actions.reload_board(false)
+	end
 	push(ok and "doomsday.notify.reset_ok" or "doomsday.notify.reset_failed", 2000)
 	return ok
 end
@@ -93,9 +97,11 @@ function actions.reset_preps()
 	local ok1 = safe_access.set_stat_for_all_characters(stats.flow_mission_prog, data.values.reset_preps_flow)
 	local ok2 = safe_access.set_stat_for_all_characters(stats.heist_status, data.values.reset_status)
 	local ok3 = safe_access.set_stat_for_all_characters(stats.flow_notifications, data.values.reset_preps_notifications)
-	actions.reload_board(false)
 
 	local ok = ok1 and ok2 and ok3
+	if ok then
+		actions.reload_board(false)
+	end
 	push(ok and "doomsday.notify.reset_preps_ok" or "doomsday.notify.reset_preps_failed", 2000)
 	return ok
 end

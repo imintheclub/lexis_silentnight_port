@@ -29,6 +29,11 @@ function controller.refresh_controls()
 	common.set_control_value(ctx, controls.max_payout_toggle, state.flags.max_payout_enabled and true or false)
 	common.set_control_value(ctx, controls.auto_force_toggle, state.flags.auto_force_cuts and true or false)
 	common.set_control_value(ctx, controls.preset_combo, data.clamp_cut_preset_index(state.flags.cut_preset_index))
+	common.set_control_value(
+		ctx,
+		controls.heist_combo,
+		data.option_index_by_value(data.heist_options, state.config.selected_heist, 1)
+	)
 
 	for i = 1, #data.player_keys do
 		local key = data.player_keys[i]
@@ -88,6 +93,18 @@ function controller.register(parent_menu)
 	common.add_button(launch, t("apartment.action.redraw_board"), actions.redraw_board)
 
 	local preps = root:submenu(t("apartment.group.preps"))
+	local heist_entries = {}
+	for i = 1, #data.heist_options do
+		heist_entries[i] = { data.heist_options[i].name, i }
+	end
+	controls.heist_combo = common.add_combo_entries(ctx, preps, t("apartment.group.preps"), heist_entries, function()
+		return data.option_index_by_value(data.heist_options, state.config.selected_heist, 1)
+	end, function(idx)
+		local option = data.heist_options[idx]
+		if option then
+			state.set_selected_heist(option.value)
+		end
+	end)
 	common.add_button(preps, t("apartment.action.complete_preps"), actions.complete_preps)
 	common.add_button(preps, t("apartment.action.change_session"), actions.change_session)
 

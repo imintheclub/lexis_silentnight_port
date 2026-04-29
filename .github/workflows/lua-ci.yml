@@ -85,6 +85,19 @@ jobs:
             --configpath=.luarc.json
           rm -rf "$log_path"
 
+
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Lua
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+
       - name: Check locale keys
         run: lua5.4 scripts/check_locale_keys.lua
 

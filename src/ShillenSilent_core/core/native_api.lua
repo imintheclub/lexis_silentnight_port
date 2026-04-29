@@ -1,6 +1,9 @@
 -- ---------------------------------------------------------
 -- 6. native api (Safe Input Filtering)
 -- ---------------------------------------------------------
+local i18n = require("ShillenSilent_core.i18n")
+local notify_core = require("ShillenSilent_core.core.notify")
+
 local CONTROL_ACTION_BLOCK_LIST = {
 	-- Block weapon/attack/scroll/camera inputs when menu is open.
 	-- DO NOT block movement (0, 30-35) or vehicle inputs (59, 60, 71, 72, 75)
@@ -42,13 +45,12 @@ local function heist_skip_cutscene(heist_name)
 		invoker.call(0xD220BDD222AC4A1E) -- STOP_CUTSCENE_IMMEDIATELY
 	end)
 
-	if notify then
-		local title = (heist_name and heist_name ~= "") and (heist_name .. " Tools") or "Heist Tools"
-		if ok then
-			notify.push(title, "Cutscene skip completed", 2000)
-		else
-			notify.push(title, "Cutscene skip failed", 2000)
-		end
+	local title = (heist_name and heist_name ~= "") and i18n.t("notify.heist_tools_title", { heist = heist_name })
+		or i18n.t("notify.heist_tools_default_title")
+	if ok then
+		notify_core.raw(title, i18n.t("notify.cutscene_skip_completed"), 2000)
+	else
+		notify_core.raw(title, i18n.t("notify.cutscene_skip_failed"), 2000)
 	end
 end
 

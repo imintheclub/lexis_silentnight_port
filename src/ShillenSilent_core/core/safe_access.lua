@@ -1,5 +1,7 @@
 local safe_access = {}
 
+local MP_GLOBAL = 1574927
+
 local function has_script_fn(name)
 	return script and type(script[name]) == "function"
 end
@@ -10,6 +12,17 @@ end
 
 local function has_tunable_fn()
 	return script and type(script.tunables) == "function"
+end
+
+local function get_stat_handle(stat_name)
+	if not has_account_stats() then
+		return nil
+	end
+	local ok, stat = pcall(account.stats, stat_name)
+	if not ok then
+		return nil
+	end
+	return stat
 end
 
 function safe_access.is_script_running(script_name)
@@ -44,6 +57,41 @@ function safe_access.set_global_int(offset, value)
 	return ok
 end
 
+function safe_access.set_global_string(offset, value)
+	if not has_script_fn("globals") then
+		return false
+	end
+	local ok = pcall(function()
+		script.globals(offset).str = value
+	end)
+	if ok then
+		return true
+	end
+	return pcall(function()
+		script.globals(offset).string = value
+	end)
+end
+
+function safe_access.set_global_at_int(offset, at_index, value)
+	if not has_script_fn("globals") then
+		return false
+	end
+	local ok = pcall(function()
+		script.globals(offset):at(at_index).int32 = value
+	end)
+	return ok
+end
+
+function safe_access.set_global_bool(offset, value)
+	if not has_script_fn("globals") then
+		return false
+	end
+	local ok = pcall(function()
+		script.globals(offset).bool = value and true or false
+	end)
+	return ok
+end
+
 function safe_access.get_global_int(offset, fallback)
 	if not has_script_fn("globals") then
 		return fallback
@@ -55,6 +103,16 @@ function safe_access.get_global_int(offset, fallback)
 		return fallback
 	end
 	return result
+end
+
+function safe_access.global_bool_supported(offset)
+	if not has_script_fn("globals") then
+		return false
+	end
+	local ok = pcall(function()
+		local _ = script.globals(offset).bool
+	end)
+	return ok
 end
 
 function safe_access.set_local_int(script_name, offset, value)
@@ -103,6 +161,19 @@ function safe_access.get_tunable_int(name, fallback)
 	return result
 end
 
+function safe_access.get_tunable_float(name, fallback)
+	if not has_tunable_fn() then
+		return fallback
+	end
+	local ok, result = pcall(function()
+		return script.tunables(name).float
+	end)
+	if not ok or result == nil then
+		return fallback
+	end
+	return result
+end
+
 function safe_access.set_tunable_int(name, value)
 	if not has_tunable_fn() then
 		return false
@@ -113,15 +184,22 @@ function safe_access.set_tunable_int(name, value)
 	return ok
 end
 
-function safe_access.get_stat_int(stat_name, fallback, profile)
-	if not has_account_stats() then
+function safe_access.set_tunable_float(name, value)
+	if not has_tunable_fn() then
+		return false
+	end
+	local ok = pcall(function()
+		script.tunables(name).float = value
+	end)
+	return ok
+end
+
+function safe_access.get_stat_int(stat_name, fallback)
+	local stat = get_stat_handle(stat_name)
+	if not stat then
 		return fallback
 	end
 	local ok, result = pcall(function()
-		local stat = account.stats(stat_name, profile)
-		if not stat then
-			return nil
-		end
 		return stat.int32
 	end)
 	if not ok or result == nil then
@@ -130,31 +208,114 @@ function safe_access.get_stat_int(stat_name, fallback, profile)
 	return result
 end
 
-function safe_access.set_stat_int(stat_name, value, profile)
-	if not has_account_stats() then
+function safe_access.get_stat_string(stat_name, fallback)
+	local stat = get_stat_handle(stat_name)
+	if not stat then
+		return fallback
+	end
+	local ok, result = pcall(function()
+		if type(stat.str) == "string" and stat.str ~= "" then
+			return stat.str
+		end
+		if type(stat.string) == "string" and stat.string ~= "" then
+			return stat.string
+		end
+		return nil
+	end)
+	if not ok or result == nil then
+		return fallback
+	end
+	return result
+end
+
+function safe_access.set_stat_int(stat_name, value)
+	local stat = get_stat_handle(stat_name)
+	if not stat then
 		return false
 	end
 	local ok = pcall(function()
-		local stat = account.stats(stat_name, profile)
-		if not stat then
-			error("stat unavailable")
-		end
 		stat.int32 = value
 	end)
 	return ok
 end
 
-function safe_access.set_stat_bool(stat_name, value, profile)
-	if not has_account_stats() then
+function safe_access.set_stat_string(stat_name, value)
+	local stat = get_stat_handle(stat_name)
+	if not stat then
 		return false
 	end
 	local ok = pcall(function()
-		local stat = account.stats(stat_name, profile)
-		if not stat then
-			error("stat unavailable")
-		end
+		stat.str = value
+	end)
+	if ok then
+		return true
+	end
+	return pcall(function()
+		stat.string = value
+	end)
+end
+
+function safe_access.set_stat_bool(stat_name, value)
+	local stat = get_stat_handle(stat_name)
+	if not stat then
+		return false
+	end
+	local ok = pcall(function()
 		stat.bool = value and true or false
 	end)
+	return ok
+end
+
+function safe_access.get_mp_prefix()
+	local mp_idx = safe_access.get_global_int(MP_GLOBAL, 0)
+	return mp_idx == 1 and "MP1_" or "MP0_"
+end
+
+function safe_access.get_active_mp_prefix()
+	local last_char = safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
+	return (math.floor(tonumber(last_char) or 0) == 1) and "MP1_" or "MP0_"
+end
+
+function safe_access.stat_name(name, opts)
+	if type(opts) == "table" and opts.raw then
+		return name
+	end
+	local prefix = (type(opts) == "table" and opts.active) and safe_access.get_active_mp_prefix()
+		or safe_access.get_mp_prefix()
+	return prefix .. tostring(name)
+end
+
+function safe_access.get_mp_stat_int(stat_name, fallback)
+	return safe_access.get_stat_int(safe_access.stat_name(stat_name), fallback)
+end
+
+function safe_access.get_active_mp_stat_int(stat_name, fallback)
+	return safe_access.get_stat_int(safe_access.stat_name(stat_name, { active = true }), fallback)
+end
+
+function safe_access.set_mp_stat_int(stat_name, value)
+	return safe_access.set_stat_int(safe_access.stat_name(stat_name), value)
+end
+
+function safe_access.set_mp_stat_int_map(values)
+	local ok = true
+	for stat_name, value in pairs(values or {}) do
+		ok = safe_access.set_mp_stat_int(stat_name, value) and ok
+	end
+	return ok
+end
+
+function safe_access.set_stat_for_all_characters(stat_name, value)
+	local ok0 = safe_access.set_stat_int("MP0_" .. stat_name, value)
+	local ok1 = safe_access.set_stat_int("MP1_" .. stat_name, value)
+	return ok0 and ok1
+end
+
+function safe_access.set_stat_pairs_for_all_characters(pairs_to_write)
+	local ok = true
+	for i = 1, #(pairs_to_write or {}) do
+		ok = safe_access.set_stat_for_all_characters(pairs_to_write[i][1], pairs_to_write[i][2]) and ok
+	end
 	return ok
 end
 

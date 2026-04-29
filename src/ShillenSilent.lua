@@ -19,5 +19,6 @@ if script_root == "" then
 end
 
 prepend_package_pattern(script_root .. "/?.lua")
+prepend_package_pattern(script_root .. "/?/init.lua")
 
 require("ShillenSilent_core.app.router")

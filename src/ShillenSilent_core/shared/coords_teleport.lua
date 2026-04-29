@@ -1,6 +1,8 @@
-local core = require("ShillenSilent_core.core.bootstrap")
+local jobs = require("ShillenSilent_core.core.jobs")
+local notify_core = require("ShillenSilent_core.core.notify")
+local i18n = require("ShillenSilent_core.i18n")
 
-local run_guarded_job = core.run_guarded_job
+local run_guarded_job = jobs.run_guarded_job
 
 local function teleport_to_coords(x, y, z)
 	local success = false
@@ -107,7 +109,7 @@ local function teleport_to_coords(x, y, z)
 					util.yield(150)
 					success = true
 				else
-					error_msg = "Invoker not available"
+					error_msg = i18n.t("notify.invoker_unavailable")
 				end
 			else
 				-- Teleport player (ped) if not in vehicle
@@ -117,16 +119,16 @@ local function teleport_to_coords(x, y, z)
 					invoker.call(0x06843DA7060A026B, ped, x, y, z, false, false, false, true)
 					success = true
 				else
-					error_msg = "Invoker not available"
+					error_msg = i18n.t("notify.invoker_unavailable")
 				end
 			end
 		else
-			error_msg = "Could not get player ped (ped=" .. tostring(ped) .. ")"
+			error_msg = i18n.t("notify.player_ped_missing", { ped = tostring(ped) })
 		end
 	end)
 
 	if not ok then
-		error_msg = "pcall error: " .. tostring(err)
+		error_msg = i18n.t("notify.pcall_error", { error = tostring(err) })
 	end
 
 	return success, error_msg
@@ -146,9 +148,7 @@ end
 
 local function run_coords_teleport(title, success_message, x, y, z, include_error_details, on_success)
 	if not try_begin_teleport_cooldown() then
-		if notify then
-			notify.push(title or "Teleport", "Teleport failed (on cooldown)", 1000)
-		end
+		notify_core.raw(title or i18n.t("notify.teleport_title"), i18n.t("notify.teleport_on_cooldown"), 1000)
 		return false
 	end
 
@@ -158,23 +158,17 @@ local function run_coords_teleport(title, success_message, x, y, z, include_erro
 			if on_success then
 				on_success()
 			end
-			if notify then
-				notify.push(title, success_message, 2000)
-			end
+			notify_core.raw(title, success_message, 2000)
 			return
 		end
 
-		local msg = "Teleport failed"
+		local msg = i18n.t("notify.teleport_failed")
 		if include_error_details and error_msg then
-			msg = msg .. ": " .. error_msg
+			msg = i18n.t("notify.teleport_failed_with_error", { error = error_msg })
 		end
-		if notify then
-			notify.push(title, msg, include_error_details and 3000 or 2000)
-		end
+		notify_core.raw(title, msg, include_error_details and 3000 or 2000)
 	end, function()
-		if notify then
-			notify.push(title or "Teleport", "Teleport failed (already running)", 1200)
-		end
+		notify_core.raw(title or i18n.t("notify.teleport_title"), i18n.t("notify.teleport_already_running"), 1200)
 	end)
 end
 

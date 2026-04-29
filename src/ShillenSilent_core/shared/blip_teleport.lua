@@ -1,6 +1,8 @@
 -- Teleport constants and shared helper functions
-local core = require("ShillenSilent_core.core.bootstrap")
-local run_guarded_job = core.run_guarded_job
+local jobs = require("ShillenSilent_core.core.jobs")
+local notify_core = require("ShillenSilent_core.core.notify")
+local i18n = require("ShillenSilent_core.i18n")
+local run_guarded_job = jobs.run_guarded_job
 
 local TELEPORT_COORDS_MAZEBANK = { x = -75.146, y = -818.687, z = 326.175 }
 local BLIP_SPRITES_FACILITY = 590
@@ -84,12 +86,10 @@ end
 
 local function teleport_to_blip_with_job(blip_sprite, notify_title, success_message, not_found_message, opts)
 	opts = opts or {}
-	local title = notify_title or "Teleport"
+	local title = notify_title or i18n.t("notify.teleport_title")
 	local me = players.me()
 	if not me then
-		if notify then
-			notify.push(title, "Player not found", 2000)
-		end
+		notify_core.raw(title, i18n.t("notify.player_not_found"), 2000)
 		return false
 	end
 
@@ -99,9 +99,7 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 		local veh = get_local_vehicle_handle(ped, me)
 		local entity = (veh and veh ~= 0) and veh or ped
 		if not entity then
-			if notify then
-				notify.push(title, "Teleport failed (invalid player entity)", 2200)
-			end
+			notify_core.raw(title, i18n.t("notify.teleport_invalid_player_entity"), 2200)
 			return
 		end
 
@@ -120,9 +118,7 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 		if coords then
 			local x, y, z = tonumber(coords.x), tonumber(coords.y), tonumber(coords.z)
 			if not (x and y and z) then
-				if notify then
-					notify.push(title, "Teleport failed (invalid blip coordinates)", 2200)
-				end
+				notify_core.raw(title, i18n.t("notify.teleport_invalid_blip_coordinates"), 2200)
 			else
 				invoker.call(0x239A3351AC1DA385, entity, x, y, z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
 			end
@@ -131,8 +127,8 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 				invoker.call(0x8E2530AA8ADA980E, entity, heading) -- SET_ENTITY_HEADING
 			end
 			util.yield(opts.arrival_delay_ms or 500)
-			if notify and success_message then
-				notify.push(title, success_message, opts.success_duration_ms or 2000)
+			if success_message then
+				notify_core.raw(title, success_message, opts.success_duration_ms or 2000)
 			end
 		elseif opts.fallback_coords then
 			local fb = opts.fallback_coords
@@ -145,20 +141,18 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 				invoker.call(0x8E2530AA8ADA980E, entity, heading) -- SET_ENTITY_HEADING
 			end
 			util.yield(opts.arrival_delay_ms or 500)
-			if notify and opts.fallback_message then
-				notify.push(title, opts.fallback_message, opts.fallback_duration_ms or 2200)
+			if opts.fallback_message then
+				notify_core.raw(title, opts.fallback_message, opts.fallback_duration_ms or 2200)
 			end
 		else
-			if notify and not_found_message then
-				notify.push(title, not_found_message, opts.not_found_duration_ms or 2000)
+			if not_found_message then
+				notify_core.raw(title, not_found_message, opts.not_found_duration_ms or 2000)
 			end
 		end
 
 		invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
 	end, function()
-		if notify then
-			notify.push(title, "Teleport failed (already running)", 1200)
-		end
+		notify_core.raw(title, i18n.t("notify.teleport_already_running"), 1200)
 	end)
 end
 

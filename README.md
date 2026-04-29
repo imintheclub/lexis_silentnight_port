@@ -28,6 +28,13 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 3. Load the script in Lexis
 
 # Changelog
+## v0.1.4
+- Added internationalization support, with English and Spanish language options across the UI, feature labels, and notifications.
+- Added persistent settings for UI mode, theme, and language, all configurable from the Info tab.
+- Added a much larger theme selector, including dark/light plus Dracula, Solarized, Monokai, One Dark, Gruvbox, Nord, Material, Tokyo Night, Night Owl, Cobalt2, Catppuccin, Rose Pine, Shades of Purple, Everforest, Ayu, and Synthwave84.
+- Reworked the click UI into a drawer-based layout with cleaner feature navigation, improved dropdown/label alignment, and more consistent controls.
+- Added JSON preset support to controller menu.
+
 ## v0.1.3-beta
 - MC businesses — Production ticks, refills, fast-production, and new teleport all should be fixed now.
 - Special Cargo — Production tick should be fixed.

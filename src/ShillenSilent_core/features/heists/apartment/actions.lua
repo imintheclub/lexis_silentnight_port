@@ -446,9 +446,13 @@ function actions.unlock_all_jobs()
 end
 
 local function force_cut_ui_flow()
+	local was_open = false
 	pcall(function()
 		local gui = _G.GUI
-		if gui and type(gui.IsOpen) == "function" and type(gui.Toggle) == "function" and gui.IsOpen() then
+		if gui and type(gui.IsOpen) == "function" then
+			was_open = gui.IsOpen() and true or false
+		end
+		if gui and type(gui.Toggle) == "function" and was_open then
 			gui.Toggle()
 		end
 	end)
@@ -457,6 +461,11 @@ local function force_cut_ui_flow()
 		util.yield(1000)
 	end
 
+	pcall(function()
+		if invoker and type(invoker.call) == "function" then
+			invoker.call(data.natives.set_cursor_position, 0.775, 0.175)
+		end
+	end)
 	pcall(function()
 		local gta = _G.GTA
 		if gta and type(gta.SimulatePlayerControl) == "function" then
@@ -469,6 +478,23 @@ local function force_cut_ui_flow()
 			gta.SimulateFrontendControl(202)
 		end
 	end)
+
+	if util and type(util.yield) == "function" then
+		util.yield(1000)
+	end
+
+	pcall(function()
+		local gui = _G.GUI
+		if
+			gui
+			and type(gui.IsOpen) == "function"
+			and type(gui.Toggle) == "function"
+			and was_open
+			and not gui.IsOpen()
+		then
+			gui.Toggle()
+		end
+	end)
 end
 
 function actions.apply_cuts(cuts_values, auto_force_cuts)
@@ -478,7 +504,7 @@ function actions.apply_cuts(cuts_values, auto_force_cuts)
 	end
 
 	local cfg = config()
-	local ok = heist_cuts.write_apartment_globals({
+	local ok, values = heist_cuts.write_apartment_balance_globals({
 		player_keys = data.player_keys,
 		offsets = cfg.globals.cuts,
 		cuts = cuts_values,
@@ -494,6 +520,8 @@ function actions.apply_cuts(cuts_values, auto_force_cuts)
 	if auto_force_cuts then
 		force_cut_ui_flow()
 	end
+
+	ok = safe_access.set_global_int_variants(cfg.globals.cuts.player1, values.player1 or 0) and ok
 
 	push(ok and "apartment.notify.cuts_ok" or "apartment.notify.cuts_failed", 2000)
 	return ok
@@ -538,6 +566,7 @@ function actions.refresh_max_payout(force_update)
 		return false
 	end
 
+	local cfg = config()
 	local heist_id = current_heist_id()
 	local payout_by_heist = heist_id and data.payouts[heist_id] or nil
 	if not payout_by_heist then
@@ -545,7 +574,7 @@ function actions.refresh_max_payout(force_update)
 		return false
 	end
 
-	local difficulty = math.floor(tonumber(safe_access.get_stat_int("HEIST_DIFFICULTY", 1)) or 1)
+	local difficulty = math.floor(tonumber(safe_access.get_global_int(cfg.globals.difficulty, 0)) or 0) + 1
 	if difficulty < 1 then
 		difficulty = 1
 	end

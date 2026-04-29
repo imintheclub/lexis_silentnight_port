@@ -9,8 +9,8 @@ data.safe_payout_target = 3000000
 
 data.cuts = {
 	min = 0,
-	max = 3000,
-	step = 10,
+	max = 9999,
+	step = 1,
 	defaults = {
 		player1 = 100,
 		player2 = 0,
@@ -171,6 +171,7 @@ data.natives = {
 	network_session_host_closed = 0xED34C0C02C098BB7,
 	network_session_host = 0x6F3D4ED9BEE4E61D,
 	get_hash_key = 0xD24D37CC275948CC,
+	set_cursor_position = 0xFC695459D4D0E219,
 }
 
 function data.localized_options(options, translate)

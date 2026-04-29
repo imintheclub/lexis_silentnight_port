@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "Забрать выручку из сейфа",
 	["arcade.notify.safe_collect_ok"] = "Выручка собрана",
 	["arcade.notify.safe_collect_failed"] = "Не удалось собрать выручку",
+	["arcade.notify.safe_empty"] = "Сейф пуст",
 
 	["garment.location.entrance"] = "Швейная фабрика (Вход)",
 	["garment.group.teleport"] = "Телепорт",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "Метка швейной фабрики не найдена",
 	["garment.notify.safe_collect_ok"] = "Сейф пуст (деньги собраны)",
 	["garment.notify.safe_collect_failed"] = "Ошибка сбора выручки",
+	["garment.notify.safe_empty"] = "Сейф пуст",
 
 	["bailoffice.location.strawberry"] = "Отдел (Строберри)",
 	["bailoffice.location.la_mesa"] = "Отдел (Ла-Меса)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "Заморозка внимания выключена",
 	["moneyfronts.notify.car_wash_safe_ok"] = "Деньги из сейфа автомойки собраны",
 	["moneyfronts.notify.car_wash_safe_failed"] = "Ошибка сбора сейфа автомойки",
+	["moneyfronts.notify.car_wash_safe_empty"] = "Сейф пуст",
 
 	["acidlab.group.production"] = "Производство",
 	["acidlab.status.fast_loop"] = "Статус цикла: {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "Настройки восстановлены",
 	["nightclub.notify.safe_collect_ok"] = "Выручка собрана",
 	["nightclub.notify.safe_collect_failed"] = "Ошибка сбора выручки",
+	["nightclub.notify.safe_empty"] = "Сейф пуст",
 	["nightclub.notify.safe_fill_ok"] = "Сейф заполнен ($250,000)",
 	["nightclub.notify.safe_fill_failed"] = "Ошибка заполнения сейфа",
 	["nightclub.notify.safe_unbrick_ok"] = "Последовательность разблокировки применена",

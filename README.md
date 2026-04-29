@@ -106,11 +106,16 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 
 # Changelog
 ## v0.1.4
-- Added internationalization support, with English and Spanish language options across the UI, feature labels, and notifications.
+- Added internationalization support across the UI, feature labels, and notifications.
+- Added full locale tables for English, Spanish, German, French, Italian, Polish, Portuguese (Brazil), Russian.
+  - The localization for Chinese, Japanese, and Korean are present, but I cannot get the font to render them. 
 - Added persistent settings for UI mode, theme, and language, all configurable from the Info tab.
 - Added a much larger theme selector, including dark/light plus Dracula, Solarized, Monokai, One Dark, Gruvbox, Nord, Material, Tokyo Night, Night Owl, Cobalt2, Catppuccin, Rose Pine, Shades of Purple, Everforest, Ayu, and Synthwave84.
 - Reworked the click UI into a drawer-based layout with cleaner feature navigation, improved dropdown/label alignment, and more consistent controls.
 - Added JSON preset support to controller menu.
+- Fixed safe collect behavior so Arcade, Bail Office, Car Wash, Garment Factory, and Nightclub use the proper safe collect globals and guard against empty safes before collecting.
+- Unified production tick UI/status behavior across Hangar, Special Cargo, Nightclub, and MC business controls.
+- Fixed Info/settings save behavior for language/UI settings and added validation scripts for locale key parity and feature manifests.
 
 ## v0.1.3-beta
 - MC businesses — Production ticks, refills, fast-production, and new teleport all should be fixed now.

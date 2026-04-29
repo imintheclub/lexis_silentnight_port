@@ -190,8 +190,16 @@ function actions.set_fast_prod_target(target)
 end
 
 function actions.safe_collect()
-	local globals = cfg().globals or {}
-	local ok = safe_access.set_global_int(globals.safe_collect, 1)
+	local offsets_cfg = cfg()
+	local stats = offsets_cfg.stats or {}
+	local value = safe_access.get_mp_stat_int(stats.safe_cash_value, 0) or 0
+	if value <= 0 then
+		push("nightclub.notify.safe_empty", 2000)
+		return false
+	end
+
+	local globals = offsets_cfg.globals or {}
+	local ok = safe_access.set_global_bool(globals.safe_collect, true)
 	push(ok and "nightclub.notify.safe_collect_ok" or "nightclub.notify.safe_collect_failed", 2000)
 	return ok
 end

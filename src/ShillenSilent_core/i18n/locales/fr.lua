@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "Vider coffre-fort",
 	["arcade.notify.safe_collect_ok"] = "Coffre-fort vidé",
 	["arcade.notify.safe_collect_failed"] = "Échec vidage coffre",
+	["arcade.notify.safe_empty"] = "Le coffre est vide",
 
 	["garment.location.entrance"] = "Usine de vêtements (Entrée)",
 	["garment.group.teleport"] = "Téléportation",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "Marqueur d'usine introuvable",
 	["garment.notify.safe_collect_ok"] = "Coffre-fort vidé",
 	["garment.notify.safe_collect_failed"] = "Échec vidage coffre",
+	["garment.notify.safe_empty"] = "Le coffre est vide",
 
 	["bailoffice.location.strawberry"] = "Bureau de caution (Strawberry)",
 	["bailoffice.location.la_mesa"] = "Bureau de caution (La Mesa)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "Blocage Heat désactivé",
 	["moneyfronts.notify.car_wash_safe_ok"] = "Coffre vidé",
 	["moneyfronts.notify.car_wash_safe_failed"] = "Échec vidage coffre",
+	["moneyfronts.notify.car_wash_safe_empty"] = "Le coffre est vide",
 
 	["acidlab.group.production"] = "Production",
 	["acidlab.status.fast_loop"] = "Statut boucle rapide : {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "Tunables restaurés",
 	["nightclub.notify.safe_collect_ok"] = "Coffre-fort vidé",
 	["nightclub.notify.safe_collect_failed"] = "Échec vidage coffre",
+	["nightclub.notify.safe_empty"] = "Le coffre est vide",
 	["nightclub.notify.safe_fill_ok"] = "Coffre-fort rempli (250 000 $)",
 	["nightclub.notify.safe_fill_failed"] = "Échec remplissage coffre",
 	["nightclub.notify.safe_unbrick_ok"] = "Séquence de déblocage appliquée",

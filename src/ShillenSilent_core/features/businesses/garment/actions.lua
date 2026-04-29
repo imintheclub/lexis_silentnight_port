@@ -48,8 +48,16 @@ function actions.teleport()
 end
 
 function actions.collect_safe()
-	local globals = cfg().globals or {}
-	local ok = safe_access.set_global_int(globals.safe_collect, 1)
+	local offsets_cfg = cfg()
+	local stats = offsets_cfg.stats or {}
+	local value = safe_access.get_mp_stat_int(stats.safe_cash_value, 0) or 0
+	if value <= 0 then
+		push("garment.notify.safe_empty", 2000)
+		return false
+	end
+
+	local globals = offsets_cfg.globals or {}
+	local ok = safe_access.set_global_bool(globals.safe_collect, true)
 	push(ok and "garment.notify.safe_collect_ok" or "garment.notify.safe_collect_failed", 2000)
 	return ok
 end

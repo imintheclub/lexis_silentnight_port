@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "Tresor leeren",
 	["arcade.notify.safe_collect_ok"] = "Tresor erfolgreich geleert",
 	["arcade.notify.safe_collect_failed"] = "Tresor leeren fehlgeschlagen",
+	["arcade.notify.safe_empty"] = "Tresor ist leer",
 
 	["garment.location.entrance"] = "Textilfabrik (Eingang)",
 	["garment.group.teleport"] = "Teleport",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "Textilfabrik-Blip nicht gefunden",
 	["garment.notify.safe_collect_ok"] = "Tresor erfolgreich geleert",
 	["garment.notify.safe_collect_failed"] = "Tresor leeren fehlgeschlagen",
+	["garment.notify.safe_empty"] = "Tresor ist leer",
 
 	["bailoffice.location.strawberry"] = "Kautionsbüro (Strawberry)",
 	["bailoffice.location.la_mesa"] = "Kautionsbüro (La Mesa)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "Heat-Sperre deaktiviert",
 	["moneyfronts.notify.car_wash_safe_ok"] = "Autowäsche-Tresor erfolgreich geleert",
 	["moneyfronts.notify.car_wash_safe_failed"] = "Leeren des Autowäsche-Tresors fehlgeschlagen",
+	["moneyfronts.notify.car_wash_safe_empty"] = "Tresor ist leer",
 
 	["acidlab.group.production"] = "Produktion",
 	["acidlab.status.fast_loop"] = "Status Schnell-Loop: {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "Tunables wiederhergestellt",
 	["nightclub.notify.safe_collect_ok"] = "Tresor erfolgreich geleert",
 	["nightclub.notify.safe_collect_failed"] = "Tresor leeren fehlgeschlagen",
+	["nightclub.notify.safe_empty"] = "Tresor ist leer",
 	["nightclub.notify.safe_fill_ok"] = "Tresor gefüllt ($250,000)",
 	["nightclub.notify.safe_fill_failed"] = "Tresor füllen fehlgeschlagen",
 	["nightclub.notify.safe_unbrick_ok"] = "Tresor-Unbrick-Sequenz angewendet",

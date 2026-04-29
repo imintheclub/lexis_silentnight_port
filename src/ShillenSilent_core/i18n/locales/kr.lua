@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "금고 수거",
 	["arcade.notify.safe_collect_ok"] = "금고 수거 완료",
 	["arcade.notify.safe_collect_failed"] = "금고 수거 적용 실패",
+	["arcade.notify.safe_empty"] = "금고가 비어 있음",
 
 	["garment.location.entrance"] = "의류 공장 (입구)",
 	["garment.group.teleport"] = "텔레포트",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "의류 공장 블립을 찾을 수 없음",
 	["garment.notify.safe_collect_ok"] = "금고 수거 완료",
 	["garment.notify.safe_collect_failed"] = "금고 수거 적용 실패",
+	["garment.notify.safe_empty"] = "금고가 비어 있음",
 
 	["bailoffice.location.strawberry"] = "보석금 사무소 (스트로베리)",
 	["bailoffice.location.la_mesa"] = "보석금 사무소 (라 메사)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "히트 고정 비활성화됨",
 	["moneyfronts.notify.car_wash_safe_ok"] = "세차장 금고 수거 완료",
 	["moneyfronts.notify.car_wash_safe_failed"] = "세차장 금고 수거 적용 실패",
+	["moneyfronts.notify.car_wash_safe_empty"] = "금고가 비어 있음",
 
 	["acidlab.group.production"] = "생산",
 	["acidlab.status.fast_loop"] = "빠른 루프 상태: {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "튜너블 복구됨",
 	["nightclub.notify.safe_collect_ok"] = "금고 수거 완료",
 	["nightclub.notify.safe_collect_failed"] = "금고 수거 적용 실패",
+	["nightclub.notify.safe_empty"] = "금고가 비어 있음",
 	["nightclub.notify.safe_fill_ok"] = "금고 채우기 완료 ($250,000)",
 	["nightclub.notify.safe_fill_failed"] = "금고 채우기 적용 실패",
 	["nightclub.notify.safe_unbrick_ok"] = "금고 복구 시퀀스 적용됨",

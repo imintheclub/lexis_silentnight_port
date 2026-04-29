@@ -420,6 +420,7 @@ return {
 	["arcade.action.collect_safe"] = "Recoger Caja Fuerte",
 	["arcade.notify.safe_collect_ok"] = "Recolección de caja fuerte completada",
 	["arcade.notify.safe_collect_failed"] = "Fallo al aplicar la recolección de caja fuerte",
+	["arcade.notify.safe_empty"] = "La caja fuerte está vacía",
 
 	["garment.location.entrance"] = "Fábrica de Ropa (Entrada)",
 	["garment.group.teleport"] = "Teletransporte",
@@ -437,6 +438,7 @@ return {
 	["garment.notify.entrance_missing"] = "Marcador de Fábrica de Ropa no encontrado",
 	["garment.notify.safe_collect_ok"] = "Recolección de caja fuerte completada",
 	["garment.notify.safe_collect_failed"] = "Fallo al aplicar la recolección de caja fuerte",
+	["garment.notify.safe_empty"] = "La caja fuerte está vacía",
 
 	["bailoffice.location.strawberry"] = "Oficina de Fianzas (Strawberry)",
 	["bailoffice.location.la_mesa"] = "Oficina de Fianzas (La Mesa)",
@@ -489,6 +491,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "Bloqueo de alerta deshabilitado",
 	["moneyfronts.notify.car_wash_safe_ok"] = "Recolección de caja fuerte del lavadero completada",
 	["moneyfronts.notify.car_wash_safe_failed"] = "Fallo al aplicar recolección de caja fuerte del lavadero",
+	["moneyfronts.notify.car_wash_safe_empty"] = "La caja fuerte está vacía",
 
 	["acidlab.group.production"] = "Producción",
 	["acidlab.status.fast_loop"] = "Estado del Bucle Rápido: {status}",
@@ -724,6 +727,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "Tunables restaurados",
 	["nightclub.notify.safe_collect_ok"] = "Recolección de caja fuerte completada",
 	["nightclub.notify.safe_collect_failed"] = "Fallo al aplicar la recolección de caja fuerte",
+	["nightclub.notify.safe_empty"] = "La caja fuerte está vacía",
 	["nightclub.notify.safe_fill_ok"] = "Llenado de caja fuerte completado ($250,000)",
 	["nightclub.notify.safe_fill_failed"] = "Fallo al aplicar el llenado de caja fuerte",
 	["nightclub.notify.safe_unbrick_ok"] = "Secuencia de desatasco de caja fuerte aplicada",

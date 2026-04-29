@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "金庫を回収",
 	["arcade.notify.safe_collect_ok"] = "金庫の回収が完了しました",
 	["arcade.notify.safe_collect_failed"] = "金庫の回収の適用に失敗しました",
+	["arcade.notify.safe_empty"] = "金庫は空です",
 
 	["garment.location.entrance"] = "縫製工場 (入口)",
 	["garment.group.teleport"] = "テレポート",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "縫製工場のアイコンが見つかりません",
 	["garment.notify.safe_collect_ok"] = "金庫の回収が完了しました",
 	["garment.notify.safe_collect_failed"] = "金庫の回収の適用に失敗しました",
+	["garment.notify.safe_empty"] = "金庫は空です",
 
 	["bailoffice.location.strawberry"] = "保釈執行オフィス (ストロベリー)",
 	["bailoffice.location.la_mesa"] = "保釈執行オフィス (ラ・メサ)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "警戒度ロックを無効にしました",
 	["moneyfronts.notify.car_wash_safe_ok"] = "洗車場の金庫回収が完了しました",
 	["moneyfronts.notify.car_wash_safe_failed"] = "洗車場の金庫回収の適用に失敗しました",
+	["moneyfronts.notify.car_wash_safe_empty"] = "金庫は空です",
 
 	["acidlab.group.production"] = "生産",
 	["acidlab.status.fast_loop"] = "高速ループ状態: {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "設定を元に戻しました",
 	["nightclub.notify.safe_collect_ok"] = "金庫の回収が完了しました",
 	["nightclub.notify.safe_collect_failed"] = "金庫の回収の適用に失敗しました",
+	["nightclub.notify.safe_empty"] = "金庫は空です",
 	["nightclub.notify.safe_fill_ok"] = "金庫を補充しました ($250,000)",
 	["nightclub.notify.safe_fill_failed"] = "金庫の補充の適用に失敗しました",
 	["nightclub.notify.safe_unbrick_ok"] = "金庫の修正シーケンスを適用しました",

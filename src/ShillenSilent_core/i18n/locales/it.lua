@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "Ritira Cassaforte",
 	["arcade.notify.safe_collect_ok"] = "Ritiro cassaforte completato",
 	["arcade.notify.safe_collect_failed"] = "Ritiro cassaforte fallito",
+	["arcade.notify.safe_empty"] = "La cassaforte è vuota",
 
 	["garment.location.entrance"] = "Fabbrica di Abbigliamento (Entrata)",
 	["garment.group.teleport"] = "Teletrasporto",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "Blip Fabbrica di Abbigliamento non trovato",
 	["garment.notify.safe_collect_ok"] = "Ritiro cassaforte completato",
 	["garment.notify.safe_collect_failed"] = "Ritiro cassaforte fallito",
+	["garment.notify.safe_empty"] = "La cassaforte è vuota",
 
 	["bailoffice.location.strawberry"] = "Ufficio Cauzioni (Strawberry)",
 	["bailoffice.location.la_mesa"] = "Ufficio Cauzioni (La Mesa)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "Blocco sospetto disabilitato",
 	["moneyfronts.notify.car_wash_safe_ok"] = "Ritiro cassaforte autolavaggio completato",
 	["moneyfronts.notify.car_wash_safe_failed"] = "Ritiro cassaforte autolavaggio fallito",
+	["moneyfronts.notify.car_wash_safe_empty"] = "La cassaforte è vuota",
 
 	["acidlab.group.production"] = "Produzione",
 	["acidlab.status.fast_loop"] = "Stato Loop Rapido: {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "Tunables ripristinati",
 	["nightclub.notify.safe_collect_ok"] = "Ritiro cassaforte completato",
 	["nightclub.notify.safe_collect_failed"] = "Ritiro cassaforte fallito",
+	["nightclub.notify.safe_empty"] = "La cassaforte è vuota",
 	["nightclub.notify.safe_fill_ok"] = "Cassaforte riempita ($250.000)",
 	["nightclub.notify.safe_fill_failed"] = "Riempimento cassaforte fallito",
 	["nightclub.notify.safe_unbrick_ok"] = "Sequenza sblocco cassaforte applicata",

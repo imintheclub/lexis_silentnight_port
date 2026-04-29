@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "收集保险箱",
 	["arcade.notify.safe_collect_ok"] = "保险箱收集完成",
 	["arcade.notify.safe_collect_failed"] = "应用保险箱收集失败",
+	["arcade.notify.safe_empty"] = "保险箱是空的",
 
 	["garment.location.entrance"] = "成衣工厂 (入口)",
 	["garment.group.teleport"] = "传送",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "未找到成衣工厂标记",
 	["garment.notify.safe_collect_ok"] = "保险箱收集完成",
 	["garment.notify.safe_collect_failed"] = "应用保险箱收集失败",
+	["garment.notify.safe_empty"] = "保险箱是空的",
 
 	["bailoffice.location.strawberry"] = "保释执行局 (草莓区)",
 	["bailoffice.location.la_mesa"] = "保释执行局 (梅萨)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "热度锁定已禁用",
 	["moneyfronts.notify.car_wash_safe_ok"] = "洗车店保险箱收集完成",
 	["moneyfronts.notify.car_wash_safe_failed"] = "洗车店保险箱收集失败",
+	["moneyfronts.notify.car_wash_safe_empty"] = "保险箱是空的",
 
 	["acidlab.group.production"] = "生产",
 	["acidlab.status.fast_loop"] = "快速循环状态: {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "Tunables 已恢复",
 	["nightclub.notify.safe_collect_ok"] = "保险箱收集完成",
 	["nightclub.notify.safe_collect_failed"] = "应用保险箱收集失败",
+	["nightclub.notify.safe_empty"] = "保险箱是空的",
 	["nightclub.notify.safe_fill_ok"] = "保险箱填充完成 ($250,000)",
 	["nightclub.notify.safe_fill_failed"] = "应用保险箱填充失败",
 	["nightclub.notify.safe_unbrick_ok"] = "保险箱修复序列已应用",

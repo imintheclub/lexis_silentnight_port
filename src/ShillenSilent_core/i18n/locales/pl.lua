@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "Opróżnij sejf",
 	["arcade.notify.safe_collect_ok"] = "Opróżniono sejf salonu gier",
 	["arcade.notify.safe_collect_failed"] = "Błąd opróżniania sejfu",
+	["arcade.notify.safe_empty"] = "Sejf jest pusty",
 
 	["garment.location.entrance"] = "Szwalnia (Wejście)",
 	["garment.group.teleport"] = "Teleportacja",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "Blip szwalni nie znaleziony",
 	["garment.notify.safe_collect_ok"] = "Sejf opróżniony",
 	["garment.notify.safe_collect_failed"] = "Błąd sejfu",
+	["garment.notify.safe_empty"] = "Sejf jest pusty",
 
 	["bailoffice.location.strawberry"] = "Biuro kaucji (Strawberry)",
 	["bailoffice.location.la_mesa"] = "Biuro kaucji (La Mesa)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "Blokada zainteresowania wyłączona",
 	["moneyfronts.notify.car_wash_safe_ok"] = "Opróżniono sejf myjni",
 	["moneyfronts.notify.car_wash_safe_failed"] = "Błąd opróżniania sejfu myjni",
+	["moneyfronts.notify.car_wash_safe_empty"] = "Sejf jest pusty",
 
 	["acidlab.group.production"] = "Produkcja",
 	["acidlab.status.fast_loop"] = "Status szybkiej pętli: {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "Szybka pętla wyłączona",
 	["nightclub.notify.safe_collect_ok"] = "Sejf opróżniony",
 	["nightclub.notify.safe_collect_failed"] = "Błąd opróżniania sejfu",
+	["nightclub.notify.safe_empty"] = "Sejf jest pusty",
 	["nightclub.notify.safe_fill_ok"] = "Sejf wypełniony ($250,000)",
 	["nightclub.notify.safe_fill_failed"] = "Błąd wypełniania sejfu",
 	["nightclub.notify.safe_unbrick_ok"] = "Sekwencja odblokowania sejfu zastosowana",

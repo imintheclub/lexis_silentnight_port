@@ -418,6 +418,7 @@ return {
 	["arcade.action.collect_safe"] = "Coletar Cofre",
 	["arcade.notify.safe_collect_ok"] = "Coleta do cofre concluída",
 	["arcade.notify.safe_collect_failed"] = "Falha ao coletar cofre",
+	["arcade.notify.safe_empty"] = "O cofre está vazio",
 
 	["garment.location.entrance"] = "Fábrica de Roupas (Entrada)",
 	["garment.group.teleport"] = "Teleporte",
@@ -435,6 +436,7 @@ return {
 	["garment.notify.entrance_missing"] = "Ícone da Fábrica não encontrado",
 	["garment.notify.safe_collect_ok"] = "Coleta do cofre concluída",
 	["garment.notify.safe_collect_failed"] = "Falha ao coletar cofre",
+	["garment.notify.safe_empty"] = "O cofre está vazio",
 
 	["bailoffice.location.strawberry"] = "Escritório de Fianças (Strawberry)",
 	["bailoffice.location.la_mesa"] = "Escritório de Fianças (La Mesa)",
@@ -487,6 +489,7 @@ return {
 	["moneyfronts.notify.heat_lock_off"] = "Trava de atenção desativada",
 	["moneyfronts.notify.car_wash_safe_ok"] = "Coleta do Lava-Jato concluída",
 	["moneyfronts.notify.car_wash_safe_failed"] = "Falha ao coletar cofre do Lava-Jato",
+	["moneyfronts.notify.car_wash_safe_empty"] = "O cofre está vazio",
 
 	["acidlab.group.production"] = "Produção",
 	["acidlab.status.fast_loop"] = "Status Loop Rápido: {status}",
@@ -722,6 +725,7 @@ return {
 	["nightclub.notify.fast_disabled"] = "Ajustes restaurados",
 	["nightclub.notify.safe_collect_ok"] = "Coleta do cofre concluída",
 	["nightclub.notify.safe_collect_failed"] = "Falha ao coletar cofre",
+	["nightclub.notify.safe_empty"] = "O cofre está vazio",
 	["nightclub.notify.safe_fill_ok"] = "Enchimento do cofre concluído ($250.000)",
 	["nightclub.notify.safe_fill_failed"] = "Falha ao encher cofre",
 	["nightclub.notify.safe_unbrick_ok"] = "Sequência de unbrick aplicada",

@@ -1,0 +1,83 @@
+local ui = require("ShillenSilent_core.ui.click.widgets")
+local i18n = require("ShillenSilent_core.i18n")
+local state = require("ShillenSilent_core.features.businesses.bunker.state")
+local actions = require("ShillenSilent_core.features.businesses.bunker.actions")
+
+local click = {}
+local refs = {}
+local config = require("ShillenSilent_core.ui.click.config")
+
+local t = i18n.t
+
+function click.refresh()
+	if refs.fast_status_label then
+		refs.fast_status_label.text = t("bunker.status.fast_loop", { status = actions.get_fast_prod_status() })
+	end
+	if refs.fast_toggle then
+		refs.fast_toggle.state = state.fast_production.active == true
+	end
+	if refs.raids_toggle then
+		refs.raids_toggle.state = state.protections.raids_active == true
+	end
+	if refs.reminders_toggle then
+		refs.reminders_toggle.state = state.protections.reminders_active == true
+	end
+	return true
+end
+
+function click.register(heist_tab)
+	if type(heist_tab) ~= "table" then
+		return nil
+	end
+
+	local production = ui.group(heist_tab, t("bunker.group.production"), nil, nil, nil, nil, "bunker")
+	ui.label(production, t("feature.bunker.name"), config.colors.accent)
+	refs.fast_status_label = ui.label(
+		production,
+		t("bunker.status.fast_loop", { status = actions.get_fast_prod_status() }),
+		config.colors.text_sec
+	)
+	refs.fast_toggle = ui.toggle(
+		production,
+		"bunker_fast_prod",
+		t("bunker.action.production_tick_loop"),
+		actions.get_fast_prod_active(),
+		function(enabled)
+			actions.set_fast_production(enabled)
+			click.refresh()
+		end
+	)
+	ui.button(production, "bunker_tick", t("bunker.action.production_tick"), actions.production_tick)
+	ui.button(production, "bunker_refill", t("bunker.action.refill_supplies"), actions.refill_supplies)
+	ui.button(production, "bunker_sell", t("bunker.action.instant_sell"), actions.instant_sell)
+
+	local protect = ui.group(heist_tab, t("bunker.group.protections"), nil, nil, nil, nil, "bunker")
+	refs.raids_toggle = ui.toggle(
+		protect,
+		"bunker_raids",
+		t("bunker.action.disable_raids"),
+		actions.get_raids_active(),
+		function(enabled)
+			actions.set_disable_raids(enabled)
+			click.refresh()
+		end
+	)
+	refs.reminders_toggle = ui.toggle(
+		protect,
+		"bunker_reminders",
+		t("bunker.action.disable_reminders"),
+		actions.get_reminders_active(),
+		function(enabled)
+			actions.set_disable_reminders(enabled)
+			click.refresh()
+		end
+	)
+
+	local teleport = ui.group(heist_tab, t("bunker.group.teleport"), nil, nil, nil, nil, "bunker")
+	ui.button(teleport, "bunker_teleport", t("bunker.action.teleport"), actions.teleport)
+
+	click.refresh()
+	return heist_tab
+end
+
+return click

@@ -2,14 +2,13 @@
 -- 8. Loop (Safe Control Lock Edition)
 -- ---------------------------------------------------------
 
-local core = require("ShillenSilent_core.core.bootstrap")
-local ui = require("ShillenSilent_core.core.ui")
+local ui = require("ShillenSilent_core.ui.click.widgets")
 local native_api = require("ShillenSilent_core.core.native_api")
 local runtime_services = require("ShillenSilent_core.runtime.services")
+local config = require("ShillenSilent_core.ui.click.config")
+local state = require("ShillenSilent_core.ui.click.state")
 
-local state = core.state
-local config = core.config
-local native = core.native
+local native = require("natives")
 local CONTROL_ACTION_BLOCK_LIST = native_api.CONTROL_ACTION_BLOCK_LIST
 local disable_control_action = native_api.disable_control_action
 

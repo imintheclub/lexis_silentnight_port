@@ -6,6 +6,9 @@ local state = {
 	font_load_attempted = false,
 	active_dropdown = nil,
 	dropdown_just_opened = false,
+	dropdown_scroll = {},
+	dropdown_scroll_init = {},
+	dropdown_scroll_max = 0,
 	dragging_slider = nil,
 	scroll = { y = 0, max_y = 0, is_dragging = false },
 	window = {

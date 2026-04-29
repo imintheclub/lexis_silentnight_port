@@ -109,10 +109,17 @@ function click.register(heist_tab)
 
 	actions.refresh_collect_safe_state()
 
-	local info = ui.group(heist_tab, t("salvageyard.group.info"), nil, nil, nil, 140, "salvageyard")
+	local info = ui.group(heist_tab, t("salvageyard.group.info"), nil, nil, nil, nil, "salvageyard")
 	ui.label(info, t("feature.salvageyard.name"), config.colors.accent)
 	ui.label(info, t("salvageyard.info.max_transaction"), config.colors.text_main)
 	ui.label(info, t("salvageyard.info.planning_controls"), config.colors.text_sec)
+	ui.info(info, t("salvageyard.tip.status"), config.colors.text_sec)
+	ui.info(info, t("salvageyard.tip.make_available"), config.colors.text_sec)
+	ui.info(info, t("salvageyard.tip.force_error"), config.colors.text_sec)
+	ui.info(info, t("salvageyard.tip.sell_values"), config.colors.text_sec)
+	ui.info(info, t("salvageyard.tip.multiplier"), config.colors.text_sec)
+	ui.info(info, t("salvageyard.tip.instant_sell"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
 
 	preset_ui.click_group(heist_tab, {
 		feature_id = "salvageyard",

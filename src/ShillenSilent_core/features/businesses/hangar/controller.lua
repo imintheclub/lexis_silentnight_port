@@ -1,5 +1,6 @@
 local common = require("ShillenSilent_core.ui.controller.widgets")
 local i18n = require("ShillenSilent_core.i18n")
+local data = require("ShillenSilent_core.features.businesses.hangar.data")
 local state = require("ShillenSilent_core.features.businesses.hangar.state")
 local actions = require("ShillenSilent_core.features.businesses.hangar.actions")
 

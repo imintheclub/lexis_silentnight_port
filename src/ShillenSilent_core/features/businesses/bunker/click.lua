@@ -39,6 +39,15 @@ function click.register(heist_tab)
 		return nil
 	end
 
+	local info = ui.group(heist_tab, t("bunker.group.info"), nil, nil, nil, nil, "bunker")
+	ui.label(info, t("feature.bunker.name"), config.colors.accent)
+	ui.info(info, t("bunker.tip.tick_loop"), config.colors.text_sec)
+	ui.info(info, t("bunker.tip.tick"), config.colors.text_sec)
+	ui.info(info, t("bunker.tip.supplier"), config.colors.text_sec)
+	ui.info(info, t("bunker.tip.max_price"), config.colors.text_sec)
+	ui.info(info, t("bunker.tip.no_xp"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
+
 	local production = ui.group(heist_tab, t("bunker.group.production"), nil, nil, nil, nil, "bunker")
 	ui.label(production, t("feature.bunker.name"), config.colors.accent)
 	refs.fast_status_label = ui.label(

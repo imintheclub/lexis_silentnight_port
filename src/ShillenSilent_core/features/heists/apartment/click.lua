@@ -81,12 +81,19 @@ function click.register(heist_tab)
 		return nil
 	end
 
-	local info = ui.group(heist_tab, t("apartment.group.info"), nil, nil, nil, 160, "apartment")
+	local info = ui.group(heist_tab, t("apartment.group.info"), nil, nil, nil, nil, "apartment")
 	ui.label(info, t("apartment.info.title"), config.colors.accent)
 	ui.label(info, t("apartment.info.max_transaction"), config.colors.text_main)
 	ui.label(info, t("apartment.info.transaction_cooldown"), config.colors.text_sec)
 	ui.label(info, t("apartment.info.criminal_mastermind"), config.colors.text_sec)
 	ui.label(info, t("apartment.info.heist_cooldown"), config.colors.text_sec)
+	ui.info(info, t("apartment.tip.play_unavailable"), config.colors.text_sec)
+	ui.info(info, t("apartment.tip.redraw_board"), config.colors.text_sec)
+	ui.info(info, t("apartment.tip.2x_week"), config.colors.text_sec)
+	ui.info(info, t("apartment.tip.unlock_all_jobs"), config.colors.text_sec)
+	ui.info(info, t("apartment.tip.auto_force_cuts"), config.colors.text_sec)
+	ui.info(info, t("apartment.tip.max_payout"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
 
 	local launch = ui.group(heist_tab, t("apartment.group.launch"), nil, nil, nil, nil, "apartment")
 	ui.button(

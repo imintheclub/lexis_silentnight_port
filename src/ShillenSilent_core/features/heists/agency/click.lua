@@ -35,11 +35,11 @@ function click.register(heist_tab)
 
 	actions.refresh_collect_safe_state()
 
-	local info = ui.group(heist_tab, t("agency.group.info"), nil, nil, nil, 140, "agency")
+	local info = ui.group(heist_tab, t("agency.group.info"), nil, nil, nil, nil, "agency")
 	ui.label(info, t("feature.agency.name"), config.colors.accent)
 	ui.label(info, t("agency.info.max_transaction"), config.colors.text_main)
 	ui.label(info, t("agency.info.cooldown"), config.colors.text_sec)
-
+	ui.spacer(info, config.space.x2)
 	preset_ui.click_group(heist_tab, {
 		feature_id = "agency",
 		id_prefix = "agency",

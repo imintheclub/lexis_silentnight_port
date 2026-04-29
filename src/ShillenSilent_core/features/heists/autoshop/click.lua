@@ -27,11 +27,11 @@ function click.register(heist_tab)
 		return nil
 	end
 
-	local info = ui.group(heist_tab, t("autoshop.group.info"), nil, nil, nil, 140, "autoshop")
+	local info = ui.group(heist_tab, t("autoshop.group.info"), nil, nil, nil, nil, "autoshop")
 	ui.label(info, t("feature.autoshop.name"), config.colors.accent)
 	ui.label(info, t("autoshop.info.max_transaction"), config.colors.text_main)
 	ui.label(info, t("autoshop.info.cooldown"), config.colors.text_sec)
-
+	ui.spacer(info, config.space.x2)
 	preset_ui.click_group(heist_tab, {
 		feature_id = "autoshop",
 		id_prefix = "autoshop",

@@ -106,16 +106,24 @@ Made by Shillen#0000 on the Lexis discord. Originally found [here](https://disco
 
 # Changelog
 ## v0.1.4
-- Added internationalization support across the UI, feature labels, and notifications.
-- Added full locale tables for English, Spanish, German, French, Italian, Polish, Portuguese (Brazil), Russian.
-  - The localization for Chinese, Japanese, and Korean are present, but I cannot get the font to render them. 
-- Added persistent settings for UI mode, theme, and language, all configurable from the Info tab.
-- Added a much larger theme selector, including dark/light plus Dracula, Solarized, Monokai, One Dark, Gruvbox, Nord, Material, Tokyo Night, Night Owl, Cobalt2, Catppuccin, Rose Pine, Shades of Purple, Everforest, Ayu, and Synthwave84.
-- Reworked the click UI into a drawer-based layout with cleaner feature navigation, improved dropdown/label alignment, and more consistent controls.
+- **v0 LEGACY SUPPORT IS HERE**
+- **Added i18n; English, Spanish, German, French, Italian, Polish, Portuguese (Brazil), Russian.**
+  - The localization for Chinese, Japanese, and Korean are present, but I cannot get the font to render them.
+- **Added hella themes.**
+- MADE APP SKINNIER BY DEFAULT AND MADE ALL CARDS SKINNIER TOO **TO TAKE LESS SPACE ON SCREEN** 
+- Added hints on each tab for what some of the non-obvious functionality does.
+- Expanded business manager functionality:
+  - Added more Bunker, Hangar, Nightclub, and Special Cargo controls for max sale price, supplier loops, cooldown removal, and optional no XP on instant sells.
+  - Added Hangar instant sell, plus Special Cargo instant buy/sell, crate amount, max crates, and get crates.
+  - Added more business laptop/computer shortcuts and teleports for Bunker, Hangar, Nightclub, Special Cargo, Bail Office, Garment Factory, and Money Fronts.
+  - Money Fronts now have separate heat controls for Car Wash, Weed Shop, and Heli Tours, with apply, max/min, and lock options.
+  - Added Nightclub setup skip and min popularity, plus a Garment Factory computer unbrick button.
+- JSON settings file for UI mode, theme, and language, all configurable from the Settings tab.
+- Fixed issue where dropdowns clip off of page by making the long ones scrollable.
+- Moved to hamburger menu.
 - Added JSON preset support to controller menu.
-- Fixed safe collect behavior so Arcade, Bail Office, Car Wash, Garment Factory, and Nightclub use the proper safe collect globals and guard against empty safes before collecting.
+- Fixed safe collection transaction error bug when empty.
 - Unified production tick UI/status behavior across Hangar, Special Cargo, Nightclub, and MC business controls.
-- Fixed Info/settings save behavior for language/UI settings and added validation scripts for locale key parity and feature manifests.
 
 ## v0.1.3-beta
 - MC businesses — Production ticks, refills, fast-production, and new teleport all should be fixed now.

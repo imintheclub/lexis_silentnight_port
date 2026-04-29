@@ -129,16 +129,6 @@ function click.register(heist_tab)
 		actions.fill_tick_once()
 		click.refresh()
 	end)
-	refs.cooldowns_toggle = ui.toggle(
-		stock,
-		"sc_cooldowns",
-		t("speccargo.action.kill_cooldowns"),
-		actions.get_cooldowns_active(),
-		function(enabled)
-			actions.set_cooldowns(enabled)
-			click.refresh()
-		end
-	)
 
 	local protect = ui.group(heist_tab, t("speccargo.group.protections"), nil, nil, nil, nil, "speccargo")
 	refs.raids_toggle = ui.toggle(
@@ -192,6 +182,19 @@ function click.register(heist_tab)
 	else
 		ui.label(teleport, t("speccargo.notify.no_owned_warehouses"), config.colors.muted_text)
 	end
+
+	local danger = ui.group(heist_tab, t("speccargo.group.danger"), nil, nil, nil, nil, "speccargo")
+	ui.label(danger, t("speccargo.warning.use_with_caution"), config.colors.danger_text)
+	refs.cooldowns_toggle = ui.toggle(
+		danger,
+		"sc_cooldowns",
+		t("speccargo.action.kill_cooldowns"),
+		actions.get_cooldowns_active(),
+		function(enabled)
+			actions.set_cooldowns(enabled)
+			click.refresh()
+		end
+	)
 
 	click.refresh()
 	return heist_tab

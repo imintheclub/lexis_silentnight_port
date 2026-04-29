@@ -47,6 +47,19 @@ function click.register(heist_tab)
 		return nil
 	end
 
+	local info = ui.group(heist_tab, t("nightclub.group.info"), nil, nil, nil, nil, "nightclub")
+	ui.label(info, t("feature.nightclub.name"), config.colors.accent)
+	ui.info(info, t("nightclub.tip.fast_target"), config.colors.text_sec)
+	ui.info(info, t("nightclub.tip.prod_increase"), config.colors.text_sec)
+	ui.info(info, t("nightclub.tip.prod_tick"), config.colors.text_sec)
+	ui.info(info, t("nightclub.tip.unbrick"), config.colors.text_sec)
+	ui.info(info, t("nightclub.tip.max_price"), config.colors.text_sec)
+	ui.info(info, t("nightclub.tip.kill_cooldowns"), config.colors.text_sec)
+	ui.info(info, t("nightclub.tip.skip_setup"), config.colors.text_sec)
+	ui.info(info, t("nightclub.tip.products"), config.colors.text_sec)
+	ui.info(info, t("nightclub.tip.products2"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
+
 	local prod = ui.group(heist_tab, t("nightclub.group.production"), nil, nil, nil, nil, "nightclub")
 	ui.label(prod, t("feature.nightclub.name"), config.colors.accent)
 	refs.fast_status_label = ui.label(
@@ -155,8 +168,11 @@ function click.register(heist_tab)
 	ui.button(teleport, "nc_computer_tp", t("nightclub.action.teleport_computer"), actions.teleport_computer)
 	ui.button(teleport, "nc_computer_open", t("nightclub.action.open_computer"), actions.open_computer)
 	ui.button(teleport, "nc_setup", t("nightclub.action.skip_setup"), actions.skip_setup)
+
+	local danger = ui.group(heist_tab, t("nightclub.group.danger"), nil, nil, nil, nil, "nightclub")
+	ui.label(danger, t("nightclub.warning.use_with_caution"), config.colors.danger_text)
 	refs.cooldowns_toggle = ui.toggle(
-		teleport,
+		danger,
 		"nc_cooldowns",
 		t("nightclub.action.kill_cooldowns"),
 		actions.get_cooldowns_active(),

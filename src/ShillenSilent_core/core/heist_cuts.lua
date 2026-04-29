@@ -73,4 +73,21 @@ function heist_cuts.write_apartment_globals(opts)
 	return ok, values
 end
 
+function heist_cuts.write_apartment_balance_globals(opts)
+	local values = opts.values or heist_cuts.enabled_values(opts)
+	local offsets = opts.offsets or {}
+	local p1 = values.player1 or 0
+	local p2 = values.player2 or 0
+	local p3 = values.player3 or 0
+	local p4 = values.player4 or 0
+	local ok = true
+
+	ok = safe_access.set_global_int_variants(offsets.host_balance, 100 - (p1 + p2 + p3 + p4)) and ok
+	ok = safe_access.set_global_int_variants(offsets.player2_balance, p2) and ok
+	ok = safe_access.set_global_int_variants(offsets.player3_balance, p3) and ok
+	ok = safe_access.set_global_int_variants(offsets.player4_balance, p4) and ok
+
+	return ok, values
+end
+
 return heist_cuts

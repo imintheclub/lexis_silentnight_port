@@ -35,6 +35,7 @@ return {
 				ee_stride = 883,
 				legacy_stride = 880,
 			},
+			difficulty = 4718592 + 3538,
 			cuts = {
 				host_balance = { ee = 1936013 + 1 + 1, legacy = 1935536 + 1 + 1 },
 				player2_balance = { ee = 1936013 + 1 + 2, legacy = 1935536 + 1 + 2 },

@@ -1,4 +1,5 @@
 local option_helpers = require("ShillenSilent_core.core.options")
+local i18n = require("ShillenSilent_core.i18n")
 local data = {}
 
 data.gta_plus = {
@@ -28,10 +29,21 @@ data.theme_modes = {
 	{ label_key = "info.theme.synthwave84", value = "synthwave84" },
 }
 
-data.languages = {
-	{ label_key = "info.language.en", value = "en" },
-	{ label_key = "info.language.es", value = "es" },
+data.languages = i18n.languages
+data.visible_languages = {}
+
+local hidden_menu_languages = {
+	jp = true,
+	kr = true,
+	["zh-cn"] = true,
 }
+
+for i = 1, #data.languages do
+	local language = data.languages[i]
+	if not hidden_menu_languages[language.value] then
+		data.visible_languages[#data.visible_languages + 1] = language
+	end
+end
 
 local function normalize_from_options(options, value, fallback)
 	if type(value) ~= "string" then

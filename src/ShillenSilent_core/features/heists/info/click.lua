@@ -18,7 +18,7 @@ local function theme_options()
 end
 
 local function language_options()
-	return data.localized_options(data.languages, t)
+	return data.localized_options(data.visible_languages, t)
 end
 
 function click.refresh()
@@ -30,7 +30,7 @@ function click.refresh()
 		refs.theme_dropdown.value = data.option_index_by_value(data.theme_modes, state.config.theme_mode, 1)
 	end
 	if refs.language_dropdown then
-		refs.language_dropdown.value = data.option_index_by_value(data.languages, state.config.language, 1)
+		refs.language_dropdown.value = data.option_index_by_value(data.visible_languages, state.config.language, 1)
 	end
 	return true
 end
@@ -79,7 +79,7 @@ function click.register(heist_tab)
 		"info_language",
 		t("info.field.language"),
 		data.option_names(languages),
-		data.option_index_by_value(data.languages, state.config.language, 1),
+		data.option_index_by_value(data.visible_languages, state.config.language, 1),
 		function(opt)
 			local target_id = data.option_value_by_name(languages, opt, state.config.language)
 			actions.set_language(target_id)

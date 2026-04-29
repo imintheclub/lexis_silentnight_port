@@ -15,6 +15,9 @@ function click.refresh()
 		refs.fill_status_label.text =
 			t(state.fill.active and "speccargo.status.fill_running" or "speccargo.status.fill_stopped")
 	end
+	if refs.fill_toggle then
+		refs.fill_toggle.state = state.fill.active == true
+	end
 	if refs.raids_toggle then
 		refs.raids_toggle.state = state.protections.raids_active == true
 	end
@@ -40,12 +43,18 @@ function click.register(heist_tab)
 		config.colors.text_sec
 	)
 	ui.button(stock, "sc_instant_sell", t("speccargo.action.instant_sell"), actions.instant_sell)
-	ui.button(stock, "sc_fill", t("speccargo.action.fill_cargo"), function()
-		actions.fill_cargo()
-		click.refresh()
-	end)
-	ui.button(stock, "sc_fill_stop", t("speccargo.action.stop_fill"), function()
-		actions.stop_fill()
+	refs.fill_toggle = ui.toggle(
+		stock,
+		"sc_fill_loop",
+		t("speccargo.action.fill_loop"),
+		actions.get_fill_active(),
+		function(enabled)
+			actions.set_fill_loop(enabled)
+			click.refresh()
+		end
+	)
+	ui.button(stock, "sc_fill_tick", t("speccargo.action.fill_tick"), function()
+		actions.fill_tick_once()
 		click.refresh()
 	end)
 

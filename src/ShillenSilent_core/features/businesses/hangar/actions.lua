@@ -93,6 +93,41 @@ function actions.fill_cargo()
 	return true
 end
 
+function actions.set_fill_loop(enabled, silent)
+	enabled = enabled == true
+	if enabled then
+		if state.fill.active then
+			if not silent then
+				push("hangar.notify.fill_running", 1500)
+			end
+			return true
+		end
+		if is_full() then
+			state.set_fill_active(false)
+			if not silent then
+				push("hangar.notify.cargo_full", 2000)
+			end
+			return false
+		end
+		state.set_fill_active(true)
+		if not silent then
+			push("hangar.notify.fill_started", 2000)
+		end
+	else
+		if not state.fill.active then
+			if not silent then
+				push("hangar.notify.fill_not_running", 1500)
+			end
+			return false
+		end
+		state.set_fill_active(false)
+		if not silent then
+			push("hangar.notify.fill_stopped", 2000)
+		end
+	end
+	return state.fill.active
+end
+
 function actions.stop_fill()
 	if not state.fill.active then
 		push("hangar.notify.fill_not_running", 1500)
@@ -105,6 +140,16 @@ end
 
 function actions.get_fill_active()
 	return state.fill.active == true
+end
+
+function actions.fill_tick_once()
+	if is_full() then
+		push("hangar.notify.cargo_full", 2000)
+		return false
+	end
+	local ok = supplier_tick()
+	push(ok and "hangar.notify.fill_tick_ok" or "hangar.notify.fill_tick_failed", 2000)
+	return ok
 end
 
 function actions.tick_fill_cargo()

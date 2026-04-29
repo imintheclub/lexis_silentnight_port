@@ -16,6 +16,7 @@ function controller.refresh_controls()
 		controls.fill_status_breaker.name =
 			t(state.fill.active and "hangar.status.fill_running" or "hangar.status.fill_stopped")
 	end
+	common.set_control_value(controller.ctx, controls.fill_toggle, state.fill.active == true)
 	return true
 end
 
@@ -24,6 +25,7 @@ function controller.register(parent_menu)
 		return nil
 	end
 
+	local ctx = controller.ctx
 	local controls = controller.controls
 
 	local root = parent_menu:submenu(t("feature.hangar.name"))
@@ -32,12 +34,14 @@ function controller.register(parent_menu)
 	local stock = root:submenu(t("hangar.group.stock"))
 	controls.fill_status_breaker =
 		stock:breaker(t(state.fill.active and "hangar.status.fill_running" or "hangar.status.fill_stopped"))
-	common.add_button(stock, t("hangar.action.fill_cargo"), function()
-		actions.fill_cargo()
+	controls.fill_toggle = common.add_toggle(ctx, stock, t("hangar.action.fill_loop"), function()
+		return actions.get_fill_active()
+	end, function(enabled)
+		actions.set_fill_loop(enabled)
 		controller.refresh_controls()
 	end)
-	common.add_button(stock, t("hangar.action.stop_fill"), function()
-		actions.stop_fill()
+	common.add_button(stock, t("hangar.action.fill_tick"), function()
+		actions.fill_tick_once()
 		controller.refresh_controls()
 	end)
 

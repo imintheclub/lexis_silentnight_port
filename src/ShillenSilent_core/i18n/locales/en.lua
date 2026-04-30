@@ -7,6 +7,8 @@ return {
 	["menu.toggle_ui_mode"] = "Toggle UI Mode",
 	["menu.unlock_gta_plus"] = "Unlock GTA+",
 	["menu.business_manager"] = "Business Manager",
+	["splash.press_open_window"] = "Press T to open the window",
+	["splash.controller_loaded_scripts"] = "Open the loaded scripts section in Lexis to use the script.",
 	["drawer.section.general"] = "General",
 	["drawer.section.heists"] = "Heists",
 	["drawer.section.businesses"] = "Businesses",

@@ -2,6 +2,7 @@ local registry = require("ShillenSilent_core.features.registry")
 local runtime_services = require("ShillenSilent_core.runtime.services")
 local i18n = require("ShillenSilent_core.i18n")
 local notify_core = require("ShillenSilent_core.core.notify")
+local splash = require("ShillenSilent_core.ui.click.splash")
 
 local controller = {
 	started = false,
@@ -109,6 +110,7 @@ function controller.start()
 	controller.register_all(root)
 
 	pcall(runtime_services.start)
+	pcall(splash.start_thread, "splash.controller_loaded_scripts")
 	controller.started = true
 	notify_core.push("app.name", "notify.controller_loaded", 2500)
 	return true

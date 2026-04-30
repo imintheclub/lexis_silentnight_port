@@ -3,7 +3,7 @@ local i18n = require("ShillenSilent_core.i18n")
 local notify_core = require("ShillenSilent_core.core.notify")
 
 local jobs = {
-	started = false,
+	started_gen = nil,
 	next_tick = {},
 	guarded = {},
 }
@@ -94,13 +94,17 @@ local function collect_jobs()
 end
 
 function jobs.start()
-	if jobs.started then
+	local my_gen = _G.ShillenSilent_Generation or 0
+	if jobs.started_gen == my_gen then
 		return false
 	end
-	jobs.started = true
+	jobs.started_gen = my_gen
 	local registered = collect_jobs()
 	util.create_thread(function()
 		while true do
+			if (_G.ShillenSilent_Generation or 0) ~= my_gen then
+				return
+			end
 			local now = get_tick()
 			for i = 1, #registered do
 				local job = registered[i]

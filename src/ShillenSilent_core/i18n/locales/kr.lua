@@ -7,6 +7,8 @@ return {
 	["menu.toggle_ui_mode"] = "UI 모드 전환",
 	["menu.unlock_gta_plus"] = "GTA+ 잠금 해제",
 	["menu.business_manager"] = "비즈니스 매니저",
+	["splash.press_open_window"] = "T를 눌러 창을 여세요",
+	["splash.controller_loaded_scripts"] = "스크립트를 사용하려면 Lexis에서 로드된 스크립트 섹션을 여세요.",
 	["drawer.section.general"] = "일반",
 	["drawer.section.heists"] = "습격",
 	["drawer.section.businesses"] = "비즈니스",

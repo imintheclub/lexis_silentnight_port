@@ -7,6 +7,8 @@ return {
 	["menu.toggle_ui_mode"] = "Cambia Modalità Interfaccia",
 	["menu.unlock_gta_plus"] = "Sblocca GTA+",
 	["menu.business_manager"] = "Gestione Attività",
+	["splash.press_open_window"] = "Premi T per aprire la finestra",
+	["splash.controller_loaded_scripts"] = "Apri la sezione degli script caricati in Lexis per usare lo script.",
 	["drawer.section.general"] = "Generale",
 	["drawer.section.heists"] = "Colpi",
 	["drawer.section.businesses"] = "Attività",

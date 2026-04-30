@@ -20,7 +20,7 @@ local state = {
 		drag_offset = { x = 0, y = 0 },
 		resize_start = { x = 0, y = 0, width = config.menu_width, height = config.menu_height },
 	},
-	animation = { open = false, progress = 0.0, target = 1.0, speed = config.motion.open_speed or 0.15 },
+	animation = { open = false, progress = 0.0, target = 0.0, speed = config.motion.open_speed or 0.15 },
 	drawer = { open = false, progress = 0.0, target = 0.0 },
 	render_alpha_mul = 1.0,
 	content_transition = { subtab = 1, progress = 1.0 },

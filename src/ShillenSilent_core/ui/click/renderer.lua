@@ -1812,7 +1812,7 @@ local function draw_button_surface(btn, btnX, btnY, btnW, btnH, disabled_message
 	return style
 end
 
-local BUTTON_LABEL_SCALE = 0.9
+local BUTTON_LABEL_SCALE = 1.0
 
 local function render_button_label(label, btnX, btnY, btnW, btnH, textColor)
 	local pad_x = config.space.x3

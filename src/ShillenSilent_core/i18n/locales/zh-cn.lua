@@ -7,6 +7,8 @@ return {
 	["menu.toggle_ui_mode"] = "切换 UI 模式",
 	["menu.unlock_gta_plus"] = "解锁 GTA+",
 	["menu.business_manager"] = "企业管理器",
+	["splash.press_open_window"] = "按 T 打开窗口",
+	["splash.controller_loaded_scripts"] = "在 Lexis 中打开已加载脚本部分以使用此脚本。",
 	["drawer.section.general"] = "常规",
 	["drawer.section.heists"] = "抢劫任务",
 	["drawer.section.businesses"] = "产业",

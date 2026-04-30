@@ -8,6 +8,7 @@ local preset_ui = {
 		waiting = false,
 		feature_id = nil,
 	},
+	keyboard_watcher_gen = nil,
 }
 
 local native = nil
@@ -225,9 +226,18 @@ local function get_keyboard_result()
 	return type(s) == "string" and s or ""
 end
 
-pcall(function()
+function preset_ui.start_keyboard_watcher()
+	if not (util and util.create_thread and native and native.update_onscreen_keyboard) then
+		return false
+	end
+	local my_gen = _G.ShillenSilent_Generation or 0
+	if preset_ui.keyboard_watcher_gen == my_gen then
+		return false
+	end
+	preset_ui.keyboard_watcher_gen = my_gen
+
 	util.create_thread(function()
-		while true do
+		while (_G.ShillenSilent_Generation or 0) == my_gen do
 			util.yield(100)
 			if preset_ui.keyboard.waiting then
 				local status = native.update_onscreen_keyboard()
@@ -243,7 +253,8 @@ pcall(function()
 			end
 		end
 	end)
-end)
+	return true
+end
 
 function preset_ui.click_group(parent, opts)
 	if type(parent) ~= "table" or type(opts) ~= "table" then

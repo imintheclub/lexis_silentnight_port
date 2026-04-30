@@ -7,6 +7,8 @@ return {
 	["menu.toggle_ui_mode"] = "UIモード切替",
 	["menu.unlock_gta_plus"] = "GTA+ を解除",
 	["menu.business_manager"] = "ビジネス管理",
+	["splash.press_open_window"] = "Tキーを押してウィンドウを開く",
+	["splash.controller_loaded_scripts"] = "スクリプトを使用するには、Lexis の読み込み済みスクリプトセクションを開いてください。",
 	["drawer.section.general"] = "全般",
 	["drawer.section.heists"] = "強盗",
 	["drawer.section.businesses"] = "ビジネス",

@@ -7,6 +7,8 @@ return {
 	["menu.toggle_ui_mode"] = "UI-Modus umschalten",
 	["menu.unlock_gta_plus"] = "GTA+ freischalten",
 	["menu.business_manager"] = "Business Manager",
+	["splash.press_open_window"] = "Drücke T, um das Fenster zu öffnen",
+	["splash.controller_loaded_scripts"] = "Öffne den Bereich für geladene Skripte in Lexis, um das Skript zu verwenden.",
 	["drawer.section.general"] = "Allgemein",
 	["drawer.section.heists"] = "Raubüberfälle",
 	["drawer.section.businesses"] = "Unternehmen",

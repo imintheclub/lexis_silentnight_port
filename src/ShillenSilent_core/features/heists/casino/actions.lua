@@ -544,6 +544,8 @@ local function solo_launch_reset()
 	ok = safe_access.set_global_int(c.launcher.globals.player_count_2, 1) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.flow, 2) and ok
 	ok = safe_access.set_global_int_variants(c.launcher.globals.extra, 11) and ok
+	ok = safe_access.set_local_int_variants(c.scripts.launcher, c.launcher.flags_offset, 0) and ok
+	ok = safe_access.set_global_int(c.launcher.globals.flags, 1) and ok
 	return ok
 end
 

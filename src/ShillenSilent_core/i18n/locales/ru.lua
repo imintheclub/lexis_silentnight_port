@@ -7,6 +7,8 @@ return {
 	["menu.toggle_ui_mode"] = "Переключить режим интерфейса",
 	["menu.unlock_gta_plus"] = "Разблокировать GTA+",
 	["menu.business_manager"] = "Управление бизнесом",
+	["splash.press_open_window"] = "Нажмите T, чтобы открыть окно",
+	["splash.controller_loaded_scripts"] = "Откройте раздел загруженных скриптов в Lexis, чтобы использовать скрипт.",
 	["drawer.section.general"] = "Общее",
 	["drawer.section.heists"] = "Ограбления",
 	["drawer.section.businesses"] = "Предприятия",

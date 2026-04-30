@@ -34,6 +34,7 @@ local function init_config()
 
 	return {
 		font_path = paths.fonts_dir .. "\\NotoSansSC-SemiBold.ttf",
+		font_load_scale = 16.0,
 		background_tile_path = paths.img_dir
 			.. "\\43d8dab59abbbb877fd374f24b34a459880815bd195696b01e0301de7c079a79.png",
 		background_tile_alpha = 255,

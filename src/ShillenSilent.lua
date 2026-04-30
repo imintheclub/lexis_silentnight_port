@@ -21,4 +21,10 @@ end
 prepend_package_pattern(script_root .. "/?.lua")
 prepend_package_pattern(script_root .. "/?/init.lua")
 
+-- Bump the generation so any mid-iteration render thread from a previous load exits
+-- on its next loop check, even if ForceStop has already been cleared by that point.
+_G.ShillenSilent_Generation = (_G.ShillenSilent_Generation or 0) + 1
+_G.ShillenSilent_ForceStop = true
+util.yield(0)
+
 require("ShillenSilent_core.app.router")

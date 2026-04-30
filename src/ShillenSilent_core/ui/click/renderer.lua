@@ -1820,17 +1820,17 @@ local function render_button_label(label, btnX, btnY, btnW, btnH, textColor)
 	local max_w = math.max(1, btnW - (pad_x * 2))
 	local lines = wrap_text_lines(tostring(label or ""), max_w, draw_size)
 	local n = math.max(1, #lines)
-	local tx = btnX + pad_x
+	local center_x = btnX + (btnW / 2)
 
 	if n == 1 then
 		local ty = centered_text_y(btnY, btnH, lines[1], draw_size)
-		render_text(lines[1], tx, ty, draw_size, textColor)
+		render_text(lines[1], center_x, ty, draw_size, textColor, "center")
 	else
 		local line_h = config.space.x6
 		local block_h = n * line_h
 		local start_y = btnY + math.floor((btnH - block_h) / 2)
 		for i, line in ipairs(lines) do
-			render_text(line, tx, start_y + (i - 1) * line_h, draw_size, textColor)
+			render_text(line, center_x, start_y + (i - 1) * line_h, draw_size, textColor, "center")
 		end
 	end
 end

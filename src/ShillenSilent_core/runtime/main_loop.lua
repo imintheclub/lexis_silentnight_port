@@ -21,8 +21,9 @@ local function subscribe_scroll_handler()
 		return
 	end
 
+	local my_gen = _G.ShillenSilent_Generation or 0
 	events.subscribe(events.event.scroll, function(e)
-		if _G.ShillenSilent_ForceStop then
+		if _G.ShillenSilent_ForceStop or (_G.ShillenSilent_Generation or 0) ~= my_gen then
 			return
 		end
 		if not state.animation.open and state.animation.progress < 0.01 then
@@ -78,9 +79,10 @@ local function subscribe_scroll_handler()
 end
 
 local function start_runtime_loop()
+	local my_gen = _G.ShillenSilent_Generation or 0
 	util.create_thread(function()
 		while true do
-			if _G.ShillenSilent_ForceStop then
+			if _G.ShillenSilent_ForceStop or (_G.ShillenSilent_Generation or 0) ~= my_gen then
 				return
 			end
 

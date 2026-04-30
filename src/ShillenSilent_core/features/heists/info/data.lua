@@ -36,17 +36,9 @@ data.theme_modes = {
 data.languages = i18n.languages
 data.visible_languages = {}
 
-local hidden_menu_languages = {
-	jp = true,
-	kr = true,
-	["zh-cn"] = true,
-}
-
 for i = 1, #data.languages do
 	local language = data.languages[i]
-	if not hidden_menu_languages[language.value] then
-		data.visible_languages[#data.visible_languages + 1] = language
-	end
+	data.visible_languages[#data.visible_languages + 1] = language
 end
 
 local function normalize_from_options(options, value, fallback)

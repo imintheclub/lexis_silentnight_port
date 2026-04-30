@@ -12,12 +12,68 @@ local function get_tick()
 	return (util and util.get_tick_count and util.get_tick_count()) or 0
 end
 
+local function current_ui_mode()
+	return _G.ShillenSilent_ForceStop == true and "controller" or "click"
+end
+
+local function infer_ui_mode(module_name)
+	if type(module_name) ~= "string" then
+		return nil
+	end
+	if module_name:match("%.click$") then
+		return "click"
+	end
+	if module_name:match("%.controller$") then
+		return "controller"
+	end
+	return nil
+end
+
+local function resolve_job_fn(job)
+	if job.disabled then
+		return nil
+	end
+	if type(job.fn) == "function" then
+		return job.fn
+	end
+	if not job.module then
+		job.disabled = true
+		return nil
+	end
+	if job.ui_mode and not package.loaded[job.module] then
+		return nil
+	end
+
+	local ok, module = pcall(require, job.module)
+	if ok and type(module) == "table" and type(module[job.fn_name]) == "function" then
+		job.fn = module[job.fn_name]
+		return job.fn
+	end
+
+	job.disabled = true
+	notify_core.push("app.name", "notify.module_failed", 3000, { module = tostring(job.module) })
+	return nil
+end
+
 local function run_job(job)
-	local module = job.module and require(job.module) or nil
-	local fn = module and module[job.fn]
+	local fn = resolve_job_fn(job)
 	if type(fn) == "function" then
 		pcall(fn)
 	end
+end
+
+local function resolve_job(job)
+	local id = job.id or (tostring(job.module) .. "." .. tostring(job.fn))
+	local interval = tonumber(job.interval_ms) or 1000
+
+	return {
+		id = id,
+		interval = interval,
+		module = job.module,
+		fn = type(job.fn) == "function" and job.fn or nil,
+		fn_name = type(job.fn) == "string" and job.fn or nil,
+		ui_mode = infer_ui_mode(job.module),
+	}
 end
 
 local function collect_jobs()
@@ -28,7 +84,10 @@ local function collect_jobs()
 		local manifest_jobs = manifest.jobs or {}
 		for j = 1, #manifest_jobs do
 			local job = manifest_jobs[j]
-			out[#out + 1] = job
+			local resolved = resolve_job(job)
+			if resolved then
+				out[#out + 1] = resolved
+			end
 		end
 	end
 	return out
@@ -45,10 +104,8 @@ function jobs.start()
 			local now = get_tick()
 			for i = 1, #registered do
 				local job = registered[i]
-				local id = job.id or (tostring(job.module) .. "." .. tostring(job.fn))
-				local interval = tonumber(job.interval_ms) or 1000
-				if now >= (jobs.next_tick[id] or 0) then
-					jobs.next_tick[id] = now + interval
+				if (not job.ui_mode or job.ui_mode == current_ui_mode()) and now >= (jobs.next_tick[job.id] or 0) then
+					jobs.next_tick[job.id] = now + job.interval
 					run_job(job)
 				end
 			end

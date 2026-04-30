@@ -33,7 +33,7 @@ local function init_config()
 	local min_w_from_one_card = (content_margin * 2) + fixed_column_w
 
 	return {
-		font_path = paths.fonts_dir .. "\\Inter-SemiBold.ttf",
+		font_path = paths.fonts_dir .. "\\NotoSansSC-SemiBold.ttf",
 		background_tile_path = paths.img_dir
 			.. "\\43d8dab59abbbb877fd374f24b34a459880815bd195696b01e0301de7c079a79.png",
 		background_tile_alpha = 255,

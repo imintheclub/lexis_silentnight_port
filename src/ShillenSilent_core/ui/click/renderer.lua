@@ -245,23 +245,33 @@ local function text_with_ellipsis(value, max_width, draw_size)
 		ellipsis_cache.by_font[font_key] = font_bucket
 	end
 
-	local cache_key = text .. "\31" .. tostring(max_width) .. "\31" .. tostring(draw_size or 1.0)
-	local cached = font_bucket[cache_key]
+	local width_bucket = font_bucket[text]
+	if not width_bucket then
+		width_bucket = {}
+		font_bucket[text] = width_bucket
+	end
+	local max_width_bucket = width_bucket[max_width]
+	if not max_width_bucket then
+		max_width_bucket = {}
+		width_bucket[max_width] = max_width_bucket
+	end
+	local scale_key = draw_size or 1.0
+	local cached = max_width_bucket[scale_key]
 	if cached ~= nil then
 		return cached
 	end
 
 	local width = measure_text_width(text, draw_size)
 	if width and width <= max_width then
-		font_bucket[cache_key] = text
+		max_width_bucket[scale_key] = text
 		ellipsis_cache.count = ellipsis_cache.count + 1
 		return text
 	end
 
 	local ellipsis = "..."
-	local ellipsis_width = measure_text_width(ellipsis, draw_size) or (draw_size * 3.0)
+	local ellipsis_width = measure_text_width(ellipsis, draw_size) or ((draw_size or 1.0) * 3.0)
 	if ellipsis_width >= max_width then
-		font_bucket[cache_key] = ""
+		max_width_bucket[scale_key] = ""
 		ellipsis_cache.count = ellipsis_cache.count + 1
 		return ""
 	end
@@ -279,7 +289,7 @@ local function text_with_ellipsis(value, max_width, draw_size)
 	end
 
 	local output = text:sub(1, low) .. ellipsis
-	font_bucket[cache_key] = output
+	max_width_bucket[scale_key] = output
 	ellipsis_cache.count = ellipsis_cache.count + 1
 	if ellipsis_cache.count > 4096 then
 		ellipsis_cache.by_font = {}
@@ -867,6 +877,9 @@ for _, v in ipairs(BIZ_SUBTAB_KEYS) do
 	HEIST_SUBTAB_KEYS[#HEIST_SUBTAB_KEYS + 1] = v
 end
 
+local heist_subtab_loader = nil
+local heist_subtab_load_state = {}
+
 local DRAWER_HEIST_KEYS = {
 	cayo = true,
 	casino = true,
@@ -893,8 +906,36 @@ function ui.set_heist_subtabs(names, keys)
 		HEIST_SUBTAB_NAMES[i] = names[i]
 		HEIST_SUBTAB_KEYS[i] = keys[i]
 	end
+	heist_subtab_load_state = {}
 	mark_layout_dirty()
 	return true
+end
+
+function ui.set_heist_subtab_loader(loader)
+	heist_subtab_loader = type(loader) == "function" and loader or nil
+	heist_subtab_load_state = {}
+	return heist_subtab_loader ~= nil
+end
+
+local function ensure_heist_subtab_loaded(index)
+	if type(heist_subtab_loader) ~= "function" then
+		return false
+	end
+	local key = HEIST_SUBTAB_KEYS[index]
+	if not key or heist_subtab_load_state[key] then
+		return false
+	end
+
+	local ok, err = pcall(heist_subtab_loader, key)
+	heist_subtab_load_state[key] = ok and true or "failed"
+	if not ok then
+		notify_core.push("notify.ui_callback_error_title", "notify.ui_callback_error", 4500, {
+			kind = "subtab_loader",
+			id = tostring(key),
+			error = tostring(err),
+		})
+	end
+	return ok
 end
 
 -- Legacy visual order hints. Used only to flatten groups into a stable sequence.
@@ -1003,11 +1044,17 @@ end
 
 local render_cache = {
 	active_groups = {},
+	active_groups_tab = nil,
+	active_groups_subtab = nil,
+	active_groups_revision = -1,
 	col_x = {},
 	groups_by_column = { {}, {}, {} },
 	ordered_groups = {},
 	pending_dropdowns = {},
-	layout_key = nil,
+	layout_tab_id = nil,
+	layout_selected_heist_key = nil,
+	layout_column_count = nil,
+	layout_col_w = nil,
 	layout_revision = -1,
 	layout_dirty = true,
 	group_heights = {},
@@ -1015,6 +1062,45 @@ local render_cache = {
 render_cache.drawer_overlay_col = { r = 0, g = 0, b = 0, a = 0 }
 render_cache.drawer_active_bg_col = { r = 255, g = 255, b = 255, a = 255 }
 render_cache.drawer_active_text_col = { r = 255, g = 255, b = 255, a = 255 }
+
+local function get_active_groups()
+	local activeGroups = render_cache.active_groups
+	local currentTab = ui.currentTab
+	local selected_heist_key = nil
+
+	if currentTab and currentTab.id == "heist" then
+		selected_heist_key = HEIST_SUBTAB_KEYS[state.heist_subtab]
+	end
+
+	if
+		render_cache.active_groups_tab == currentTab
+		and render_cache.active_groups_subtab == selected_heist_key
+		and render_cache.active_groups_revision == layout_cache_revision
+	then
+		return activeGroups, selected_heist_key
+	end
+
+	clear_array(activeGroups)
+	if currentTab then
+		if currentTab.id == "heist" then
+			for i = 1, #currentTab.groups do
+				local group = currentTab.groups[i]
+				if selected_heist_key and group.heist_subtab == selected_heist_key then
+					activeGroups[#activeGroups + 1] = group
+				end
+			end
+		else
+			for i = 1, #currentTab.groups do
+				activeGroups[#activeGroups + 1] = currentTab.groups[i]
+			end
+		end
+	end
+
+	render_cache.active_groups_tab = currentTab
+	render_cache.active_groups_subtab = selected_heist_key
+	render_cache.active_groups_revision = layout_cache_revision
+	return activeGroups, selected_heist_key
+end
 
 local function update_drawer_animation()
 	local drawer = state.drawer
@@ -1058,6 +1144,7 @@ local function select_heist_subtab(index)
 		state.content_transition.progress = 0.0
 		animator.values["content_transition"] = { v = 0.0, seen = animator.frame }
 	end
+	ensure_heist_subtab_loaded(index)
 	state.scroll.y = 0
 	state.scroll.is_dragging = false
 	state.dragging_slider = nil
@@ -1282,6 +1369,27 @@ local function flatten_groups_by_order(activeGroups, heist_subtab)
 	return ordered
 end
 
+local function group_animation_key(group, subkey, order)
+	return "group:" .. subkey .. ":" .. tostring(order or 0) .. ":" .. tostring(group and group.label or "")
+end
+
+local function group_animation_keys(group, subkey, order)
+	local key = group_animation_key(group, subkey, order)
+	return key, key .. ":x", key .. ":y"
+end
+
+local function group_column_entry(group, order, h, animation_subkey)
+	local anim_key, anim_key_x, anim_key_y = group_animation_keys(group, animation_subkey, order)
+	return {
+		group = group,
+		order = order,
+		h = h,
+		anim_key = anim_key,
+		anim_key_x = anim_key_x,
+		anim_key_y = anim_key_y,
+	}
+end
+
 local function get_item_height(item, col_w)
 	if item.hidden then
 		return 0
@@ -1342,8 +1450,12 @@ local function next_auto_pair_button_index(items, start_index)
 end
 
 local function get_group_actual_height(group, col_w)
-	local cache_rev = tostring(layout_cache_revision) .. ":" .. tostring(col_w or 0)
-	if group._cached_h and group._cached_rev == cache_rev then
+	local cache_col_w = col_w or 0
+	if
+		group._cached_h
+		and group._cached_layout_revision == layout_cache_revision
+		and group._cached_col_w == cache_col_w
+	then
 		return group._cached_h
 	end
 
@@ -1385,11 +1497,12 @@ local function get_group_actual_height(group, col_w)
 		h = min_h
 	end
 	group._cached_h = h
-	group._cached_rev = cache_rev
+	group._cached_layout_revision = layout_cache_revision
+	group._cached_col_w = cache_col_w
 	return h
 end
 
-local function distribute_groups_by_column(flattened, groups_by_column, column_count, group_heights)
+local function distribute_groups_by_column(flattened, groups_by_column, column_count, group_heights, animation_subkey)
 	for col = 1, column_count do
 		clear_array(groups_by_column[col])
 	end
@@ -1405,11 +1518,8 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 	if cols == 1 then
 		for i = 1, total do
 			local entry = flattened[i]
-			groups_by_column[1][#groups_by_column[1] + 1] = {
-				group = entry.group,
-				order = i,
-				h = group_heights[entry.group],
-			}
+			groups_by_column[1][#groups_by_column[1] + 1] =
+				group_column_entry(entry.group, i, group_heights[entry.group], animation_subkey)
 		end
 		return
 	end
@@ -1455,11 +1565,8 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 
 			for _, col_entry in ipairs(column_entries[col]) do
 				local entry = col_entry.entry
-				groups_by_column[col][#groups_by_column[col] + 1] = {
-					group = entry.group,
-					order = col_entry.seq_order,
-					h = group_heights[entry.group],
-				}
+				groups_by_column[col][#groups_by_column[col] + 1] =
+					group_column_entry(entry.group, col_entry.seq_order, group_heights[entry.group], animation_subkey)
 			end
 		end
 
@@ -1523,11 +1630,8 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 		if range then
 			for idx = range.s, range.e do
 				local entry = flattened[idx]
-				groups_by_column[col][#groups_by_column[col] + 1] = {
-					group = entry.group,
-					order = idx,
-					h = group_heights[entry.group],
-				}
+				groups_by_column[col][#groups_by_column[col] + 1] =
+					group_column_entry(entry.group, idx, group_heights[entry.group], animation_subkey)
 			end
 		end
 	end
@@ -2056,6 +2160,7 @@ ui.render = function()
 
 	-- Heist-only layout: always keep the Heist tab selected.
 	ui.currentTab = ui.tabs[1]
+	ensure_heist_subtab_loaded(state.heist_subtab)
 
 	-- Animation
 	state.animation.speed = config.motion.open_speed or state.animation.speed
@@ -2244,24 +2349,7 @@ ui.render = function()
 	local pendingDropdowns = render_cache.pending_dropdowns
 	clear_array(pendingDropdowns)
 
-	local activeGroups = render_cache.active_groups
-	clear_array(activeGroups)
-	local selected_heist_key = nil
-	if ui.currentTab then
-		if ui.currentTab.id == "heist" then
-			-- Filter groups based on active heist subtab.
-			selected_heist_key = HEIST_SUBTAB_KEYS[state.heist_subtab]
-			for _, group in ipairs(ui.currentTab.groups) do
-				if selected_heist_key and group.heist_subtab == selected_heist_key then
-					table.insert(activeGroups, group)
-				end
-			end
-		else
-			for i = 1, #ui.currentTab.groups do
-				activeGroups[#activeGroups + 1] = ui.currentTab.groups[i]
-			end
-		end
-	end
+	local activeGroups, selected_heist_key = get_active_groups()
 
 	if #activeGroups > 0 then
 		local col_w = fixed_col_w
@@ -2276,19 +2364,15 @@ ui.render = function()
 		end
 
 		local groups_by_column = render_cache.groups_by_column
-		local layout_key = tostring(ui.currentTab and ui.currentTab.id or "")
-			.. ":"
-			.. tostring(selected_heist_key or "")
-			.. ":"
-			.. tostring(column_count)
-			.. ":"
-			.. tostring(col_w)
-			.. ":"
-			.. tostring(layout_cache_revision)
+		local layout_tab_id = ui.currentTab and ui.currentTab.id or ""
+		local animation_subkey = selected_heist_key or tostring(state.heist_subtab or 0)
 		if
 			render_cache.layout_dirty
 			or render_cache.layout_revision ~= layout_cache_revision
-			or render_cache.layout_key ~= layout_key
+			or render_cache.layout_tab_id ~= layout_tab_id
+			or render_cache.layout_selected_heist_key ~= selected_heist_key
+			or render_cache.layout_column_count ~= column_count
+			or render_cache.layout_col_w ~= col_w
 		then
 			local ordered = flatten_groups_by_order(activeGroups, state.heist_subtab)
 			local group_heights = render_cache.group_heights
@@ -2299,8 +2383,11 @@ ui.render = function()
 				local group = ordered[i].group
 				group_heights[group] = get_group_actual_height(group, col_w)
 			end
-			distribute_groups_by_column(ordered, groups_by_column, column_count, group_heights)
-			render_cache.layout_key = layout_key
+			distribute_groups_by_column(ordered, groups_by_column, column_count, group_heights, animation_subkey)
+			render_cache.layout_tab_id = layout_tab_id
+			render_cache.layout_selected_heist_key = selected_heist_key
+			render_cache.layout_column_count = column_count
+			render_cache.layout_col_w = col_w
 			render_cache.layout_revision = layout_cache_revision
 			render_cache.layout_dirty = false
 		end
@@ -2316,14 +2403,14 @@ ui.render = function()
 				local group = entry.group
 				local gY = col_y
 				local actual_h = entry.h or get_group_actual_height(group, col_w)
-				local subkey = HEIST_SUBTAB_KEYS[state.heist_subtab] or tostring(state.heist_subtab or 0)
-				local anim_key = "group:"
-					.. subkey
-					.. ":"
-					.. tostring(entry.order or 0)
-					.. ":"
-					.. tostring(group and group.label or "")
-				local drawX, drawY = animator.vec2(anim_key, gX, gY, group_move_speed)
+				local anim_key = entry.anim_key or group_animation_key(group, animation_subkey, entry.order)
+				local drawX, drawY
+				if entry.anim_key_x and entry.anim_key_y then
+					drawX = animator.to(entry.anim_key_x, gX, group_move_speed)
+					drawY = animator.to(entry.anim_key_y, gY, group_move_speed)
+				else
+					drawX, drawY = animator.vec2(anim_key, gX, gY, group_move_speed)
+				end
 				local stagger = math.min(0.45, ((entry.order or 1) - 1) * 0.06)
 				local reveal_t = (content_intro_t <= stagger) and 0.0 or ((content_intro_t - stagger) / (1.0 - stagger))
 				reveal_t = animator.clamp01(reveal_t)

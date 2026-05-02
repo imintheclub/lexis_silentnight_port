@@ -66,9 +66,16 @@ function click.register(heistTab)
 		refresh = click.refresh,
 	})
 
+	local teleport = ui.group(heistTab, t("doomsday.group.teleport"), nil, nil, nil, nil, data.feature_id)
+	ui.button(
+		teleport,
+		"doomsday_teleport_entrance",
+		t("doomsday.action.teleport_entrance"),
+		actions.teleport_to_entrance
+	)
+	ui.button(teleport, "doomsday_teleport_screen", t("doomsday.action.teleport_screen"), actions.teleport_to_screen)
+
 	local preps = ui.group(heistTab, t("doomsday.group.preps"), nil, nil, nil, nil, data.feature_id)
-	ui.button(preps, "doomsday_teleport_entrance", t("doomsday.action.teleport_entrance"), actions.teleport_to_entrance)
-	ui.button(preps, "doomsday_teleport_screen", t("doomsday.action.teleport_screen"), actions.teleport_to_screen)
 
 	local act_options = data.localized_options(data.act_options, t)
 	refs.act_dropdown = ui.dropdown(

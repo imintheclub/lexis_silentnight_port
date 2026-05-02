@@ -13,6 +13,7 @@ function controller.register(parent_menu)
 
 	local root = parent_menu:submenu(t("feature.arcade.name"))
 	root:breaker(t("feature.arcade.name"))
+	common.add_button(root, t("arcade.action.teleport"), actions.teleport)
 	common.add_button(root, t("arcade.action.collect_safe"), actions.collect_safe)
 	return root
 end

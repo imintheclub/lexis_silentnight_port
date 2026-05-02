@@ -6,14 +6,13 @@ local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
 local offsets = require("ShillenSilent_core.data.offsets.current")
+local arcade_actions = require("ShillenSilent_core.features.businesses.arcade.actions")
 local data = require("ShillenSilent_core.features.heists.casino.data")
 local state = require("ShillenSilent_core.features.heists.casino.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
-local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 
 local run_guarded_job = jobs.run_guarded_job
 local run_coords_teleport = coords_teleport.run_coords_teleport
-local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 
 local actions = {}
 
@@ -549,14 +548,7 @@ function actions.maintain_solo_launch()
 end
 
 function actions.teleport_arcade()
-	local c = cfg()
-	return teleport_to_blip_with_job(
-		c.blips.arcade,
-		t("casino.group.teleport"),
-		t("casino.notify.tp_arcade"),
-		t("casino.notify.tp_arcade_missing"),
-		{ relay_if_interior = true }
-	)
+	return arcade_actions.teleport()
 end
 
 local function teleport_to_coord(coord_key, message_key)

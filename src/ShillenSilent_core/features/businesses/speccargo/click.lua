@@ -53,6 +53,18 @@ function click.register(heist_tab)
 		return nil
 	end
 
+	local info = ui.group(heist_tab, t("speccargo.group.info"), nil, nil, nil, nil, "speccargo")
+	ui.label(info, t("feature.speccargo.name"), config.colors.accent)
+	ui.info(info, t("speccargo.tip.instant_sell"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.sale_price"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.no_xp_crateback"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.supply"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.instant_buy"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.fill"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.protections"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.cooldowns"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
+
 	local stock = ui.group(heist_tab, t("speccargo.group.stock"), nil, nil, nil, nil, "speccargo")
 	ui.label(stock, t("feature.speccargo.name"), config.colors.accent)
 	refs.fill_status_label = ui.label(

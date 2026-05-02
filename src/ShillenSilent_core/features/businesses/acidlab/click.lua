@@ -24,6 +24,14 @@ function click.register(heist_tab)
 		return nil
 	end
 
+	local info = ui.group(heist_tab, t("acidlab.group.info"), nil, nil, nil, nil, "acidlab")
+	ui.label(info, t("feature.acidlab.name"), config.colors.accent)
+	ui.info(info, t("acidlab.tip.fast_loop"), config.colors.text_sec)
+	ui.info(info, t("acidlab.tip.tick"), config.colors.text_sec)
+	ui.info(info, t("acidlab.tip.refill"), config.colors.text_sec)
+	ui.info(info, t("acidlab.tip.instant_sell"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
+
 	local production = ui.group(heist_tab, t("acidlab.group.production"), nil, nil, nil, nil, "acidlab")
 	ui.label(production, t("feature.acidlab.name"), config.colors.accent)
 	refs.fast_status_label = ui.label(

@@ -343,11 +343,19 @@ local function info_item_text(item)
 	return "· " .. ((item and item.text) or "")
 end
 
+local function info_item_pad_top()
+	return config.space.x1_5
+end
+
+local function info_item_pad_bottom()
+	return config.space.x1
+end
+
 local function info_item_height(text, max_w, scale)
 	if not max_w or max_w <= 0 then
-		return config.space.x6
+		return config.space.x3
 	end
-	return config.space.x3 + math.ceil(measure_wrapped_text_height(text, max_w, scale)) + config.space.x2
+	return info_item_pad_top() + math.ceil(measure_wrapped_text_height(text, max_w, scale)) + info_item_pad_bottom()
 end
 
 local function button_line_count(label, btn_w)
@@ -725,6 +733,10 @@ local function button_variant_for(btn)
 		return "outline"
 	end
 
+	if id:find("instant_finish", 1, true) or id == "cayo_tool_finish" then
+		return "success"
+	end
+
 	if
 		id:find("preset_copy", 1, true)
 		or id:find("preset_refresh", 1, true)
@@ -738,6 +750,10 @@ local function button_variant_for(btn)
 		return "ghost_danger"
 	end
 
+	if id:find("cooldown", 1, true) then
+		return "danger"
+	end
+
 	if id:find("_tp_", 1, true) or id:find("teleport", 1, true) then
 		return "outline"
 	end
@@ -748,6 +764,8 @@ local function button_variant_for(btn)
 
 	if
 		id:find("cuts_apply", 1, true)
+		or id:find("cuts_reset", 1, true)
+		or id:find("reset_cuts", 1, true)
 		or id:find("_apply", 1, true)
 		or id:find("preset_save", 1, true)
 		or id:find("preset_load", 1, true)
@@ -776,8 +794,12 @@ local function dropdown_label_height(item, w)
 	)
 end
 
+local function dropdown_label_gap()
+	return config.space.x1
+end
+
 local function get_dropdown_item_height(item, w)
-	return config.space.x1 + dropdown_label_height(item, w) + config.space.x9 + config.space.x2
+	return config.space.x1 + dropdown_label_height(item, w) + dropdown_label_gap() + config.space.x9 + config.space.x2
 end
 
 local function get_dropdown_panel_width(item, min_w, max_w)
@@ -1032,6 +1054,7 @@ local HEIST_GROUP_LAYOUTS = {
 	},
 	[7] = { -- Auto Shop
 		["autoshop.group.info"] = { col = 1, order = 1 },
+		["autoshop.group.teleport"] = { col = 1, order = 2 },
 		["autoshop.group.preps"] = { col = 2, order = 1 },
 		["autoshop.group.payout"] = { col = 2, order = 2 },
 		["autoshop.group.tools"] = { col = 3, order = 1 },
@@ -1039,6 +1062,7 @@ local HEIST_GROUP_LAYOUTS = {
 	},
 	[8] = { -- Salvage Yard
 		["salvageyard.group.info"] = { col = 1, order = 1 },
+		["salvageyard.group.teleport"] = { col = 1, order = 2 },
 		["salvageyard.group.preps"] = { col = 2, order = 1 },
 		["salvageyard.group.slot.1"] = {
 			col = 2,
@@ -2088,7 +2112,7 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	local boxH = config.space.x9
 	local boxX = x + pad_x
 	local label_h = dropdown_label_height(item, w)
-	local boxY = y + config.space.x1 + label_h
+	local boxY = y + config.space.x1 + label_h + dropdown_label_gap()
 
 	local is_active_dropdown = (state.active_dropdown == item.id)
 	local allow_hover = (not state.active_dropdown) or is_active_dropdown
@@ -2179,9 +2203,16 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	end
 end
 
-local function draw_label_item(item, x, y, pad_x)
+local function draw_label_item(item, x, y, pad_x, group_w)
 	local labelCol = item.color or config.colors.text_sec
-	render_text(item.text, x + pad_x, y + config.space.x3, config.font_scale_small, labelCol)
+	local text = item.text
+	if group_w then
+		local max_w = group_w - (pad_x * 2)
+		if max_w > 0 then
+			text = text_with_ellipsis(text, max_w, config.font_scale_small)
+		end
+	end
+	render_text(text, x + pad_x, y + config.space.x3, config.font_scale_small, labelCol)
 	return y + config.space.x6
 end
 
@@ -2192,7 +2223,7 @@ local function draw_info_item(item, x, y, pad_x, group_w)
 	local text = info_item_text(item)
 	local item_h = info_item_height(text, max_w, scale)
 
-	render_wrapped_text(text, x + pad_x, y + config.space.x3, max_w, scale, text_col)
+	render_wrapped_text(text, x + pad_x, y + info_item_pad_top(), max_w, scale, text_col)
 	return y + item_h
 end
 
@@ -2218,7 +2249,7 @@ local function render_group_item(item, group_x, item_y, group_w, pad_x)
 		return item_y + get_dropdown_item_height(item, group_w), dd
 	end
 	if item.type == "label" then
-		return draw_label_item(item, group_x, item_y, pad_x), nil
+		return draw_label_item(item, group_x, item_y, pad_x, group_w), nil
 	end
 	if item.type == "info" then
 		return draw_info_item(item, group_x, item_y, pad_x, group_w), nil

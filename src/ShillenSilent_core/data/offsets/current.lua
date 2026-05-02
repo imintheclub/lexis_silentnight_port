@@ -530,7 +530,11 @@ return {
 		},
 	},
 	arcade = {
+		blips = {
+			entrance = 740,
+		},
 		stats = {
+			owned = "ARCADE_OWNED",
 			safe_cash_value = "ARCADE_SAFE_CASH_VALUE",
 		},
 		globals = {

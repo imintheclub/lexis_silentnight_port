@@ -45,6 +45,9 @@ function click.register(heist_tab)
 	ui.button(production, "acidlab_refill", t("acidlab.action.refill_supplies"), actions.refill_supplies)
 	ui.button(production, "acidlab_sell", t("acidlab.action.instant_sell"), actions.instant_sell)
 
+	local teleport = ui.group(heist_tab, t("acidlab.group.teleport"), nil, nil, nil, nil, "acidlab")
+	ui.button(teleport, "acidlab_teleport", t("acidlab.action.teleport"), actions.teleport)
+
 	click.refresh()
 	return heist_tab
 end

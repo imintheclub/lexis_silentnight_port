@@ -114,16 +114,6 @@ function actions.apply_front_heat_value(key)
 	return set_heat_for_key(key, state.config.front_heat[key] or data.heat.default, false)
 end
 
-function actions.max_front_heat(key)
-	state.set_front_heat_value(key, data.heat.max)
-	return set_heat_for_key(key, data.heat.max, false)
-end
-
-function actions.min_front_heat(key)
-	state.set_front_heat_value(key, data.heat.min)
-	return set_heat_for_key(key, data.heat.min, false)
-end
-
 function actions.set_front_heat_lock_active(key, enabled, silent)
 	state.set_front_heat_lock_active(key, enabled == true)
 	if state.flags.front_heat_lock[key] then
@@ -136,59 +126,6 @@ function actions.set_front_heat_lock_active(key, enabled, silent)
 		)
 	end
 	return state.flags.front_heat_lock[key]
-end
-
-function actions.set_overall_heat_value(value)
-	state.set_overall_heat_value(value)
-	return state.config.overall_heat
-end
-
-function actions.apply_overall_heat_value()
-	local ok = true
-	for _, key in ipairs(data.front_keys) do
-		ok = set_heat_for_key(key, state.config.overall_heat, true) and ok
-	end
-	push(ok and "moneyfronts.notify.heat_set" or "moneyfronts.notify.heat_failed", 2000, {
-		value = tostring(state.config.overall_heat),
-	})
-	return ok
-end
-
-function actions.max_overall_heat()
-	state.set_overall_heat_value(data.heat.max)
-	return actions.apply_overall_heat_value()
-end
-
-function actions.min_overall_heat()
-	state.set_overall_heat_value(data.heat.min)
-	return actions.apply_overall_heat_value()
-end
-
-function actions.set_overall_heat_lock_active(enabled, silent)
-	state.set_overall_heat_lock_active(enabled == true)
-	for _, key in ipairs(data.front_keys) do
-		actions.set_front_heat_lock_active(key, state.flags.overall_heat_lock and actions.is_front_available(key), true)
-	end
-	if state.flags.overall_heat_lock then
-		local overall = data.heat.min
-		for _, key in ipairs(data.front_keys) do
-			if actions.is_front_available(key) then
-				overall = math.max(overall, state.config.front_heat[key] or data.heat.default)
-			end
-		end
-		state.set_overall_heat_value(overall)
-	end
-	if not silent then
-		push(
-			state.flags.overall_heat_lock and "moneyfronts.notify.heat_lock_on" or "moneyfronts.notify.heat_lock_off",
-			2000
-		)
-	end
-	return state.flags.overall_heat_lock
-end
-
-function actions.get_overall_heat_lock_active()
-	return state.flags.overall_heat_lock == true
 end
 
 function actions.get_front_heat_lock_active(key)

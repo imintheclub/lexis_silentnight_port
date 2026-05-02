@@ -86,7 +86,9 @@ function controller.register(parent_menu)
 	local teleport = root:submenu(t("bunker.group.teleport"))
 	common.add_button(teleport, t("bunker.action.teleport"), actions.teleport)
 	common.add_button(teleport, t("bunker.action.teleport_laptop"), actions.teleport_laptop)
-	common.add_button(teleport, t("bunker.action.open_laptop"), actions.open_laptop)
+
+	local tools = root:submenu(t("bunker.group.tools"))
+	common.add_button(tools, t("bunker.action.open_laptop"), actions.open_laptop)
 
 	controller.refresh_controls()
 	return root

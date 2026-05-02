@@ -79,6 +79,25 @@ local function register_businesses(root)
 	return true
 end
 
+local function register_general(root)
+	local general = registry.list("general")
+	if #general <= 0 then
+		return false
+	end
+
+	local general_root = root:submenu(i18n.t("drawer.section.general"))
+	general_root:breaker(i18n.t("drawer.section.general"))
+
+	for i = 1, #general do
+		local controller_module = registry.load_module(general[i], "controller")
+		if controller_module and type(controller_module.register) == "function" then
+			register_menu_group(controller_module.register, general_root)
+		end
+	end
+
+	return true
+end
+
 function controller.register_all(root)
 	local heists = registry.list("heist")
 	for i = 1, #heists do
@@ -89,6 +108,7 @@ function controller.register_all(root)
 		end
 	end
 
+	register_general(root)
 	register_businesses(root)
 	return true
 end

@@ -330,25 +330,6 @@ function actions.instant_finish_new()
 	end)
 end
 
-function actions.manual_launch_reset()
-	return run_guarded_job("doomsday_manual_launch_reset", function()
-		core_state.solo_launch.doomsday = false
-		local reset_fn = solo_launch_runtime.manual_reset_doomsday_launch
-		if type(reset_fn) ~= "function" then
-			reset_fn = solo_launch_runtime.solo_launch_reset_doomsday
-		end
-
-		local ok = false
-		if type(reset_fn) == "function" then
-			ok = reset_fn() and true or false
-		end
-
-		push(ok and "doomsday.notify.launch_reset_ok" or "doomsday.notify.launch_reset_failed", 2000)
-	end, function()
-		push("doomsday.notify.launch_reset_running", 1500)
-	end)
-end
-
 function actions.maintain_solo_launch()
 	local enabled = core_state.solo_launch.doomsday and true or false
 	local was_enabled = core_state.solo_launch_prev.doomsday and true or false
@@ -392,6 +373,5 @@ actions.doomsday_set_max_payout = actions.set_max_payout
 actions.doomsday_data_hack = actions.data_hack
 actions.doomsday_doomsday_hack = actions.doomsday_hack
 actions.doomsday_instant_finish_new = actions.instant_finish_new
-actions.doomsday_manual_launch_reset = actions.manual_launch_reset
 
 return actions

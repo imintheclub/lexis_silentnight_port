@@ -1,7 +1,6 @@
 local core_state = require("ShillenSilent_core.shared.runtime_state")
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
-local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
@@ -301,20 +300,6 @@ function actions.reset_preps()
 	return ok
 end
 
-function actions.skip_arcade_setup()
-	local c = cfg()
-	local packed = c.packed_stats or {}
-	local natives = c.natives or {}
-	local ok = business_runtime.write_packed_bool(
-		packed.arcade_setup_done,
-		true,
-		packed.character_slots,
-		natives.stat_set_packed_bool
-	)
-	tool_push(ok and "casino.notify.arcade_setup_ok" or "casino.notify.arcade_setup_failed", 2000)
-	return ok
-end
-
 function actions.fix_stuck_keycards()
 	local c = cfg()
 	local ok = safe_access.set_local_int(c.scripts.controller, c.locals.keycards_fix, 5)
@@ -609,7 +594,6 @@ actions.casino_set_autograbber = actions.set_autograbber
 actions.casino_set_max_payout = actions.set_max_payout
 actions.casino_refresh_max_payout = actions.refresh_max_payout
 actions.casino_enforce_heist_toggles = actions.enforce_heist_toggles
-actions.casino_skip_arcade_setup = actions.skip_arcade_setup
 actions.casino_fix_stuck_keycards = actions.fix_stuck_keycards
 actions.casino_skip_objective = actions.skip_objective
 actions.casino_fingerprint_hack = actions.fingerprint_hack

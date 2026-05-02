@@ -273,13 +273,6 @@ return {
 			completed_posix = "H3_COMPLETEDPOSIX",
 			cooldown = "MPPLY_H3_COOLDOWN",
 		},
-		packed_stats = {
-			arcade_setup_done = 27227,
-			character_slots = "active",
-		},
-		natives = {
-			stat_set_packed_bool = 0xDB8A58AEAA67CD07,
-		},
 		scripts = {
 			controller = "fm_mission_controller",
 			planning = "gb_casino_heist_planning",
@@ -627,13 +620,21 @@ return {
 		production = {
 			timer_root = { ee = 2708936 - ((6 - 1) * 2) - 1, legacy = 2708790 },
 		},
+		globals = {
+			vehicle_handle = 2733138 + 348,
+		},
+		natives = {
+			does_entity_exist = 0x7239B21A38F536BA,
+			get_entity_coords = 0x3FEF770D40960D5A,
+		},
 		scripts = {
 			freemode = "freemode",
 			sell = {
 				name = "fm_content_acid_lab_sell",
-				state_offset = 7050,
-				state_value = 1,
-				flags_offset = 7059,
+				state_offset = { ee = 7050, legacy = 7048 },
+				reason_offset = { ee = 7051, legacy = 7049 },
+				reason_value = 3,
+				flags_offset = { ee = 7059, legacy = 7057 },
 				win_bit = 11,
 			},
 		},

@@ -52,9 +52,9 @@ function click.register(heistTab)
 	ui.label(info, t("doomsday.info.title"), config.colors.accent)
 	ui.label(info, t("doomsday.info.max_transaction"), config.colors.text_main)
 	ui.label(info, t("doomsday.info.transaction_cooldown"), config.colors.text_sec)
-	ui.label(info, t("doomsday.info.transaction_note"), config.colors.text_sec)
 	ui.label(info, t("doomsday.info.heist_cooldown"), config.colors.text_sec)
 	ui.info(info, t("doomsday.tip.max_payout"), config.colors.text_sec)
+	ui.info(info, t("doomsday.tip.force_ready"), config.colors.text_sec)
 	ui.spacer(info, config.space.x2)
 
 	preset_ui.click_group(heistTab, {
@@ -106,10 +106,6 @@ function click.register(heistTab)
 		end
 	)
 	ui.button(launch, "doomsday_launch_force_ready", t("doomsday.action.force_ready"), actions.force_ready)
-	ui.button(launch, "doomsday_launch_reset_manual", t("doomsday.action.reset_solo_launch"), function()
-		actions.manual_launch_reset()
-		click.refresh()
-	end)
 
 	local cuts = ui.group(heistTab, t("doomsday.group.cuts"), nil, nil, nil, nil, data.feature_id)
 	refs.max_payout_toggle = ui.toggle(

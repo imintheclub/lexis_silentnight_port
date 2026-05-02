@@ -96,6 +96,7 @@ function click.register(heist_tab)
 	ui.info(info, t("apartment.tip.unlock_all_jobs"), config.colors.text_sec)
 	ui.info(info, t("apartment.tip.auto_force_cuts"), config.colors.text_sec)
 	ui.info(info, t("apartment.tip.max_payout"), config.colors.text_sec)
+	ui.info(info, t("apartment.tip.force_ready"), config.colors.text_sec)
 	ui.spacer(info, config.space.x2)
 
 	local launch = ui.group(heist_tab, t("apartment.group.launch"), nil, nil, nil, nil, "apartment")
@@ -141,10 +142,11 @@ function click.register(heist_tab)
 	})
 
 	local tools = ui.group(heist_tab, t("apartment.group.tools"), nil, nil, nil, nil, "apartment")
+	ui.button(tools, "apartment_play_unavailable", t("apartment.action.play_unavailable"), actions.play_unavailable)
+	ui.button(tools, "apartment_unlock_all", t("apartment.action.unlock_all_jobs"), actions.unlock_all_jobs)
 	ui.button(tools, "apartment_fleeca_hack", t("apartment.action.fleeca_hack"), actions.fleeca_hack)
 	ui.button(tools, "apartment_fleeca_drill", t("apartment.action.fleeca_drill"), actions.fleeca_drill)
 	ui.button(tools, "apartment_pacific_hack", t("apartment.action.pacific_hack"), actions.pacific_hack)
-	ui.button(tools, "apartment_play_unavailable", t("apartment.action.play_unavailable"), actions.play_unavailable)
 	ui.button(
 		tools,
 		"apartment_instant_finish_pacific",
@@ -157,7 +159,6 @@ function click.register(heist_tab)
 		t("apartment.action.instant_finish_other"),
 		actions.instant_finish_other
 	)
-	ui.button(tools, "apartment_unlock_all", t("apartment.action.unlock_all_jobs"), actions.unlock_all_jobs)
 	ui.button(tools, "apartment_skip_cutscene", t("apartment.action.skip_cutscene"), actions.skip_cutscene)
 
 	local teleport = ui.group(heist_tab, t("apartment.group.teleport"), nil, nil, nil, nil, "apartment")

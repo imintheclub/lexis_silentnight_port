@@ -25,7 +25,9 @@ prepend_package_pattern(script_root .. "/?/init.lua")
 -- on its next loop check, even if ForceStop has already been cleared by that point.
 _G.ShillenSilent_Generation = (_G.ShillenSilent_Generation or 0) + 1
 _G.ShillenSilent_ForceStop = true
-util.yield(0)
+if util and type(util.yield) == "function" then
+	pcall(util.yield, 0)
+end
 
 -- Drop cached GUI handles and started flags so each load re-acquires fresh fonts/images
 -- and re-invokes service start. Lexis rebuilds its font atlas on script load, which

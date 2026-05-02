@@ -119,6 +119,7 @@ function controller.register(parent_menu)
 	local root = parent_menu:submenu(t("feature.salvageyard.name"))
 	root:breaker(t("feature.salvageyard.name"))
 	root:breaker(t("salvageyard.info.max_transaction"))
+	root:breaker(t("salvageyard.info.cooldown"))
 	root:breaker(t("salvageyard.info.planning_controls"))
 
 	common.add_button(root, t("salvageyard.action.teleport_entrance"), actions.teleport_entrance)

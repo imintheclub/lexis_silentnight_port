@@ -372,6 +372,15 @@ function safe_access.set_global_int_variants(field, value)
 	return ee_ok or legacy_ok
 end
 
+function safe_access.set_global_bool_variants(field, value)
+	if type(field) == "number" then
+		return safe_access.set_global_bool(field, value)
+	end
+	local ee_ok = safe_access.set_global_bool(field.ee, value)
+	local legacy_ok = safe_access.set_global_bool(field.legacy, value)
+	return ee_ok or legacy_ok
+end
+
 function safe_access.get_local_int_variants(script_name, field, fallback)
 	if type(field) == "number" then
 		return safe_access.get_local_int(script_name, field, fallback)

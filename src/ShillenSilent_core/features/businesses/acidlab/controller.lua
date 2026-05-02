@@ -44,6 +44,9 @@ function controller.register(parent_menu)
 	common.add_button(production, t("acidlab.action.refill_supplies"), actions.refill_supplies)
 	common.add_button(production, t("acidlab.action.instant_sell"), actions.instant_sell)
 
+	local teleport = root:submenu(t("acidlab.group.teleport"))
+	common.add_button(teleport, t("acidlab.action.teleport"), actions.teleport)
+
 	controller.refresh_controls()
 	return root
 end

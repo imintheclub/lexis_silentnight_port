@@ -39,7 +39,10 @@ function controller.register(parent_menu)
 	root:breaker(t("agency.info.max_transaction"))
 	root:breaker(t("agency.info.cooldown"))
 
-	common.add_button(root, t("agency.action.teleport_entrance"), actions.teleport_entrance)
+	local teleport = root:submenu(t("agency.group.teleport"))
+	common.add_button(teleport, t("agency.action.teleport_entrance"), actions.teleport_entrance)
+	common.add_button(teleport, t("agency.action.teleport_computer"), actions.teleport_computer)
+	common.add_button(teleport, t("agency.action.teleport_mission"), actions.teleport_mission)
 
 	local preps = root:submenu(t("agency.group.preps"))
 	local contract_options = data.localized_options(data.contracts, t)
@@ -79,10 +82,8 @@ function controller.register(parent_menu)
 	common.add_button(payout, t("agency.action.apply_payout"), actions.apply_payout)
 
 	local tools = root:submenu(t("agency.group.tools"))
-	common.add_button(tools, t("agency.action.teleport_computer"), actions.teleport_computer)
-	common.add_button(tools, t("agency.action.teleport_mission"), actions.teleport_mission)
-	common.add_button(tools, t("agency.action.collect_safe"), actions.collect_safe)
 	common.add_button(tools, t("agency.action.instant_finish"), actions.instant_finish_new)
+	common.add_button(tools, t("agency.action.collect_safe"), actions.collect_safe)
 	common.add_button(tools, t("agency.action.skip_cutscene"), actions.skip_cutscene)
 
 	preset_ui.controller_group(root, {

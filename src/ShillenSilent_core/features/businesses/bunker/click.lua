@@ -120,7 +120,9 @@ function click.register(heist_tab)
 	local teleport = ui.group(heist_tab, t("bunker.group.teleport"), nil, nil, nil, nil, "bunker")
 	ui.button(teleport, "bunker_teleport", t("bunker.action.teleport"), actions.teleport)
 	ui.button(teleport, "bunker_laptop_tp", t("bunker.action.teleport_laptop"), actions.teleport_laptop)
-	ui.button(teleport, "bunker_laptop_open", t("bunker.action.open_laptop"), actions.open_laptop)
+
+	local tools = ui.group(heist_tab, t("bunker.group.tools"), nil, nil, nil, nil, "bunker")
+	ui.button(tools, "bunker_laptop_open", t("bunker.action.open_laptop"), actions.open_laptop)
 
 	click.refresh()
 	return heist_tab

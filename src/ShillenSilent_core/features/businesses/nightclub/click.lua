@@ -122,14 +122,6 @@ function click.register(heist_tab)
 		data.popularity.step
 	)
 	ui.button(pop, "nc_pop_apply", t("nightclub.action.apply_popularity"), actions.apply_popularity_editor_value)
-	ui.button(pop, "nc_pop_max", t("nightclub.action.max_popularity"), function()
-		actions.set_popularity_max()
-		click.refresh()
-	end)
-	ui.button(pop, "nc_pop_min", t("nightclub.action.min_popularity"), function()
-		actions.set_popularity_min()
-		click.refresh()
-	end)
 	refs.popularity_lock_toggle = ui.toggle(
 		pop,
 		"nc_pop_lock",
@@ -166,8 +158,10 @@ function click.register(heist_tab)
 	local teleport = ui.group(heist_tab, t("nightclub.group.teleport"), nil, nil, nil, nil, "nightclub")
 	ui.button(teleport, "nc_teleport", t("nightclub.action.teleport"), actions.teleport)
 	ui.button(teleport, "nc_computer_tp", t("nightclub.action.teleport_computer"), actions.teleport_computer)
-	ui.button(teleport, "nc_computer_open", t("nightclub.action.open_computer"), actions.open_computer)
-	ui.button(teleport, "nc_setup", t("nightclub.action.skip_setup"), actions.skip_setup)
+
+	local tools = ui.group(heist_tab, t("nightclub.group.tools"), nil, nil, nil, nil, "nightclub")
+	ui.button(tools, "nc_computer_open", t("nightclub.action.open_computer"), actions.open_computer)
+	ui.button(tools, "nc_setup", t("nightclub.action.skip_setup"), actions.skip_setup)
 
 	local danger = ui.group(heist_tab, t("nightclub.group.danger"), nil, nil, nil, nil, "nightclub")
 	ui.label(danger, t("nightclub.warning.use_with_caution"), config.colors.danger_text)

@@ -9,7 +9,6 @@ return {
 	support = { current = true, legacy = false },
 	modules = {
 		data = "ShillenSilent_core.features.businesses.garment.data",
-		state = "ShillenSilent_core.features.businesses.garment.state",
 		actions = "ShillenSilent_core.features.businesses.garment.actions",
 		click = "ShillenSilent_core.features.businesses.garment.click",
 		controller = "ShillenSilent_core.features.businesses.garment.controller",

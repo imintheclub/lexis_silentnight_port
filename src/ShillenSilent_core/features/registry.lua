@@ -3,6 +3,7 @@ local notify_core = require("ShillenSilent_core.core.notify")
 
 local manifest_modules = {
 	"ShillenSilent_core.features.heists.info.manifest",
+	"ShillenSilent_core.features.general.faq.manifest",
 	"ShillenSilent_core.features.heists.cayo.manifest",
 	"ShillenSilent_core.features.heists.casino.manifest",
 	"ShillenSilent_core.features.heists.doomsday.manifest",
@@ -46,6 +47,18 @@ local function load_manifests()
 	table.sort(out, function(a, b)
 		if (a.kind or "") == (b.kind or "") then
 			return (a.order or 0) < (b.order or 0)
+		end
+		if a.id == "info" then
+			return true
+		end
+		if b.id == "info" then
+			return false
+		end
+		if a.kind == "general" then
+			return true
+		end
+		if b.kind == "general" then
+			return false
 		end
 		if a.kind == "heist" then
 			return true

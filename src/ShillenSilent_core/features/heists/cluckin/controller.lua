@@ -18,6 +18,8 @@ function controller.register(parent_menu)
 	local root = parent_menu:submenu(t("feature.cluckin.name"))
 	root:breaker(t("cluckin.info.title"))
 	root:breaker(t("cluckin.info.subtitle"))
+	root:breaker(t("cluckin.info.max_transaction"))
+	root:breaker(t("cluckin.info.cooldown"))
 
 	local tools = root:submenu(t("cluckin.group.tools"))
 	common.add_button(tools, t("cluckin.action.skip_finale"), actions.skip_to_finale)

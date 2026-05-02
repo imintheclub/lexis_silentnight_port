@@ -298,42 +298,6 @@ local function text_with_ellipsis(value, max_width, draw_size)
 	return output
 end
 
-local function wrap_text_lines(text, max_w, scale)
-	if not text or text == "" then
-		return { "" }
-	end
-	if max_w <= 0 then
-		return { text }
-	end
-	local total_w = measure_text_width(text, scale)
-	if total_w and total_w <= max_w then
-		return { text }
-	end
-	local words = {}
-	for word in text:gmatch("%S+") do
-		words[#words + 1] = word
-	end
-	if #words == 0 then
-		return { text }
-	end
-	local lines = {}
-	local current = ""
-	for _, word in ipairs(words) do
-		local candidate = current == "" and word or (current .. " " .. word)
-		local w = measure_text_width(candidate, scale)
-		if w and w > max_w and current ~= "" then
-			lines[#lines + 1] = current
-			current = word
-		else
-			current = candidate
-		end
-	end
-	if current ~= "" then
-		lines[#lines + 1] = current
-	end
-	return #lines > 0 and lines or { text }
-end
-
 local function measure_wrapped_text_height(text, max_w, scale)
 	if gui.text_size then
 		local size = gui.text_size(tostring(text or ""), scale, { wrap = max_w, font = state.fonts.regular })
@@ -341,8 +305,36 @@ local function measure_wrapped_text_height(text, max_w, scale)
 			return size.y
 		end
 	end
-	local lines = wrap_text_lines(text, max_w, scale)
-	return math.max(1, #lines) * config.space.x6
+	return config.space.x6
+end
+
+local function render_wrapped_text(text, x, y, max_w, scale, col, align)
+	if not text or state.animation.progress < 0.01 then
+		return
+	end
+	local ox, oy = state._frame_ox, state._frame_oy
+	local t = gui.text(tostring(text))
+		:position(vec(snap(x + ox), snap(y + oy)))
+		:color(to_gui_color(col, true))
+		:scale(scale or 1.0)
+
+	if state.fonts.regular then
+		t:font(state.fonts.regular)
+	end
+	if t.wrap then
+		t:wrap(max_w)
+	end
+	if gui.justify then
+		if align == "center" then
+			t:justify(gui.justify.center)
+		elseif align == "right" then
+			t:justify(gui.justify.right)
+		else
+			t:justify(gui.justify.left)
+		end
+	end
+	t:draw()
+	return t
 end
 
 local function info_item_text(item)
@@ -362,8 +354,8 @@ local function button_line_count(label, btn_w)
 	end
 	local pad_x = config.space.x3
 	local draw_size = (config.font_scale_small or 1.0) * 0.9
-	local lines = wrap_text_lines(tostring(label or ""), math.max(1, btn_w - (pad_x * 2)), draw_size)
-	return math.max(1, #lines)
+	local wrapped_h = measure_wrapped_text_height(tostring(label or ""), math.max(1, btn_w - (pad_x * 2)), draw_size)
+	return math.max(1, math.ceil(wrapped_h / config.space.x6))
 end
 
 local function button_h_from_lines(n)
@@ -764,8 +756,46 @@ local function button_variant_for(btn)
 	return "outline"
 end
 
-local function get_dropdown_item_height()
-	return config.item_height.dropdown + config.space.x4
+local function dropdown_label_text(item)
+	return tostring((item and item.label) or "")
+end
+
+local function dropdown_label_width(w)
+	local pad_x = config.space.x3
+	return math.max(1, (w or 0) - (pad_x * 2))
+end
+
+local function dropdown_label_height(item, w)
+	return math.max(
+		config.space.x4,
+		math.ceil(
+			measure_wrapped_text_height(dropdown_label_text(item), dropdown_label_width(w), config.font_scale_body)
+		)
+	)
+end
+
+local function get_dropdown_item_height(item, w)
+	return config.space.x1 + dropdown_label_height(item, w) + config.space.x9 + config.space.x2
+end
+
+local function get_dropdown_panel_width(item, min_w, max_w)
+	local longest_w = 0
+	local options = item and item.options or {}
+	for i = 1, #options do
+		local option_w = measure_text_width(options[i], config.font_scale_body)
+		if option_w and option_w > longest_w then
+			longest_w = option_w
+		end
+	end
+
+	if longest_w <= 0 then
+		return min_w
+	end
+
+	local text_padding = config.space.x6
+	local scroll_padding = config.space.x3
+	local desired_w = math.ceil(longest_w + text_padding + scroll_padding)
+	return clamp(desired_w, min_w, math.max(min_w, max_w or min_w))
 end
 
 local BUTTON_COLOR_STYLES = {
@@ -890,6 +920,11 @@ local DRAWER_HEIST_KEYS = {
 	salvageyard = true,
 	cluckin = true,
 	knoway = true,
+}
+
+local DRAWER_GENERAL_KEYS = {
+	info = true,
+	faq = true,
 }
 
 function ui.set_heist_subtabs(names, keys)
@@ -1159,10 +1194,14 @@ local function build_drawer_rows(rows)
 
 	local heist_start = nil
 	local business_start = nil
+	local general_start = nil
 	for i = 1, #HEIST_SUBTAB_KEYS do
 		local key = HEIST_SUBTAB_KEYS[i]
-		if key == "info" then
-			rows[#rows + 1] = { type = "header", label = i18n.t("drawer.section.general") }
+		if DRAWER_GENERAL_KEYS[key] then
+			if not general_start then
+				general_start = #rows + 1
+				rows[#rows + 1] = { type = "header", label = i18n.t("drawer.section.general") }
+			end
 			rows[#rows + 1] = { type = "item", index = i }
 		elseif DRAWER_HEIST_KEYS[key] then
 			if not heist_start then
@@ -1414,7 +1453,7 @@ local function get_item_height(item, col_w)
 	elseif item.type == "slider" then
 		return config.item_height.slider
 	elseif item.type == "dropdown" then
-		return get_dropdown_item_height(item)
+		return get_dropdown_item_height(item, col_w)
 	elseif item.type == "label" then
 		return config.space.x6
 	elseif item.type == "info" then
@@ -1434,6 +1473,31 @@ local function is_auto_pairable_button(item)
 	return type(item) == "table" and item.type == "button" and not item.hidden
 end
 
+local function is_auto_pairable_dropdown(item)
+	return type(item) == "table" and item.type == "dropdown" and not item.hidden
+end
+
+local function cut_control_base_id(item)
+	if type(item) ~= "table" or type(item.id) ~= "string" or not item.id:find("_cut", 1, true) then
+		return nil
+	end
+	if item.type == "toggle" and item.id:sub(-8) == "_enabled" then
+		return item.id:sub(1, -9)
+	elseif item.type == "slider" then
+		return item.id
+	end
+	return nil
+end
+
+local function is_cut_slider_toggle_pair(left, right)
+	local left_base = cut_control_base_id(left)
+	local right_base = cut_control_base_id(right)
+	if not left_base or left_base ~= right_base then
+		return false
+	end
+	return (left.type == "slider" and right.type == "toggle") or (left.type == "toggle" and right.type == "slider")
+end
+
 local function next_auto_pair_button_index(items, start_index)
 	local i = start_index + 1
 	while i <= #items do
@@ -1447,6 +1511,41 @@ local function next_auto_pair_button_index(items, start_index)
 		i = i + 1
 	end
 	return nil
+end
+
+local function next_auto_pair_dropdown_index(items, start_index)
+	local i = start_index + 1
+	while i <= #items do
+		local item = items[i]
+		if not item.hidden then
+			if is_auto_pairable_dropdown(item) then
+				return i
+			end
+			return nil
+		end
+		i = i + 1
+	end
+	return nil
+end
+
+local function next_cut_control_pair_index(items, start_index)
+	local item = items[start_index]
+	local i = start_index + 1
+	while i <= #items do
+		local next_item = items[i]
+		if not next_item.hidden then
+			if is_cut_slider_toggle_pair(item, next_item) then
+				return i
+			end
+			return nil
+		end
+		i = i + 1
+	end
+	return nil
+end
+
+local function get_cut_control_pair_height()
+	return config.cut_pair_height or (config.item_height.slider + config.item_height.toggle)
 end
 
 local function get_group_actual_height(group, col_w)
@@ -1467,6 +1566,13 @@ local function get_group_actual_height(group, col_w)
 	while i <= #items do
 		local item = items[i]
 		local item_h = get_item_height(item, col_w)
+		local pair_index = nil
+		if item_h > 0 then
+			pair_index = next_cut_control_pair_index(items, i)
+			if pair_index then
+				item_h = get_cut_control_pair_height()
+			end
+		end
 		if item_h > 0 then
 			if visible_count > 0 then
 				h = h + (config.item_gap or 0)
@@ -1475,7 +1581,9 @@ local function get_group_actual_height(group, col_w)
 			visible_count = visible_count + 1
 		end
 
-		if is_auto_pairable_button(item) then
+		if pair_index then
+			i = pair_index
+		elseif is_auto_pairable_button(item) then
 			local pair_index = next_auto_pair_button_index(items, i)
 			if pair_index then
 				local pair_item = items[pair_index]
@@ -1484,6 +1592,20 @@ local function get_group_actual_height(group, col_w)
 					local nl = button_line_count(item.label, leftW)
 					local nr = button_line_count(pair_item.label, rightW)
 					local pair_h = button_h_from_lines(math.max(nl, nr))
+					h = h - item_h + pair_h
+				end
+				i = pair_index
+			end
+		elseif is_auto_pairable_dropdown(item) then
+			local pair_index = next_auto_pair_dropdown_index(items, i)
+			if pair_index then
+				local pair_item = items[pair_index]
+				if col_w and col_w > 0 then
+					local leftW, rightW = button_pair_half_widths(col_w)
+					local pair_h = math.max(
+						get_dropdown_item_height(item, leftW + (config.space.x3 * 2)),
+						get_dropdown_item_height(pair_item, rightW + (config.space.x3 * 2))
+					)
 					h = h - item_h + pair_h
 				end
 				i = pair_index
@@ -1818,20 +1940,18 @@ local function render_button_label(label, btnX, btnY, btnW, btnH, textColor)
 	local pad_x = config.space.x3
 	local draw_size = config.font_scale_small * BUTTON_LABEL_SCALE
 	local max_w = math.max(1, btnW - (pad_x * 2))
-	local lines = wrap_text_lines(tostring(label or ""), max_w, draw_size)
-	local n = math.max(1, #lines)
-	local center_x = btnX + (btnW / 2)
+	local text = tostring(label or "")
+	local text_h = measure_wrapped_text_height(text, max_w, draw_size)
+	local text_y = btnY + math.floor((btnH - text_h) / 2)
+	local text_x = btnX + (btnW / 2)
 
-	if n == 1 then
-		local ty = centered_text_y(btnY, btnH, lines[1], draw_size)
-		render_text(lines[1], center_x, ty, draw_size, textColor, "center")
+	if gui.push_clip and gui.pop_clip then
+		local ox, oy = state._frame_ox, state._frame_oy
+		gui.push_clip(vec(btnX + ox, btnY + oy), vec(btnW, btnH))
+		render_wrapped_text(text, text_x, text_y, max_w, draw_size, textColor, "center")
+		gui.pop_clip()
 	else
-		local line_h = config.space.x6
-		local block_h = n * line_h
-		local start_y = btnY + math.floor((btnH - block_h) / 2)
-		for i, line in ipairs(lines) do
-			render_text(line, center_x, start_y + (i - 1) * line_h, draw_size, textColor, "center")
-		end
+		render_wrapped_text(text, text_x, text_y, max_w, draw_size, textColor, "center")
 	end
 end
 
@@ -1921,7 +2041,7 @@ local function draw_slider_item(item, x, y, w, original_y)
 	local displayValue = math.floor(item.value)
 	render_text(
 		tostring(displayValue),
-		x + w - pad_x,
+		x + w - pad_x - thumbInset,
 		y + config.space.x1,
 		config.font_scale_body,
 		config.colors.accent,
@@ -1965,11 +2085,12 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	local boxW = available_w
 	local boxH = config.space.x9
 	local boxX = x + pad_x
-	local boxY = y + config.space.x5
+	local label_h = dropdown_label_height(item, w)
+	local boxY = y + config.space.x1 + label_h
 
 	local is_active_dropdown = (state.active_dropdown == item.id)
 	local allow_hover = (not state.active_dropdown) or is_active_dropdown
-	local hovered = allow_hover and is_hovered_content(x, original_y, w, get_dropdown_item_height(item))
+	local hovered = allow_hover and is_hovered_content(x, original_y, w, get_dropdown_item_height(item, w))
 
 	if hovered and state.mouse.clicked then
 		state.window.is_dragging = false -- Prevent window dragging
@@ -2001,8 +2122,14 @@ local function draw_dropdown_item(item, x, y, w, original_y)
 	end
 
 	local label_y = y + config.space.x1
-	local label_text = text_with_ellipsis(item.label, available_w, config.font_scale_body)
-	render_text(label_text, x + pad_x, label_y, config.font_scale_body, config.colors.text_main)
+	render_wrapped_text(
+		dropdown_label_text(item),
+		x + pad_x,
+		label_y,
+		available_w,
+		config.font_scale_body,
+		config.colors.text_main
+	)
 
 	local box_active = hovered or (open_t > 0.01)
 	local boxBg = box_active and config.colors.accent or config.colors.bg_control
@@ -2063,28 +2190,7 @@ local function draw_info_item(item, x, y, pad_x, group_w)
 	local text = info_item_text(item)
 	local item_h = info_item_height(text, max_w, scale)
 
-	if gui.text and max_w > 0 then
-		local ox, oy = state._frame_ox, state._frame_oy
-		local t = gui.text(text)
-			:position(vec(snap(x + pad_x + ox), snap(y + config.space.x3 + oy)))
-			:color(to_gui_color(text_col, true))
-			:scale(scale)
-
-		if state.fonts.regular then
-			t:font(state.fonts.regular)
-		end
-		if t.wrap then
-			t:wrap(max_w)
-			t:draw()
-			return y + item_h
-		end
-	end
-
-	local lines = wrap_text_lines(text, max_w, scale)
-	local line_h = config.space.x6
-	for i, line in ipairs(lines) do
-		render_text(line, x + pad_x, y + config.space.x3 + (i - 1) * line_h, scale, text_col)
-	end
+	render_wrapped_text(text, x + pad_x, y + config.space.x3, max_w, scale, text_col)
 	return y + item_h
 end
 
@@ -2107,7 +2213,7 @@ local function render_group_item(item, group_x, item_y, group_w, pad_x)
 	end
 	if item.type == "dropdown" then
 		local dd = draw_dropdown_item(item, group_x, item_y, group_w, item_y)
-		return item_y + get_dropdown_item_height(item), dd
+		return item_y + get_dropdown_item_height(item, group_w), dd
 	end
 	if item.type == "label" then
 		return draw_label_item(item, group_x, item_y, pad_x), nil
@@ -2130,6 +2236,38 @@ local function render_button_pair_row(left_button, right_button, group_x, item_y
 		draw_button_item(left_button, group_x, item_y, group_w)
 		return item_y + get_item_height(left_button, group_w)
 	end
+end
+
+local function render_cut_control_pair(first_item, second_item, group_x, item_y, group_w)
+	local offset = config.cut_pair_inner_offset or config.item_height.toggle
+	if first_item.type == "slider" then
+		draw_slider_item(first_item, group_x, item_y, group_w, item_y)
+		draw_toggle_item(second_item, group_x, item_y + offset, group_w, item_y + offset)
+	else
+		draw_toggle_item(first_item, group_x, item_y, group_w, item_y)
+		draw_slider_item(second_item, group_x, item_y + offset, group_w, item_y + offset)
+	end
+	return item_y + get_cut_control_pair_height()
+end
+
+local function render_dropdown_pair_row(left_dropdown, right_dropdown, group_x, item_y, group_w)
+	if right_dropdown then
+		local pad_x = config.space.x3
+		local gap = config.space.x2_5
+		local leftW, rightW = button_pair_half_widths(group_w)
+		local baseX = group_x + pad_x
+		local left_dd = draw_dropdown_item(left_dropdown, baseX - pad_x, item_y, leftW + (pad_x * 2), item_y)
+		local right_dd =
+			draw_dropdown_item(right_dropdown, baseX + leftW + gap - pad_x, item_y, rightW + (pad_x * 2), item_y)
+		local row_h = math.max(
+			get_dropdown_item_height(left_dropdown, leftW + (pad_x * 2)),
+			get_dropdown_item_height(right_dropdown, rightW + (pad_x * 2))
+		)
+		return item_y + row_h, left_dd, right_dd
+	end
+
+	local dd = draw_dropdown_item(left_dropdown, group_x, item_y, group_w, item_y)
+	return item_y + get_dropdown_item_height(left_dropdown, group_w), dd, nil
 end
 
 local function render_background_watermarks(header_h, body_h)
@@ -2461,10 +2599,29 @@ ui.render = function()
 						local item_h = get_item_height(item, col_w)
 						local pair_index = nil
 						local pair_item = nil
-						if is_auto_pairable_button(item) then
+						local pair_kind = nil
+						local cut_pair_index = next_cut_control_pair_index(group.items, item_index)
+						if cut_pair_index then
+							pair_index = cut_pair_index
+							pair_item = group.items[pair_index]
+							pair_kind = "cut"
+							item_h = get_cut_control_pair_height()
+						elseif is_auto_pairable_button(item) then
 							pair_index = next_auto_pair_button_index(group.items, item_index)
 							if pair_index then
 								pair_item = group.items[pair_index]
+								pair_kind = "button"
+							end
+						elseif is_auto_pairable_dropdown(item) then
+							pair_index = next_auto_pair_dropdown_index(group.items, item_index)
+							if pair_index then
+								pair_item = group.items[pair_index]
+								pair_kind = "dropdown"
+								local leftW, rightW = button_pair_half_widths(col_w)
+								item_h = math.max(
+									get_dropdown_item_height(item, leftW + (pad_x * 2)),
+									get_dropdown_item_height(pair_item, rightW + (pad_x * 2))
+								)
 							end
 						end
 						local item_gap = (rendered_items > 0) and (config.item_gap or 0) or 0
@@ -2473,9 +2630,29 @@ ui.render = function()
 							-- Item fully outside visible area, skip rendering
 							itemY = itemY + item_h
 						elseif pair_item then
-							itemY = render_button_pair_row(item, pair_item, drawX, itemY, col_w)
+							if pair_kind == "cut" then
+								itemY = render_cut_control_pair(item, pair_item, drawX, itemY, col_w)
+							elseif pair_kind == "dropdown" then
+								local left_dd, right_dd
+								itemY, left_dd, right_dd =
+									render_dropdown_pair_row(item, pair_item, drawX, itemY, col_w)
+								if left_dd then
+									pendingDropdowns[#pendingDropdowns + 1] = left_dd
+								end
+								if right_dd then
+									pendingDropdowns[#pendingDropdowns + 1] = right_dd
+								end
+							else
+								itemY = render_button_pair_row(item, pair_item, drawX, itemY, col_w)
+							end
 						elseif is_auto_pairable_button(item) then
 							itemY = render_button_pair_row(item, nil, drawX, itemY, col_w)
+						elseif is_auto_pairable_dropdown(item) then
+							local dd
+							itemY, dd = render_dropdown_pair_row(item, nil, drawX, itemY, col_w)
+							if dd then
+								pendingDropdowns[#pendingDropdowns + 1] = dd
+							end
 						else
 							local dd
 							itemY, dd = render_group_item(item, drawX, itemY, col_w, pad_x)
@@ -2546,8 +2723,13 @@ ui.render = function()
 			local itemHeight = config.space.x9
 			local fullOptsH = #dd.item.options * itemHeight
 			local open_t = dd.open_t or 1.0
-			local screen_h = game.resolution().y
+			local resolution = game.resolution()
+			local screen_w = resolution.x
+			local screen_h = resolution.y
 			local screen_margin = config.space.x2
+			local max_panel_w = math.max(dd.w, screen_w - (screen_margin * 2))
+			local panel_w = get_dropdown_panel_width(dd.item, dd.w, max_panel_w)
+			local panel_x = clamp(dd.x, screen_margin - ox, screen_w - ox - screen_margin - panel_w)
 			local max_visible_items =
 				math.max(1, math.floor((config.control and config.control.dropdown_max_visible_items) or 10))
 			local min_visible_items =
@@ -2583,15 +2765,23 @@ ui.render = function()
 			local can_interact = dd.interactive and (open_t > 0.95)
 
 			state.render_alpha_mul = open_t
-			render_card(dd.x, panel_y, dd.w, optsH, config.colors.bg_panel, config.colors.border, config.radius.md)
-			gui.push_clip(vec(dd.x + ox, panel_y + oy), vec(dd.w, optsH))
+			render_card(
+				panel_x,
+				panel_y,
+				panel_w,
+				optsH,
+				config.colors.bg_panel,
+				config.colors.border,
+				config.radius.md
+			)
+			gui.push_clip(vec(panel_x + ox, panel_y + oy), vec(panel_w, optsH))
 
 			for i, opt in ipairs(dd.item.options) do
 				local optY = panel_y + (i - 1) * itemHeight - scroll_y
 				local optTextCol = config.colors.text_main
 				local visible = optY + itemHeight >= panel_y and optY <= panel_y + optsH
-				if visible and can_interact and is_hovered(dd.x, optY, dd.w, itemHeight) then
-					render_rect(dd.x, optY, dd.w, itemHeight, config.colors.accent, config.radius.none)
+				if visible and can_interact and is_hovered(panel_x, optY, panel_w, itemHeight) then
+					render_rect(panel_x, optY, panel_w, itemHeight, config.colors.accent, config.radius.none)
 					if state.mouse.clicked and not state.dropdown_just_opened then
 						dd.item.value = i
 						dd.item.isOpen = false
@@ -2606,14 +2796,14 @@ ui.render = function()
 					optTextCol = config.colors.text_on_accent
 				end
 				if visible then
-					local option_max_w = dd.w - config.space.x6
+					local option_max_w = panel_w - config.space.x6
 					if max_scroll_y > 0 then
 						option_max_w = option_max_w - config.space.x2
 					end
 					local option_text = text_with_ellipsis(opt, option_max_w, config.font_scale_body)
 					render_text_in_rect(
 						option_text,
-						dd.x + config.space.x3,
+						panel_x + config.space.x3,
 						optY,
 						option_max_w,
 						itemHeight,
@@ -2627,7 +2817,7 @@ ui.render = function()
 			gui.pop_clip()
 			if max_scroll_y > 0 then
 				local track_w = config.scrollbar.w or config.space.x1
-				local track_x = dd.x + dd.w - config.space.x2
+				local track_x = panel_x + panel_w - config.space.x2
 				local thumb_h = math.max(config.control.scrollbar_min_thumb, (visible_full_h / fullOptsH) * optsH)
 				local thumb_y = panel_y
 				if max_scroll_y > 0 then
@@ -2648,7 +2838,7 @@ ui.render = function()
 				can_interact
 				and state.mouse.clicked
 				and not state.dropdown_just_opened
-				and not is_hovered(dd.x, panel_y, dd.w, optsH)
+				and not is_hovered(panel_x, panel_y, panel_w, optsH)
 			then
 				dd.item.isOpen = false
 				state.active_dropdown = nil

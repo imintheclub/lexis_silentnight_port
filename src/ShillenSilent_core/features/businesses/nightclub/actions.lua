@@ -381,22 +381,6 @@ function actions.safe_fill()
 	return ok
 end
 
-function actions.set_popularity_max()
-	state.set_popularity_editor_value(data.popularity.max)
-	local stats = cfg().stats or {}
-	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity_to_stat(data.popularity.max))
-	push(ok and "nightclub.notify.popularity_max_ok" or "nightclub.notify.popularity_failed", 2000)
-	return ok
-end
-
-function actions.set_popularity_min()
-	state.set_popularity_editor_value(data.popularity.min)
-	local stats = cfg().stats or {}
-	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity_to_stat(data.popularity.min))
-	push(ok and "nightclub.notify.popularity_min_ok" or "nightclub.notify.popularity_failed", 2000)
-	return ok
-end
-
 function actions.set_popularity(value, silent)
 	local target = data.clamp_popularity(value)
 	state.set_popularity_editor_value(target)

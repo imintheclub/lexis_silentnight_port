@@ -3,6 +3,7 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
 local offsets = require("ShillenSilent_core.data.offsets.current")
+local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local data = require("ShillenSilent_core.features.businesses.acidlab.data")
 local state = require("ShillenSilent_core.features.businesses.acidlab.state")
 
@@ -47,24 +48,53 @@ end
 local function apply_production_tick()
 	local supply = cfg().supply or {}
 	local production = cfg().production or {}
-	local base = supply.base
 	local slot = supply.slot
 	local timer_root = production.timer_root
 	if type(slot) ~= "number" then
 		return false
 	end
 
-	local supply_offset = offset_with_delta(base, slot)
 	local trig1 = offset_with_delta(timer_root, 1 + (slot - 1) * 2)
 	local trig2 = offset_with_delta(trig1, 1)
-	if not supply_offset or not trig1 or not trig2 then
+	if not trig1 or not trig2 then
 		return false
 	end
 	local ok = true
-	ok = safe_access.set_global_int_variants(supply_offset, 1) and ok
 	ok = safe_access.set_global_int_variants(trig1, 0) and ok
-	ok = safe_access.set_global_int_variants(trig2, 1) and ok
+	ok = safe_access.set_global_bool_variants(trig2, true) and ok
 	return ok
+end
+
+local function get_acid_lab_vehicle_coords()
+	local globals = cfg().globals or {}
+	local natives = cfg().natives or {}
+	local vehicle = safe_access.get_global_int(globals.vehicle_handle, 0)
+	if not vehicle or vehicle == 0 then
+		return nil, "acidlab.notify.teleport_vehicle_missing"
+	end
+	if not (invoker and invoker.call) then
+		return nil, "notify.invoker_unavailable"
+	end
+
+	local exists_ok, exists = pcall(function()
+		local result = invoker.call(natives.does_entity_exist, vehicle)
+		return result and result.bool == true
+	end)
+	if not exists_ok or not exists then
+		return nil, "acidlab.notify.teleport_vehicle_missing"
+	end
+
+	local coords_ok, coords = pcall(function()
+		local result = invoker.call(natives.get_entity_coords, vehicle, true)
+		return result and result.scr_vec3
+	end)
+	if not coords_ok or not coords then
+		return nil, "acidlab.notify.teleport_vehicle_coords_failed"
+	end
+	if coords.x == 0 and coords.y == 0 and coords.z == 0 then
+		return nil, "acidlab.notify.teleport_vehicle_coords_failed"
+	end
+	return coords, nil
 end
 
 function actions.production_tick()
@@ -96,15 +126,36 @@ function actions.instant_sell()
 			return
 		end
 
-		local flags = safe_access.get_local_int(sell.name, sell.flags_offset, 0) or 0
+		local flags = safe_access.get_local_int_variants(sell.name, sell.flags_offset, nil)
+		if flags == nil then
+			push("acidlab.notify.sell_failed", 2200)
+			return
+		end
 		flags = flags | (1 << sell.win_bit)
-		local ok1 = safe_access.set_local_int(sell.name, sell.state_offset, sell.state_value)
-		local ok2 = safe_access.set_local_int(sell.name, sell.flags_offset, flags)
+		local ok1 = safe_access.set_local_int_variants(sell.name, sell.flags_offset, flags)
+		local ok2 = safe_access.set_local_int_variants(sell.name, sell.reason_offset, sell.reason_value)
 
 		push((ok1 and ok2) and "acidlab.notify.sell_ok" or "acidlab.notify.sell_failed", 2200)
 	end, function()
 		push("acidlab.notify.sell_running", 1500)
 	end)
+end
+
+function actions.teleport()
+	local coords, err_key = get_acid_lab_vehicle_coords()
+	if not coords then
+		push(err_key or "acidlab.notify.teleport_failed", 2200)
+		return false
+	end
+	return coords_teleport.run_coords_teleport(
+		t("feature.acidlab.name"),
+		t("acidlab.notify.teleported"),
+		coords.x,
+		coords.y,
+		coords.z,
+		false,
+		nil
+	)
 end
 
 function actions.set_fast_production(enabled, silent)

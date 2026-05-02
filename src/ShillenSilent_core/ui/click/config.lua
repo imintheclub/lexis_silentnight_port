@@ -87,6 +87,8 @@ local function init_config()
 			header_padding = tw(10),
 		},
 		item_gap = tw(2),
+		cut_pair_inner_offset = tw(9),
+		cut_pair_height = tw(21),
 
 		space = {
 			x1 = tw(1),

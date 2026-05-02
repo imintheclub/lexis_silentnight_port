@@ -7,6 +7,8 @@ local notify_core = require("ShillenSilent_core.core.notify")
 local assets = require("ShillenSilent_core.ui.click.assets")
 local config = require("ShillenSilent_core.ui.click.config")
 local state = require("ShillenSilent_core.ui.click.state")
+local info_actions = require("ShillenSilent_core.features.heists.info.actions")
+local info_data = require("ShillenSilent_core.features.heists.info.data")
 
 local ui = {}
 
@@ -2270,7 +2272,119 @@ local function render_dropdown_pair_row(left_dropdown, right_dropdown, group_x, 
 	return item_y + get_dropdown_item_height(left_dropdown, group_w), dd, nil
 end
 
-local function render_background_watermarks(header_h, body_h)
+local function build_header_theme_dropdown_item()
+	local themes = info_data.localized_options(info_data.theme_modes, i18n.t)
+	return {
+		type = "dropdown",
+		id = "header_theme_mode",
+		options = info_data.option_names(themes),
+		value = info_data.option_index_by_value(info_data.theme_modes, config.theme_mode, 1),
+		onChange = function(opt)
+			local target_id = info_data.option_value_by_name(themes, opt, config.theme_mode)
+			info_actions.set_theme_mode(target_id)
+		end,
+	}
+end
+
+local function draw_header_theme_dropdown(x, y, w, h)
+	local item = build_header_theme_dropdown_item()
+	local is_active_dropdown = (state.active_dropdown == item.id)
+	local allow_hover = (not state.active_dropdown) or is_active_dropdown
+	local hovered = allow_hover and is_hovered(x, y, w, h)
+
+	if hovered and state.mouse.clicked then
+		state.window.is_dragging = false
+		state.window.is_resizing = false
+		if is_active_dropdown then
+			item.isOpen = false
+			state.active_dropdown = nil
+			state.dropdown_scroll_max = 0
+		elseif not state.active_dropdown then
+			item.isOpen = true
+			state.active_dropdown = item.id
+			state.dropdown_just_opened = true
+			state.dropdown_scroll = state.dropdown_scroll or {}
+			state.dropdown_scroll_init = state.dropdown_scroll_init or {}
+			state.dropdown_scroll[item.id] = nil
+			state.dropdown_scroll_init[item.id] = false
+		end
+	end
+
+	local target_open = (state.active_dropdown == item.id) and 1.0 or 0.0
+	local open_t = animator.to(
+		"dropdown_open:" .. tostring(item.id),
+		target_open,
+		animator.motion_speed(config.motion.dropdown_speed, config.motion.speed_fast or 0.24)
+	)
+	if target_open > 0.5 then
+		item.isOpen = true
+	elseif open_t < 0.01 then
+		item.isOpen = false
+	end
+
+	local box_active = hovered or (open_t > 0.01)
+	local boxBg = box_active and config.colors.accent or config.colors.bg_control
+	local boxBorder = box_active and config.colors.accent_hover or config.colors.border
+	local boxText = box_active and config.colors.text_on_accent or config.colors.text_sec
+	local boxArrow = box_active and config.colors.text_on_accent or config.colors.text_dim
+	local shadow_t = animator.to(
+		"dropdown_shadow:" .. tostring(item.id),
+		box_active and 1.0 or 0.0,
+		animator.motion_speed(config.motion.speed_fast, 0.24)
+	)
+
+	render_depth_shadow(x, y, w, h, config.radius.md, 0.5 + (0.2 * shadow_t), shadow_t)
+	render_rect(x, y, w, h, boxBg, config.radius.md)
+	render_outline(x, y, w, h, boxBorder, 1, config.radius.md)
+
+	local selected = item.options[item.value] or ""
+	local selected_max_w = w - config.space.x9
+	local selected_text = text_with_ellipsis(selected, selected_max_w, config.font_scale_small)
+	local sel_y = centered_text_y(y, h, selected_text, config.font_scale_small)
+	render_text(selected_text, x + config.space.x2, sel_y, config.font_scale_small, boxText)
+
+	local arrowFrames = { "v", ">", "^" }
+	local arrowIdx = 1 + math.floor((open_t or 0.0) * (#arrowFrames - 1) + 0.5)
+	arrowIdx = clamp(arrowIdx, 1, #arrowFrames)
+	local arrow_glyph = arrowFrames[arrowIdx]
+	local arrow_y = centered_text_y(y, h, arrow_glyph, config.font_scale_small)
+	render_text(arrow_glyph, x + w - config.space.x3, arrow_y, config.font_scale_small, boxArrow)
+
+	if open_t > 0.01 then
+		return {
+			item = item,
+			x = x,
+			y = y + h + config.space.x1,
+			w = w,
+			control_y = y,
+			control_h = h,
+			open_t = open_t,
+			interactive = (target_open > 0.5) and (open_t > 0.95),
+		}
+	end
+end
+
+local function render_header_title(header_h, hamburger_x, hamburger_size, right_edge)
+	local title = HEIST_SUBTAB_NAMES[state.heist_subtab]
+	if not title or title == "" then
+		return
+	end
+
+	local title_left = hamburger_x + hamburger_size + config.space.x4
+	local title_right = right_edge - config.space.x4
+	local title_w = title_right - title_left
+	if title_w <= config.space.x8 then
+		return
+	end
+
+	local title_scale = config.font_scale_header or config.font_scale_body
+	local title_text = text_with_ellipsis(title, title_w, title_scale)
+	local title_x = title_left + math.floor(title_w / 2)
+	local title_y = centered_text_y(config.origin_y, header_h, title_text, title_scale)
+	render_text(title_text, title_x, title_y, title_scale, config.colors.text_main, "center")
+end
+
+local function render_background_watermarks(header_h, body_h, hamburger_x, hamburger_size)
 	local version_label = i18n.t("app.version")
 	local wm_x = config.origin_x + config.menu_width - config.content_margin
 	local wm_scale = config.font_scale_small or 1.0
@@ -2278,9 +2392,26 @@ local function render_background_watermarks(header_h, body_h)
 	local wm_col = config.colors.text_main
 	render_text(version_label, wm_x, wm_y, wm_scale, wm_col, "right")
 
+	local theme_w = math.max(config.space.x15 * 3, math.floor(config.menu_width * 0.18))
+	local theme_h = math.max(config.space.x7, header_h - (config.space.x2 * 2))
+	local version_w = measure_text_width(version_label, wm_scale) or 0
+	local theme_x = wm_x - version_w - ((config.space.x10 * 2) + config.space.x5) - theme_w
+	local theme_y = config.origin_y + math.floor((header_h - theme_h) / 2)
+	local min_x = config.origin_x + config.content_margin + config.space.x8
+	local header_dropdown = nil
+	if theme_x >= min_x and theme_w > 0 and theme_h > 0 then
+		header_dropdown = draw_header_theme_dropdown(theme_x, theme_y, theme_w, theme_h)
+	end
+
+	if hamburger_x and hamburger_size then
+		render_header_title(header_h, hamburger_x, hamburger_size, theme_x)
+	end
+
 	local credits_x = config.origin_x + config.space.x2
 	local credits_y = config.origin_y + body_h - (config.space.x2 * 2)
 	render_text(i18n.t("app.credits"), credits_x, credits_y, wm_scale, wm_col, "left")
+
+	return header_dropdown
 end
 
 -- ---------------------------------------------------------
@@ -2418,7 +2549,7 @@ ui.render = function()
 		config.radius.xl
 	)
 	render_background_tile(config.origin_x, bodyY, config.menu_width, bodyH)
-	render_background_watermarks(header_h, dynamicBodyH)
+	local headerDropdown = render_background_watermarks(header_h, dynamicBodyH, hamburger_x, hamburger_size)
 
 	-- Bottom-right corner grip to indicate draggable resize area.
 	local grip_color = config.colors.accent
@@ -2486,6 +2617,9 @@ ui.render = function()
 
 	local pendingDropdowns = render_cache.pending_dropdowns
 	clear_array(pendingDropdowns)
+	if headerDropdown then
+		pendingDropdowns[#pendingDropdowns + 1] = headerDropdown
+	end
 
 	local activeGroups, selected_heist_key = get_active_groups()
 

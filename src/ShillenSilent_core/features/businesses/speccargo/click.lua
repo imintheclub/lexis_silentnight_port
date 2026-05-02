@@ -27,9 +27,6 @@ function click.refresh()
 	if refs.no_crateback_toggle then
 		refs.no_crateback_toggle.state = state.config.no_crateback == true
 	end
-	if refs.supplier_toggle then
-		refs.supplier_toggle.state = state.config.supplier_active == true
-	end
 	if refs.crate_slider then
 		refs.crate_slider.value = state.config.crate_amount
 	end
@@ -55,61 +52,37 @@ function click.register(heist_tab)
 
 	local info = ui.group(heist_tab, t("speccargo.group.info"), nil, nil, nil, nil, "speccargo")
 	ui.label(info, t("feature.speccargo.name"), config.colors.accent)
-	ui.info(info, t("speccargo.tip.instant_sell"), config.colors.text_sec)
-	ui.info(info, t("speccargo.tip.sale_price"), config.colors.text_sec)
-	ui.info(info, t("speccargo.tip.no_xp_crateback"), config.colors.text_sec)
-	ui.info(info, t("speccargo.tip.supply"), config.colors.text_sec)
-	ui.info(info, t("speccargo.tip.instant_buy"), config.colors.text_sec)
 	ui.info(info, t("speccargo.tip.fill"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.instant_buy"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.sale_price"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.instant_sell"), config.colors.text_sec)
+	ui.info(info, t("speccargo.tip.no_xp_crateback"), config.colors.text_sec)
 	ui.info(info, t("speccargo.tip.protections"), config.colors.text_sec)
 	ui.info(info, t("speccargo.tip.cooldowns"), config.colors.text_sec)
 	ui.spacer(info, config.space.x2)
 
-	local stock = ui.group(heist_tab, t("speccargo.group.stock"), nil, nil, nil, nil, "speccargo")
-	ui.label(stock, t("feature.speccargo.name"), config.colors.accent)
+	local source = ui.group(heist_tab, t("speccargo.group.source_fill"), nil, nil, nil, nil, "speccargo")
 	refs.fill_status_label = ui.label(
-		stock,
+		source,
 		t(state.fill.active and "speccargo.status.fill_running" or "speccargo.status.fill_stopped"),
 		config.colors.text_sec
 	)
-	ui.button(stock, "sc_instant_sell", t("speccargo.action.instant_sell"), actions.instant_sell)
-	refs.sale_price_toggle = ui.toggle(
-		stock,
-		"sc_sale_price",
-		t("speccargo.action.sale_price_loop"),
-		actions.get_sale_price_loop_active(),
+	refs.fill_toggle = ui.toggle(
+		source,
+		"sc_fill_loop",
+		t("speccargo.action.fill_loop"),
+		actions.get_fill_active(),
 		function(enabled)
-			actions.set_sale_price_loop(enabled)
+			actions.set_fill_loop(enabled)
 			click.refresh()
 		end
 	)
-	refs.no_xp_toggle = ui.toggle(stock, "sc_no_xp", t("speccargo.action.no_xp"), actions.get_no_xp(), function(enabled)
-		actions.set_no_xp(enabled)
+	ui.button(source, "sc_fill_tick", t("speccargo.action.fill_tick"), function()
+		actions.fill_tick_once()
 		click.refresh()
 	end)
-	refs.no_crateback_toggle = ui.toggle(
-		stock,
-		"sc_no_crateback",
-		t("speccargo.action.no_crateback"),
-		actions.get_no_crateback(),
-		function(enabled)
-			actions.set_no_crateback(enabled)
-			click.refresh()
-		end
-	)
-	ui.button(stock, "sc_supply", t("speccargo.action.supply_crates"), actions.supply_crates)
-	refs.supplier_toggle = ui.toggle(
-		stock,
-		"sc_supplier",
-		t("speccargo.action.supplier_loop"),
-		actions.get_supplier_loop_active(),
-		function(enabled)
-			actions.set_supplier_loop(enabled)
-			click.refresh()
-		end
-	)
 	refs.crate_slider = ui.slider(
-		stock,
+		source,
 		"sc_crate_amount",
 		t("speccargo.field.crate_amount"),
 		data.crates.min,
@@ -122,25 +95,38 @@ function click.register(heist_tab)
 		nil,
 		data.crates.step
 	)
-	ui.button(stock, "sc_crate_max", t("speccargo.action.max_crates"), function()
+	ui.button(source, "sc_crate_max", t("speccargo.action.max_crates"), function()
 		actions.max_crate_amount()
 		click.refresh()
 	end)
-	ui.button(stock, "sc_buy", t("speccargo.action.instant_buy"), actions.instant_buy)
-	refs.fill_toggle = ui.toggle(
-		stock,
-		"sc_fill_loop",
-		t("speccargo.action.fill_loop"),
-		actions.get_fill_active(),
+	ui.button(source, "sc_buy", t("speccargo.action.instant_buy"), actions.instant_buy)
+
+	local sell = ui.group(heist_tab, t("speccargo.group.sell"), nil, nil, nil, nil, "speccargo")
+	refs.sale_price_toggle = ui.toggle(
+		sell,
+		"sc_sale_price",
+		t("speccargo.action.sale_price_loop"),
+		actions.get_sale_price_loop_active(),
 		function(enabled)
-			actions.set_fill_loop(enabled)
+			actions.set_sale_price_loop(enabled)
 			click.refresh()
 		end
 	)
-	ui.button(stock, "sc_fill_tick", t("speccargo.action.fill_tick"), function()
-		actions.fill_tick_once()
+	refs.no_xp_toggle = ui.toggle(sell, "sc_no_xp", t("speccargo.action.no_xp"), actions.get_no_xp(), function(enabled)
+		actions.set_no_xp(enabled)
 		click.refresh()
 	end)
+	refs.no_crateback_toggle = ui.toggle(
+		sell,
+		"sc_no_crateback",
+		t("speccargo.action.no_crateback"),
+		actions.get_no_crateback(),
+		function(enabled)
+			actions.set_no_crateback(enabled)
+			click.refresh()
+		end
+	)
+	ui.button(sell, "sc_instant_sell", t("speccargo.action.instant_sell"), actions.instant_sell)
 
 	local protect = ui.group(heist_tab, t("speccargo.group.protections"), nil, nil, nil, nil, "speccargo")
 	refs.raids_toggle = ui.toggle(
@@ -167,12 +153,6 @@ function click.register(heist_tab)
 	local teleport = ui.group(heist_tab, t("speccargo.group.teleport"), nil, nil, nil, nil, "speccargo")
 	ui.button(teleport, "sc_office", t("speccargo.action.teleport_office"), actions.teleport_office)
 	ui.button(teleport, "sc_computer", t("speccargo.action.teleport_computer"), actions.teleport_computer)
-	ui.button(
-		teleport,
-		"sc_warehouse_blip",
-		t("speccargo.action.teleport_warehouse_blip"),
-		actions.teleport_warehouse_blip
-	)
 	local locations = actions.get_locations()
 	local localized_locations = data.localized_locations(locations, t)
 	if #localized_locations > 0 then

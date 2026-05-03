@@ -132,6 +132,20 @@ This repository contains modified upstream content (Lexis port + additional chan
 Made by Shillen#0000 on the Lexis discord. Originally found [here](https://discord.com/channels/1181574376727003166/1453814961838231715).
 
 # Changelog
+## v0.1.5
+- **FAQ section under General** — Built-in answers covering setup, controller switching, mouse/input troubleshooting, safety, payouts, Discord, and common transaction errors.
+- **Teleport to Arcade** — Direct teleport to your owned arcade.
+- **Teleport to Acid Lab vehicle** — Teleports you to the spawned Acid Lab truck wherever it currently is, instead of a fixed coord.
+- **Cayo Perico: Go Offline / Go Online** — Quickly drop to a solo session and re-enter an invite-only session without leaving the menu.
+- **Apartment Heist selector** — Pick which Apartment heist (Fleeca, Prison Break, Humane Labs, Series A, Pacific Standard) the "Complete Preps" button targets, instead of guessing from your active mission. Selection is saved into presets.
+- **Money Fronts: overall heat controls** — One slider, apply/max/min buttons, and a lock toggle that drive heat across every front at once. Controls for fronts you don't own are now grayed out, and teleports to fronts you don't own no longer silently misfire.
+- **Chinese language support** — New Simplified Chinese locale, plus a proper CJK font so Chinese, Japanese, and Korean text render correctly.
+- **Splash screen on load** — Briefly shows "Press T to open the window" (or controller-mode equivalent) so first-time users aren't stuck wondering how to open the menu.
+- **Info panels added** — Acid Lab and Special Cargo now have dedicated info panels explaining what each toggle/loop actually does. Payout and cooldown info added to Cayo, Apartment, Agency, Salvage Yard, Auto Shop, Cluckin Bell, Doomsday, and Casino. Force Ready behavior is now explained on every heist that supports it.
+- General menu reorganization, cleaner grouping of teleports/tools/danger actions, paired cut sliders, better text wrapping, dropdown sizing fixes, and click/controller parity cleanup.
+- Faster locale loading (only the active language stays in memory), lighter background-job system that skips work for the inactive UI mode, and various rendering optimizations.
+
+
 ## v0.1.4
 - **v0 LEGACY SUPPORT IS HERE**
 - **Added i18n; English, Spanish, German, French, Italian, Polish, Portuguese (Brazil), Russian.**

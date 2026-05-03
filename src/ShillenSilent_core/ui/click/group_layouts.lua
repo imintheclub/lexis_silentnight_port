@@ -8,7 +8,7 @@
 -- heist_subtab arg in each feature's click.lua), NOT by registry index.
 -- Indices shift whenever a manifest is added or reordered; ids are stable.
 --
--- The strings inside each column are i18n keys. The renderer compares each
+-- The strings inside each column are i18n keys. The frame layout compares each
 -- registered group's label against i18n.t(key, vars). For parameterized
 -- labels (e.g. salvage yard slot 1/2/3) use { "key", vars } instead of a
 -- bare string. The shared preset card is registered with the i18n key
@@ -19,7 +19,7 @@
 --   * To add a card at column N, append its key to cols_<N> at the spot
 --     you want (top of column = first, bottom = last).
 --   * Every registered group should appear in every cols_<N> for its tab.
---     Anything missing falls into the renderer's "unmatched" bucket and
+--     Anything missing falls into the frame layout's "unmatched" bucket and
 --     drops to the bottom of column 1.
 --   * Canonical order I'm following: Info -> Launch -> Presets -> Preps
 --     -> Cuts/Payout -> Teleport(s) -> Tools -> Popularity -> Danger.
@@ -483,7 +483,7 @@ end
 -- Resolve { col, order } for a given group within a heist subtab at the
 -- requested column count. `subtab_key` is the feature id string (e.g. "cayo").
 -- Returns nil when the subtab is unmapped or the group label doesn't match
--- any authored entry; the renderer treats that as "drop to bottom of col 1"
+-- any authored entry; the frame layout treats that as "drop to bottom of col 1"
 -- so unmapped groups stay deterministic.
 function M.lookup(subtab_key, group, column_count)
 	local tab = LAYOUTS[subtab_key]

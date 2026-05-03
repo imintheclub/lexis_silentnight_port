@@ -1015,12 +1015,6 @@ return {
 			},
 		},
 		finish = {
-			old = {
-				step1_offset = { ee = 56223 + 1, legacy = 55789 + 1 },
-				step2_offset = { ee = 56223 + 1776 + 1, legacy = 55789 + 1776 + 1 },
-				step1_value = 51338977,
-				step2_value = 101,
-			},
 			current = {
 				step1_offset = { ee = 56223 + 1589, legacy = 55789 + 1589 },
 				step2_offset = { ee = 56223 + 1776 + 1, legacy = 55789 + 1776 + 1 },

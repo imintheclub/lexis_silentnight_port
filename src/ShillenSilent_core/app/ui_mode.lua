@@ -57,8 +57,4 @@ function ui_mode.get_mode_for_next_load()
 	return mode or DEFAULT_MODE
 end
 
-function ui_mode.list_modes()
-	return { "click", "controller" }
-end
-
 return ui_mode

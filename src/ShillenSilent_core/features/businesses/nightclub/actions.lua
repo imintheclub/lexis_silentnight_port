@@ -326,10 +326,6 @@ function actions.get_fast_product_options()
 	return data.localized_options(data.fast_product_options, t)
 end
 
-function actions.get_fast_prod_target()
-	return state.config.fast_prod_target
-end
-
 function actions.set_fast_prod_target(target)
 	local was_active = state.fast_production.active
 	if was_active then

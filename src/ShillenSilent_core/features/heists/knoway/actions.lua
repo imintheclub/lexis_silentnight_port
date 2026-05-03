@@ -94,6 +94,4 @@ function actions.skip_cutscene()
 	return ok
 end
 
-actions.knoway_instant_finish = actions.instant_finish
-
 return actions

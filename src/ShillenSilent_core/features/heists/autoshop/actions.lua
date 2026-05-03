@@ -23,10 +23,6 @@ local text = i18n.t
 
 local push = notify_core.feature("feature.autoshop.name")
 
-function actions.sync_contract_index()
-	return state.contract_index()
-end
-
 function actions.redraw_board()
 	local cfg = config()
 	if not safe_access.is_script_running(cfg.scripts.board_reload) then
@@ -104,30 +100,6 @@ function actions.teleport_board()
 			end
 		end
 	)
-end
-
-function actions.instant_finish_old()
-	return run_guarded_job("autoshop_instant_finish_old", function()
-		local cfg = config()
-		if not safe_access.is_script_running(cfg.scripts.finish) then
-			push("autoshop.notify.old_finish_requires", 2200)
-			return
-		end
-
-		if not safe_access.force_host(cfg.scripts.finish) then
-			push("autoshop.notify.host_failed", 2200)
-			return
-		end
-		util.yield(1000)
-
-		local finish = cfg.finish.old
-		local ok1 = safe_access.set_local_int_variants(cfg.scripts.finish, finish.step1_offset, finish.step1_value)
-		local ok2 = safe_access.set_local_int_variants(cfg.scripts.finish, finish.step2_offset, finish.step2_value)
-
-		push((ok1 and ok2) and "autoshop.notify.finish_ok_old" or "autoshop.notify.finish_failed", 2200)
-	end, function()
-		push("autoshop.notify.finish_running", 1500)
-	end)
 end
 
 function actions.instant_finish_new()

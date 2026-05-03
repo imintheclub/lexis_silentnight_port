@@ -50,13 +50,6 @@ function state.set_sub_status(sub_key, status)
 	return true
 end
 
-function state.apply_sub_flags(flags)
-	for i = 1, #data.subs do
-		local key = data.subs[i].key
-		state.set_sub_production(key, flags and flags[key] == true)
-	end
-end
-
 function state.set_reminders_active(enabled)
 	state.protections.reminders_active = enabled == true
 end

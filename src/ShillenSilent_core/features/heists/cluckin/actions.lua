@@ -104,9 +104,4 @@ function actions.skip_cutscene()
 	return ok
 end
 
-actions.cluckin_skip_to_finale = actions.skip_to_finale
-actions.cluckin_remove_cooldown = actions.remove_cooldown
-actions.cluckin_reset_progress = actions.reset_progress
-actions.cluckin_instant_finish = actions.instant_finish
-
 return actions

@@ -357,21 +357,4 @@ function actions.skip_cutscene()
 	return ok
 end
 
-actions.doomsday_reload_board = actions.reload_board
-actions.doomsday_set_selected_act = actions.set_selected_act
-actions.doomsday_complete_preps = actions.complete_preps
-actions.doomsday_reset_progress = actions.reset_progress
-actions.doomsday_reset_preps = actions.reset_preps
-actions.doomsday_force_ready = actions.force_ready
-actions.doomsday_teleport_to_entrance = actions.teleport_to_entrance
-actions.doomsday_teleport_to_screen = actions.teleport_to_screen
-actions.hp_get_doomsday_max_payout_cut = actions.get_max_payout_cut
-actions.doomsday_refresh_max_payout = actions.refresh_max_payout
-actions.apply_doomsday_cuts = actions.apply_cuts
-actions.apply_selected_doomsday_cut_preset = actions.apply_selected_cut_preset
-actions.doomsday_set_max_payout = actions.set_max_payout
-actions.doomsday_data_hack = actions.data_hack
-actions.doomsday_doomsday_hack = actions.doomsday_hack
-actions.doomsday_instant_finish_new = actions.instant_finish_new
-
 return actions

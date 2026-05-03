@@ -87,16 +87,4 @@ function data.normalize_status(status)
 	return data.status[value] or data.status.stopped
 end
 
-function data.normalize_sub_flags(payload)
-	local out = {}
-	if type(payload) ~= "table" then
-		return out
-	end
-	for i = 1, #data.subs do
-		local key = data.subs[i].key
-		out[key] = payload[key] == true
-	end
-	return out
-end
-
 return data

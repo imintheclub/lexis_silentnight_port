@@ -118,15 +118,6 @@ local function apply_production_tick(slot)
 	return ok
 end
 
-function actions.get_subs()
-	return data.subs
-end
-
-function actions.get_sub_label(sub_key)
-	local sub = data.find_sub(sub_key)
-	return sub and t(sub.label_key) or tostring(sub_key)
-end
-
 function actions.production_tick(sub_key)
 	local sub = data.find_sub(sub_key)
 	if not sub then

@@ -581,22 +581,4 @@ function actions.skip_cutscene()
 	return native_api.heist_skip_cutscene(t("feature.casino.name"))
 end
 
-actions.casino_set_remove_crew_cuts = actions.set_remove_crew_cuts
-actions.casino_set_autograbber = actions.set_autograbber
-actions.casino_set_max_payout = actions.set_max_payout
-actions.casino_refresh_max_payout = actions.refresh_max_payout
-actions.casino_enforce_heist_toggles = actions.enforce_heist_toggles
-actions.casino_fix_stuck_keycards = actions.fix_stuck_keycards
-actions.casino_skip_objective = actions.skip_objective
-actions.casino_fingerprint_hack = actions.fingerprint_hack
-actions.casino_instant_keypad_hack = actions.instant_keypad_hack
-actions.casino_instant_vault_drill = actions.instant_vault_drill
-actions.casino_remove_cooldown = actions.remove_cooldown
-actions.casino_set_team_lives = actions.set_team_lives
-actions.casino_instant_finish = actions.instant_finish
-actions.casino_force_ready = actions.force_ready
-actions.reset_heist_preps = actions.reset_preps
-actions.apply_casino_cuts = actions.apply_cuts
-actions.hp_get_casino_max_payout_cut = actions.get_max_payout_cut
-
 return actions

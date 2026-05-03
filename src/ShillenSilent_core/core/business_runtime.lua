@@ -2,9 +2,20 @@ local safe_access = require("ShillenSilent_core.core.safe_access")
 
 local business_runtime = {}
 
+local function account_character()
+	if account and type(account.character) == "function" then
+		local ok, result = pcall(account.character)
+		local character = math.floor(tonumber(ok and result or nil) or -1)
+		if character == 0 or character == 1 then
+			return character
+		end
+	end
+	return nil
+end
+
 local function packed_slots(slots)
 	if slots == "active" then
-		local last_char = safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
+		local last_char = account_character() or safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
 		return { math.floor(tonumber(last_char) or 0) }
 	end
 	return slots or { 0 }
@@ -21,7 +32,7 @@ local function native_result_ok(result)
 end
 
 function business_runtime.active_character_slot()
-	local last_char = safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
+	local last_char = account_character() or safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
 	return math.floor(tonumber(last_char) or 0)
 end
 

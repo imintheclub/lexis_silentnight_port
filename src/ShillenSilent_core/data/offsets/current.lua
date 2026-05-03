@@ -717,7 +717,7 @@ return {
 		},
 		packed_stats = {
 			cargo_available = 36828,
-			character_slots = "active",
+			character_slots = { 0, 1 },
 		},
 		globals = {
 			cargo_limit_base = {

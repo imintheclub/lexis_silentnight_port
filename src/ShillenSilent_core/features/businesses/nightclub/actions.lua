@@ -40,6 +40,18 @@ local function product_by_key(key)
 	return nil
 end
 
+local function product_stock(product)
+	return safe_access.get_mp_stat_int(product_stat(product.slot), 0) or 0
+end
+
+local function apply_product_tick(product)
+	local cur = product_stock(product)
+	if cur >= product.cap then
+		return false, true
+	end
+	return safe_access.set_mp_stat_int(product_stat(product.slot), math.min(cur + 1, product.cap)), false
+end
+
 local function safe_local_cfg()
 	local locals = cfg().locals or {}
 	return locals.safe or {}
@@ -217,10 +229,8 @@ function actions.production_tick_all()
 	local any_ok = false
 	for i = 1, #data.product_slots do
 		local product = data.product_slots[i]
-		local cur = safe_access.get_mp_stat_int(product_stat(product.slot), 0) or 0
-		if cur < product.cap then
-			any_ok = safe_access.set_mp_stat_int(product_stat(product.slot), math.min(cur + 1, product.cap)) or any_ok
-		end
+		local ok = apply_product_tick(product)
+		any_ok = ok or any_ok
 	end
 	push(any_ok and "nightclub.notify.production_tick_ok" or "nightclub.notify.production_tick_full", 2000)
 	return any_ok
@@ -237,13 +247,12 @@ function actions.production_tick()
 		return actions.production_tick_all()
 	end
 
-	local cur = safe_access.get_mp_stat_int(product_stat(product.slot), 0) or 0
-	if cur >= product.cap then
+	local ok, full = apply_product_tick(product)
+	if full then
 		push("nightclub.notify.production_tick_target_full", 2000, { target = t(product.label_key) })
 		return false
 	end
 
-	local ok = safe_access.set_mp_stat_int(product_stat(product.slot), math.min(cur + 1, product.cap))
 	push(
 		ok and "nightclub.notify.production_tick_target_ok" or "nightclub.notify.production_tick_failed",
 		2000,
@@ -303,6 +312,27 @@ function actions.tick_fast_production()
 	local defaults = cfg().defaults or {}
 	for _, tunable in ipairs(selected_tunables()) do
 		safe_access.set_tunable_int(tunable.name, defaults.fast_accrue_time)
+	end
+	local ok = false
+	local all_full = true
+	if state.config.fast_prod_target == "all" then
+		for i = 1, #data.product_slots do
+			local tick_ok, full = apply_product_tick(data.product_slots[i])
+			all_full = all_full and full
+			ok = tick_ok or ok
+		end
+	else
+		local product = product_by_key(state.config.fast_prod_target)
+		if product then
+			local tick_ok, full = apply_product_tick(product)
+			all_full = full
+			ok = tick_ok
+		end
+	end
+	if not ok then
+		state.set_fast_production(false)
+		push(all_full and "nightclub.notify.production_tick_full" or "nightclub.notify.production_tick_failed", 2200)
+		return false
 	end
 	state.set_fast_status(data.status.running)
 	return true

@@ -59,6 +59,10 @@ local function set_cargo_limit(value)
 	)
 end
 
+local function restore_cargo_limit()
+	return set_cargo_limit(get_stock_units())
+end
+
 local function apply_sale_price()
 	local offsets_cfg = cfg()
 	local tunables = offsets_cfg.tunables or {}
@@ -197,7 +201,12 @@ function actions.tick_supplier()
 		return false
 	end
 	local laptop = cfg().scripts and cfg().scripts.laptop or {}
-	if safe_access.is_script_running(laptop.name) or is_full() then
+	if is_full() then
+		state.set_supplier_active(false)
+		push("hangar.notify.cargo_full", 2000)
+		return false
+	end
+	if safe_access.is_script_running(laptop.name) then
 		return false
 	end
 	return supplier_tick()
@@ -208,6 +217,7 @@ function actions.set_pocket_active(enabled, silent)
 	if state.config.pocket_active then
 		state.set_supplier_active(false)
 	elseif not state.config.pocket_active then
+		restore_cargo_limit()
 		state.set_fill_active(false)
 	end
 	if not silent then
@@ -288,6 +298,9 @@ function actions.set_fill_loop(enabled, silent)
 			return false
 		end
 		state.set_fill_active(false)
+		if state.config.pocket_active then
+			restore_cargo_limit()
+		end
 		if not silent then
 			push("hangar.notify.fill_stopped", 2000)
 		end
@@ -301,6 +314,9 @@ function actions.stop_fill()
 		return false
 	end
 	state.set_fill_active(false)
+	if state.config.pocket_active then
+		restore_cargo_limit()
+	end
 	push("hangar.notify.fill_stopped", 2000)
 	return true
 end

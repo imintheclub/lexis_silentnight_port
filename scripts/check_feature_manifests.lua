@@ -40,6 +40,9 @@ local function module_to_kind(module_name)
 	if module_name:find(".businesses.", 1, true) then
 		return "business"
 	end
+	if module_name:find(".general.", 1, true) then
+		return "general"
+	end
 	return nil
 end
 
@@ -117,7 +120,6 @@ end
 local function validate_modules(errors, manifest, manifest_module)
 	local expected_prefix = manifest_module:gsub("%.manifest$", "")
 	local modules = manifest.modules
-	local required_slots = { "data", "state", "actions", "click", "controller" }
 	local allowed_slots = {
 		actions = true,
 		click = true,
@@ -132,11 +134,19 @@ local function validate_modules(errors, manifest, manifest_module)
 		return
 	end
 
-	for i = 1, #required_slots do
-		local slot = required_slots[i]
-		if type(modules[slot]) ~= "string" or modules[slot] == "" then
-			add_error(errors, ("%s.modules.%s must be a non-empty module path"):format(manifest.id, slot))
-		end
+	if type(modules.data) ~= "string" or modules.data == "" then
+		add_error(errors, ("%s.modules.data must be a non-empty module path"):format(manifest.id))
+	end
+
+	if manifest.show_in_click ~= false and (type(modules.click) ~= "string" or modules.click == "") then
+		add_error(
+			errors,
+			("%s.modules.click must be a non-empty module path when shown in click UI"):format(manifest.id)
+		)
+	end
+
+	if manifest.kind ~= "general" and (type(modules.controller) ~= "string" or modules.controller == "") then
+		add_error(errors, ("%s.modules.controller must be a non-empty module path"):format(manifest.id))
 	end
 
 	for slot, module_name in pairs(modules) do
@@ -262,6 +272,14 @@ local function validate_manifest(errors, manifest_module, english)
 
 	if manifest.display_group_order ~= nil and type(manifest.display_group_order) ~= "number" then
 		add_error(errors, ("%s.display_group_order must be a number when present"):format(owner))
+	end
+
+	if manifest.display_group ~= nil then
+		validate_string(errors, owner, "display_group", manifest.display_group)
+	end
+
+	if manifest.show_in_click ~= nil and type(manifest.show_in_click) ~= "boolean" then
+		add_error(errors, ("%s.show_in_click must be a boolean when present"):format(owner))
 	end
 
 	validate_modules(errors, manifest, manifest_module)

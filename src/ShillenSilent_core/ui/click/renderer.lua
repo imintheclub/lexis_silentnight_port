@@ -7,6 +7,7 @@ local notify_core = require("ShillenSilent_core.core.notify")
 local assets = require("ShillenSilent_core.ui.click.assets")
 local config = require("ShillenSilent_core.ui.click.config")
 local state = require("ShillenSilent_core.ui.click.state")
+local group_layouts = require("ShillenSilent_core.ui.click.group_layouts")
 local info_actions = require("ShillenSilent_core.features.heists.info.actions")
 local info_data = require("ShillenSilent_core.features.heists.info.data")
 
@@ -951,6 +952,57 @@ local DRAWER_GENERAL_KEYS = {
 	faq = true,
 }
 
+-- Natural drawer height = enough vertical room to render every subtab row at
+-- its configured item_h, plus section headers and gaps. We use this as the
+-- min resize height so users can't shrink the menu shorter than its own nav
+-- list, which previously made the drawer clip rows and look empty.
+local function compute_drawer_min_menu_height()
+	local drawer_cfg = config.drawer or {}
+	local item_h = drawer_cfg.item_h or config.space.x8
+	local header_row_h = config.space.x7
+	local item_gap = config.space.x1
+	local top_pad = config.space.x3
+	local bot_pad = config.space.x3
+
+	local item_count = 0
+	local has_general, has_heist, has_business = false, false, false
+	for i = 1, #HEIST_SUBTAB_KEYS do
+		local key = HEIST_SUBTAB_KEYS[i]
+		item_count = item_count + 1
+		if DRAWER_GENERAL_KEYS[key] then
+			has_general = true
+		elseif DRAWER_HEIST_KEYS[key] then
+			has_heist = true
+		else
+			has_business = true
+		end
+	end
+	local header_count = (has_general and 1 or 0) + (has_heist and 1 or 0) + (has_business and 1 or 0)
+	local total_rows = item_count + header_count
+	if total_rows <= 0 then
+		return 0
+	end
+	local list_h = (item_count * item_h) + (header_count * header_row_h) + (math.max(0, total_rows - 1) * item_gap)
+	return list_h + top_pad + bot_pad
+end
+
+local function refresh_min_menu_height_for_drawer()
+	local needed = compute_drawer_min_menu_height()
+	if needed <= 0 then
+		return
+	end
+	config.resize.min_menu_height = needed
+	if (config.resize.max_menu_height or 0) < needed then
+		config.resize.max_menu_height = needed
+	end
+	if config.menu_height < needed then
+		local prev_h = config.menu_height
+		config.menu_height = needed
+		-- Re-center vertically so the bumped height doesn't push the menu off-screen.
+		config.origin_y = config.origin_y + math.floor((prev_h - needed) / 2)
+	end
+end
+
 function ui.set_heist_subtabs(names, keys)
 	if type(names) ~= "table" or type(keys) ~= "table" or #names ~= #keys or #names == 0 then
 		return false
@@ -966,6 +1018,7 @@ function ui.set_heist_subtabs(names, keys)
 		HEIST_SUBTAB_KEYS[i] = keys[i]
 	end
 	heist_subtab_load_state = {}
+	refresh_min_menu_height_for_drawer()
 	mark_layout_dirty()
 	return true
 end
@@ -996,106 +1049,6 @@ local function ensure_heist_subtab_loaded(index)
 	end
 	return ok
 end
-
--- Legacy visual order hints. Used only to flatten groups into a stable sequence.
-local HEIST_GROUP_LAYOUTS = {
-	[1] = { -- Info
-		["info.group.settings"] = { col = 1, order = 1 },
-		["info.group.presets"] = { col = 1, order = 2 },
-	},
-	[2] = { -- Cayo
-		["cayo.group.info"] = { col = 1, order = 1 },
-		["cayo.group.presets"] = { col = 1, order = 2 },
-		["cayo.group.preps"] = { col = 2, order = 1 },
-		["cayo.group.cuts"] = { col = 3, order = 1 },
-		["cayo.group.tools"] = { col = 3, order = 2 },
-		["cayo.group.teleport_outside"] = { col = 3, order = 3 },
-		["cayo.group.teleport_in_residence"] = { col = 3, order = 4 },
-		["cayo.group.danger"] = { col = 3, order = 5 },
-	},
-	[3] = { -- Casino
-		["casino.group.info"] = { col = 1, order = 1 },
-		["casino.group.presets"] = { col = 1, order = 2 },
-		["casino.group.teleport"] = { col = 1, order = 3 },
-		["casino.group.teleport_outside"] = { col = 1, order = 3 },
-		["casino.group.launch"] = { col = 1, order = 4 },
-		["casino.group.preps"] = { col = 2, order = 1 },
-		["casino.group.cuts"] = { col = 3, order = 1 },
-		["casino.group.tools"] = { col = 3, order = 2 },
-		["casino.group.teleport_inside"] = { col = 3, order = 3 },
-		["casino.group.danger"] = { col = 3, order = 4 },
-	},
-	[4] = { -- Doomsday
-		["doomsday.group.info"] = { col = 1, order = 1 },
-		["doomsday.group.presets"] = { col = 1, order = 2 },
-		["doomsday.group.teleport"] = { col = 1, order = 3 },
-		["doomsday.group.launch"] = { col = 1, order = 4 },
-		["doomsday.group.preps"] = { col = 2, order = 1 },
-		["doomsday.group.cuts"] = { col = 3, order = 1 },
-		["doomsday.group.tools"] = { col = 3, order = 2 },
-	},
-	[5] = { -- Apartment
-		["apartment.group.info"] = { col = 1, order = 1 },
-		["apartment.group.presets"] = { col = 1, order = 2 },
-		["apartment.group.teleport"] = { col = 1, order = 3 },
-		["apartment.group.launch"] = { col = 2, order = 1 },
-		["apartment.group.preps"] = { col = 2, order = 2 },
-		["apartment.group.cuts"] = { col = 2, order = 3 },
-		["apartment.group.tools"] = { col = 3, order = 1 },
-		["apartment.group.danger"] = { col = 3, order = 3 },
-	},
-	[6] = { -- Agency
-		["agency.group.info"] = { col = 1, order = 1 },
-		["agency.group.presets"] = { col = 1, order = 2 },
-		["agency.group.preps"] = { col = 2, order = 1 },
-		["agency.group.payout"] = { col = 2, order = 2 },
-		["agency.group.tools"] = { col = 3, order = 1 },
-		["agency.group.danger"] = { col = 3, order = 2 },
-	},
-	[7] = { -- Auto Shop
-		["autoshop.group.info"] = { col = 1, order = 1 },
-		["autoshop.group.teleport"] = { col = 1, order = 2 },
-		["autoshop.group.preps"] = { col = 2, order = 1 },
-		["autoshop.group.payout"] = { col = 2, order = 2 },
-		["autoshop.group.tools"] = { col = 3, order = 1 },
-		["autoshop.group.danger"] = { col = 3, order = 2 },
-	},
-	[8] = { -- Salvage Yard
-		["salvageyard.group.info"] = { col = 1, order = 1 },
-		["salvageyard.group.teleport"] = { col = 1, order = 2 },
-		["salvageyard.group.preps"] = { col = 2, order = 1 },
-		["salvageyard.group.slot.1"] = {
-			col = 2,
-			order = 2,
-			label_key = "salvageyard.group.slot",
-			vars = { slot = "1" },
-		},
-		["salvageyard.group.slot.2"] = {
-			col = 2,
-			order = 3,
-			label_key = "salvageyard.group.slot",
-			vars = { slot = "2" },
-		},
-		["salvageyard.group.slot.3"] = {
-			col = 2,
-			order = 4,
-			label_key = "salvageyard.group.slot",
-			vars = { slot = "3" },
-		},
-		["salvageyard.group.payout"] = { col = 3, order = 1 },
-		["salvageyard.group.tools"] = { col = 3, order = 2 },
-		["salvageyard.group.danger"] = { col = 3, order = 3 },
-	},
-	[9] = { -- Cluckin
-		["cluckin.group.info"] = { col = 1, order = 1 },
-		["cluckin.group.preps"] = { col = 2, order = 1 },
-		["cluckin.group.tools"] = { col = 2, order = 2 },
-		["cluckin.group.danger"] = { col = 3, order = 1 },
-	},
-	[10] = { -- KnoWay
-		["knoway.group.tools"] = { col = 3, order = 1 },
-	},
-}
 
 local function clear_array(tbl)
 	for i = #tbl, 1, -1 do
@@ -1390,30 +1343,19 @@ local function render_drawer(bodyY, bodyH, drawer_t)
 	end
 end
 
-local function flatten_groups_by_order(activeGroups, heist_subtab)
+local function flatten_groups_by_order(activeGroups, subtab_key, column_count)
 	local ordered = render_cache.ordered_groups
 	clear_array(ordered)
 
-	local layout = HEIST_GROUP_LAYOUTS[heist_subtab]
 	for i, group in ipairs(activeGroups) do
 		local rank = 1000000 + i
 		local pref_col = nil
 		local pref_order = nil
-		if layout then
-			local spec = layout[group.layout_key]
-			if not spec then
-				for key, candidate in pairs(layout) do
-					if group.label == i18n.t(candidate.label_key or key, candidate.vars) then
-						spec = candidate
-						break
-					end
-				end
-			end
-			if spec then
-				rank = ((spec.col - 1) * 1000) + spec.order
-				pref_col = spec.col
-				pref_order = spec.order
-			end
+		local spec = group_layouts.lookup(subtab_key, group, column_count)
+		if spec then
+			rank = ((spec.col - 1) * 1000) + spec.order
+			pref_col = spec.col
+			pref_order = spec.order
 		end
 		ordered[#ordered + 1] = {
 			group = group,
@@ -1650,6 +1592,13 @@ local function get_group_actual_height(group, col_w)
 	return h
 end
 
+-- Strict explicit-layout placement. Every card's column and within-column
+-- order come from group_layouts.lookup (via flatten_groups_by_order). There
+-- is no dynamic flow / linear-partition fallback: if a tab's layout map is
+-- missing entries, those groups deterministically pile up at the bottom of
+-- col 1 instead of being silently rebalanced.
+local UNMATCHED_PREF_ORDER_OFFSET = 1e9
+
 local function distribute_groups_by_column(flattened, groups_by_column, column_count, group_heights, animation_subkey)
 	for col = 1, column_count do
 		clear_array(groups_by_column[col])
@@ -1661,7 +1610,6 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 	end
 
 	local cols = math.max(1, math.min(column_count, total))
-	local gap = config.space.x3_5
 
 	if cols == 1 then
 		for i = 1, total do
@@ -1672,115 +1620,46 @@ local function distribute_groups_by_column(flattened, groups_by_column, column_c
 		return
 	end
 
-	-- When an explicit layout map exists, honor explicit column placement.
-	-- If the UI is resized below 3 columns, overflow columns collapse rightward.
-	local has_explicit_layout = false
-	for i = 1, total do
-		if flattened[i].pref_col ~= nil then
-			has_explicit_layout = true
-			break
-		end
+	local column_entries = {}
+	for col = 1, cols do
+		column_entries[col] = {}
 	end
-	if has_explicit_layout then
-		local column_entries = {}
-		for col = 1, cols do
-			column_entries[col] = {}
-		end
 
-		for i = 1, total do
-			local entry = flattened[i]
-			local target_col = tonumber(entry.pref_col) or 1
+	for i = 1, total do
+		local entry = flattened[i]
+		local target_col = tonumber(entry.pref_col)
+		local pref_order
+		if target_col == nil then
+			target_col = 1
+			pref_order = UNMATCHED_PREF_ORDER_OFFSET + i
+		else
 			if target_col < 1 then
 				target_col = 1
 			elseif target_col > cols then
 				target_col = cols
 			end
-
-			column_entries[target_col][#column_entries[target_col] + 1] = {
-				entry = entry,
-				pref_order = tonumber(entry.pref_order) or i,
-				seq_order = i,
-			}
+			pref_order = tonumber(entry.pref_order) or (UNMATCHED_PREF_ORDER_OFFSET + i)
 		end
 
-		for col = 1, cols do
-			table.sort(column_entries[col], function(a, b)
-				if a.pref_order == b.pref_order then
-					return a.seq_order < b.seq_order
-				end
-				return a.pref_order < b.pref_order
-			end)
-
-			for _, col_entry in ipairs(column_entries[col]) do
-				local entry = col_entry.entry
-				groups_by_column[col][#groups_by_column[col] + 1] =
-					group_column_entry(entry.group, col_entry.seq_order, group_heights[entry.group], animation_subkey)
-			end
-		end
-
-		return
+		column_entries[target_col][#column_entries[target_col] + 1] = {
+			entry = entry,
+			pref_order = pref_order,
+			seq_order = i,
+		}
 	end
-
-	local weights = {}
-	local prefix = { [0] = 0 }
-	for i = 1, total do
-		local group_h = group_heights[flattened[i].group] or get_group_actual_height(flattened[i].group)
-		weights[i] = group_h + gap
-		prefix[i] = prefix[i - 1] + weights[i]
-	end
-
-	-- Linear partition DP: keep group order stable, split into contiguous columns,
-	-- minimize the tallest column.
-	local dp = {}
-	local split = {}
-	dp[1] = {}
-	for i = 1, total do
-		dp[1][i] = prefix[i]
-	end
-
-	for k = 2, cols do
-		dp[k] = {}
-		split[k] = {}
-		for i = k, total do
-			local best_cost = math.huge
-			local best_x = k - 1
-
-			for x = k - 1, i - 1 do
-				local left = dp[k - 1][x]
-				if left then
-					local right = prefix[i] - prefix[x]
-					local cost = (left > right) and left or right
-					if cost < best_cost then
-						best_cost = cost
-						best_x = x
-					end
-				end
-			end
-
-			dp[k][i] = best_cost
-			split[k][i] = best_x
-		end
-	end
-
-	local ranges = {}
-	local k = cols
-	local i = total
-	while k > 1 do
-		local x = split[k][i] or (k - 1)
-		ranges[k] = { s = x + 1, e = i }
-		i = x
-		k = k - 1
-	end
-	ranges[1] = { s = 1, e = i }
 
 	for col = 1, cols do
-		local range = ranges[col]
-		if range then
-			for idx = range.s, range.e do
-				local entry = flattened[idx]
-				groups_by_column[col][#groups_by_column[col] + 1] =
-					group_column_entry(entry.group, idx, group_heights[entry.group], animation_subkey)
+		table.sort(column_entries[col], function(a, b)
+			if a.pref_order == b.pref_order then
+				return a.seq_order < b.seq_order
 			end
+			return a.pref_order < b.pref_order
+		end)
+
+		for _, col_entry in ipairs(column_entries[col]) do
+			local entry = col_entry.entry
+			groups_by_column[col][#groups_by_column[col] + 1] =
+				group_column_entry(entry.group, col_entry.seq_order, group_heights[entry.group], animation_subkey)
 		end
 	end
 end
@@ -2677,7 +2556,7 @@ ui.render = function()
 			or render_cache.layout_column_count ~= column_count
 			or render_cache.layout_col_w ~= col_w
 		then
-			local ordered = flatten_groups_by_order(activeGroups, state.heist_subtab)
+			local ordered = flatten_groups_by_order(activeGroups, selected_heist_key, column_count)
 			local group_heights = render_cache.group_heights
 			for key in pairs(group_heights) do
 				group_heights[key] = nil

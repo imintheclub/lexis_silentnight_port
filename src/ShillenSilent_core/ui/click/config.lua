@@ -21,7 +21,7 @@ local function init_config()
 	end
 
 	local design_menu_width = tw(356)
-	local menu_height = tw(150)
+	local menu_height = tw(180)
 	local content_margin = tw(6)
 	local header_height = tw(12)
 	local column_gap = tw(4)

@@ -140,6 +140,63 @@ function business_runtime.restore_tunables(tunables)
 	return ok
 end
 
+function business_runtime.set_tunable_list_toggle(opts)
+	local enabled = opts.enabled == true
+	opts.set_active(enabled)
+	local active = opts.is_active()
+	local ok = active and business_runtime.apply_tunables(opts.tunables, opts.enabled_value or 0)
+		or business_runtime.restore_tunables(opts.tunables)
+	return active, ok
+end
+
+function business_runtime.set_cached_tunable_toggle(opts)
+	local enabled = opts.enabled == true
+	local cache = opts.cache or {}
+	local cache_key = opts.cache_key
+	local tunable = opts.tunable
+	local default = opts.default
+	local disabled_value = opts.disabled_value
+
+	if enabled then
+		if cache_key and cache[cache_key] == nil then
+			cache[cache_key] = safe_access.get_tunable_int(tunable, default)
+		end
+		local ok = safe_access.set_tunable_int(tunable, disabled_value)
+		opts.set_active(true)
+		return opts.is_active(), ok
+	end
+
+	local restore_value = (cache_key and cache[cache_key]) or default
+	local ok = safe_access.set_tunable_int(tunable, restore_value)
+	opts.set_active(false)
+	return opts.is_active(), ok
+end
+
+function business_runtime.set_recurring_tunable_loop(opts)
+	local was_active = opts.is_active()
+	opts.set_active(opts.enabled == true)
+	local active = opts.is_active()
+	local ok
+
+	if active then
+		if not was_active and opts.start_invite_only ~= false then
+			business_runtime.start_invite_only_session()
+		end
+		ok = opts.apply()
+	else
+		ok = opts.restore()
+	end
+
+	return active, ok
+end
+
+function business_runtime.tick_recurring_tunable_loop(opts)
+	if not opts.is_active() then
+		return false
+	end
+	return opts.apply()
+end
+
 function business_runtime.set_xp_multiplier(enabled, tunable_name)
 	if not tunable_name then
 		return true

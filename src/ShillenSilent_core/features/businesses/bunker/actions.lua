@@ -169,23 +169,21 @@ function actions.refill_supplies()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
-	local was_active = state.config.sale_price_active == true
-	state.set_sale_price_active(enabled == true)
-	if not state.config.sale_price_active then
-		local ok = restore_sale_price()
-		if not silent then
-			push(ok and "bunker.notify.sale_price_off" or "bunker.notify.sale_price_failed", 2000)
-		end
-		return false
-	end
-	if not was_active then
-		business_runtime.start_invite_only_session()
-	end
-	local ok = apply_sale_price()
+	local active, ok = business_runtime.set_recurring_tunable_loop({
+		enabled = enabled,
+		is_active = actions.get_sale_price_loop_active,
+		set_active = state.set_sale_price_active,
+		apply = apply_sale_price,
+		restore = restore_sale_price,
+	})
 	if not silent then
-		push(ok and "bunker.notify.sale_price_on" or "bunker.notify.sale_price_failed", 2200)
+		push(
+			ok and (active and "bunker.notify.sale_price_on" or "bunker.notify.sale_price_off")
+				or "bunker.notify.sale_price_failed",
+			active and 2200 or 2000
+		)
 	end
-	return state.config.sale_price_active
+	return active
 end
 
 function actions.get_sale_price_loop_active()
@@ -193,10 +191,10 @@ function actions.get_sale_price_loop_active()
 end
 
 function actions.tick_sale_price()
-	if not state.config.sale_price_active then
-		return false
-	end
-	return apply_sale_price()
+	return business_runtime.tick_recurring_tunable_loop({
+		is_active = actions.get_sale_price_loop_active,
+		apply = apply_sale_price,
+	})
 end
 
 function actions.set_no_xp(enabled, silent)
@@ -287,21 +285,20 @@ end
 function actions.set_disable_raids(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.raids_default == nil then
-			state.protections.raids_default =
-				safe_access.get_tunable_int(tunables.disable_raids, defaults.raids_default)
-		end
-		safe_access.set_tunable_int(tunables.disable_raids, defaults.raids_disabled)
-		state.set_raids_active(true)
-	else
-		safe_access.set_tunable_int(tunables.disable_raids, state.protections.raids_default or defaults.raids_default)
-		state.set_raids_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "raids_default",
+		tunable = tunables.disable_raids,
+		default = defaults.raids_default,
+		disabled_value = defaults.raids_disabled,
+		is_active = actions.get_raids_active,
+		set_active = state.set_raids_active,
+	})
 	if not silent then
-		push(enabled and "bunker.notify.raids_disabled" or "bunker.notify.raids_restored", 2000)
+		push(active and "bunker.notify.raids_disabled" or "bunker.notify.raids_restored", 2000)
 	end
-	return state.protections.raids_active
+	return active
 end
 
 function actions.get_raids_active()
@@ -311,24 +308,20 @@ end
 function actions.set_disable_reminders(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.reminders_default == nil then
-			state.protections.reminders_default =
-				safe_access.get_tunable_int(tunables.reminders, defaults.reminder_cooldown_default)
-		end
-		safe_access.set_tunable_int(tunables.reminders, defaults.reminder_cooldown_disabled)
-		state.set_reminders_active(true)
-	else
-		safe_access.set_tunable_int(
-			tunables.reminders,
-			state.protections.reminders_default or defaults.reminder_cooldown_default
-		)
-		state.set_reminders_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "reminders_default",
+		tunable = tunables.reminders,
+		default = defaults.reminder_cooldown_default,
+		disabled_value = defaults.reminder_cooldown_disabled,
+		is_active = actions.get_reminders_active,
+		set_active = state.set_reminders_active,
+	})
 	if not silent then
-		push(enabled and "bunker.notify.reminders_disabled" or "bunker.notify.reminders_restored", 2000)
+		push(active and "bunker.notify.reminders_disabled" or "bunker.notify.reminders_restored", 2000)
 	end
-	return state.protections.reminders_active
+	return active
 end
 
 function actions.get_reminders_active()

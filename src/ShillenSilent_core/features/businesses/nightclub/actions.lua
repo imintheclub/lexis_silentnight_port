@@ -253,21 +253,21 @@ function actions.production_tick()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
-	local was_active = state.config.sale_price_active == true
-	state.set_sale_price_active(enabled == true)
-	if state.config.sale_price_active and not was_active then
-		business_runtime.start_invite_only_session()
-	end
-	local ok = state.config.sale_price_active and apply_sale_price() or restore_sale_price()
+	local active, ok = business_runtime.set_recurring_tunable_loop({
+		enabled = enabled,
+		is_active = actions.get_sale_price_loop_active,
+		set_active = state.set_sale_price_active,
+		apply = apply_sale_price,
+		restore = restore_sale_price,
+	})
 	if not silent then
 		push(
-			ok
-					and (state.config.sale_price_active and "nightclub.notify.sale_price_on" or "nightclub.notify.sale_price_off")
+			ok and (active and "nightclub.notify.sale_price_on" or "nightclub.notify.sale_price_off")
 				or "nightclub.notify.sale_price_failed",
 			2200
 		)
 	end
-	return state.config.sale_price_active
+	return active
 end
 
 function actions.get_sale_price_loop_active()
@@ -275,10 +275,10 @@ function actions.get_sale_price_loop_active()
 end
 
 function actions.tick_sale_price()
-	if not state.config.sale_price_active then
-		return false
-	end
-	return apply_sale_price()
+	return business_runtime.tick_recurring_tunable_loop({
+		is_active = actions.get_sale_price_loop_active,
+		apply = apply_sale_price,
+	})
 end
 
 function actions.set_fast_production(enabled, silent)
@@ -491,19 +491,21 @@ function actions.open_computer()
 end
 
 function actions.set_cooldowns(enabled, silent)
-	state.set_cooldowns_active(enabled == true)
 	local tunables = cfg().tunables or {}
-	local ok = state.config.cooldowns_active and business_runtime.apply_tunables(tunables.cooldowns, 0)
-		or business_runtime.restore_tunables(tunables.cooldowns)
+	local active, ok = business_runtime.set_tunable_list_toggle({
+		enabled = enabled,
+		tunables = tunables.cooldowns,
+		is_active = actions.get_cooldowns_active,
+		set_active = state.set_cooldowns_active,
+	})
 	if not silent then
 		push(
-			ok
-					and (state.config.cooldowns_active and "nightclub.notify.cooldowns_on" or "nightclub.notify.cooldowns_off")
+			ok and (active and "nightclub.notify.cooldowns_on" or "nightclub.notify.cooldowns_off")
 				or "nightclub.notify.cooldowns_failed",
 			2000
 		)
 	end
-	return state.config.cooldowns_active
+	return active
 end
 
 function actions.get_cooldowns_active()
@@ -513,21 +515,20 @@ end
 function actions.set_disable_raids(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.raids_default == nil then
-			state.protections.raids_default =
-				safe_access.get_tunable_int(tunables.disable_raids, defaults.raids_default)
-		end
-		safe_access.set_tunable_int(tunables.disable_raids, defaults.raids_disabled)
-		state.set_raids_active(true)
-	else
-		safe_access.set_tunable_int(tunables.disable_raids, state.protections.raids_default or defaults.raids_default)
-		state.set_raids_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "raids_default",
+		tunable = tunables.disable_raids,
+		default = defaults.raids_default,
+		disabled_value = defaults.raids_disabled,
+		is_active = actions.get_raids_active,
+		set_active = state.set_raids_active,
+	})
 	if not silent then
-		push(enabled and "nightclub.notify.raids_disabled" or "nightclub.notify.raids_restored", 2000)
+		push(active and "nightclub.notify.raids_disabled" or "nightclub.notify.raids_restored", 2000)
 	end
-	return state.protections.raids_active
+	return active
 end
 
 function actions.get_raids_active()
@@ -537,24 +538,20 @@ end
 function actions.set_disable_reminders(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.reminders_default == nil then
-			state.protections.reminders_default =
-				safe_access.get_tunable_int(tunables.reminders, defaults.reminder_cooldown_default)
-		end
-		safe_access.set_tunable_int(tunables.reminders, defaults.reminder_cooldown_disabled)
-		state.set_reminders_active(true)
-	else
-		safe_access.set_tunable_int(
-			tunables.reminders,
-			state.protections.reminders_default or defaults.reminder_cooldown_default
-		)
-		state.set_reminders_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "reminders_default",
+		tunable = tunables.reminders,
+		default = defaults.reminder_cooldown_default,
+		disabled_value = defaults.reminder_cooldown_disabled,
+		is_active = actions.get_reminders_active,
+		set_active = state.set_reminders_active,
+	})
 	if not silent then
-		push(enabled and "nightclub.notify.reminders_disabled" or "nightclub.notify.reminders_restored", 2000)
+		push(active and "nightclub.notify.reminders_disabled" or "nightclub.notify.reminders_restored", 2000)
 	end
-	return state.protections.reminders_active
+	return active
 end
 
 function actions.get_reminders_active()

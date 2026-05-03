@@ -140,23 +140,21 @@ function actions.fill_cargo()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
-	local was_active = state.config.sale_price_active == true
-	state.set_sale_price_active(enabled == true)
-	if not state.config.sale_price_active then
-		local ok = restore_sale_price()
-		if not silent then
-			push(ok and "hangar.notify.sale_price_off" or "hangar.notify.sale_price_failed", 2000)
-		end
-		return false
-	end
-	if not was_active then
-		business_runtime.start_invite_only_session()
-	end
-	local ok = apply_sale_price()
+	local active, ok = business_runtime.set_recurring_tunable_loop({
+		enabled = enabled,
+		is_active = actions.get_sale_price_loop_active,
+		set_active = state.set_sale_price_active,
+		apply = apply_sale_price,
+		restore = restore_sale_price,
+	})
 	if not silent then
-		push(ok and "hangar.notify.sale_price_on" or "hangar.notify.sale_price_failed", 2200)
+		push(
+			ok and (active and "hangar.notify.sale_price_on" or "hangar.notify.sale_price_off")
+				or "hangar.notify.sale_price_failed",
+			active and 2200 or 2000
+		)
 	end
-	return state.config.sale_price_active
+	return active
 end
 
 function actions.get_sale_price_loop_active()
@@ -164,10 +162,10 @@ function actions.get_sale_price_loop_active()
 end
 
 function actions.tick_sale_price()
-	if not state.config.sale_price_active then
-		return false
-	end
-	return apply_sale_price()
+	return business_runtime.tick_recurring_tunable_loop({
+		is_active = actions.get_sale_price_loop_active,
+		apply = apply_sale_price,
+	})
 end
 
 function actions.set_no_xp(enabled, silent)
@@ -241,18 +239,21 @@ function actions.get_pocket_delay()
 end
 
 function actions.set_cooldowns(enabled, silent)
-	state.set_cooldowns_active(enabled == true)
 	local tunables = cfg().tunables or {}
-	local ok = state.config.cooldowns_active and business_runtime.apply_tunables(tunables.cooldowns, 0)
-		or business_runtime.restore_tunables(tunables.cooldowns)
+	local active, ok = business_runtime.set_tunable_list_toggle({
+		enabled = enabled,
+		tunables = tunables.cooldowns,
+		is_active = actions.get_cooldowns_active,
+		set_active = state.set_cooldowns_active,
+	})
 	if not silent then
 		push(
-			ok and (state.config.cooldowns_active and "hangar.notify.cooldowns_on" or "hangar.notify.cooldowns_off")
+			ok and (active and "hangar.notify.cooldowns_on" or "hangar.notify.cooldowns_off")
 				or "hangar.notify.cooldowns_failed",
 			2000
 		)
 	end
-	return state.config.cooldowns_active
+	return active
 end
 
 function actions.get_cooldowns_active()

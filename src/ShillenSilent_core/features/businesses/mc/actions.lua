@@ -1,5 +1,6 @@
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
 local offsets = require("ShillenSilent_core.data.offsets.current")
@@ -116,15 +117,6 @@ local function apply_production_tick(slot)
 	ok = safe_access.set_global_int_variants(trig1, 0) and ok
 	ok = safe_access.set_global_int_variants(trig2, 1) and ok
 	return ok
-end
-
-function actions.get_subs()
-	return data.subs
-end
-
-function actions.get_sub_label(sub_key)
-	local sub = data.find_sub(sub_key)
-	return sub and t(sub.label_key) or tostring(sub_key)
 end
 
 function actions.production_tick(sub_key)
@@ -365,24 +357,20 @@ end
 function actions.set_disable_reminders(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.reminders_default == nil then
-			state.protections.reminders_default =
-				safe_access.get_tunable_int(tunables.reminders, defaults.reminder_cooldown_default)
-		end
-		safe_access.set_tunable_int(tunables.reminders, defaults.reminder_cooldown_disabled)
-		state.set_reminders_active(true)
-	else
-		safe_access.set_tunable_int(
-			tunables.reminders,
-			state.protections.reminders_default or defaults.reminder_cooldown_default
-		)
-		state.set_reminders_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "reminders_default",
+		tunable = tunables.reminders,
+		default = defaults.reminder_cooldown_default,
+		disabled_value = defaults.reminder_cooldown_disabled,
+		is_active = actions.get_reminders_active,
+		set_active = state.set_reminders_active,
+	})
 	if not silent then
-		push_feature(enabled and "mc.notify.reminders_disabled" or "mc.notify.reminders_restored", 2000)
+		push_feature(active and "mc.notify.reminders_disabled" or "mc.notify.reminders_restored", 2000)
 	end
-	return state.protections.reminders_active
+	return active
 end
 
 function actions.get_reminders_active()
@@ -392,21 +380,20 @@ end
 function actions.set_disable_raids(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.raids_default == nil then
-			state.protections.raids_default =
-				safe_access.get_tunable_int(tunables.disable_raids, defaults.raids_default)
-		end
-		safe_access.set_tunable_int(tunables.disable_raids, 0)
-		state.set_raids_active(true)
-	else
-		safe_access.set_tunable_int(tunables.disable_raids, state.protections.raids_default or defaults.raids_default)
-		state.set_raids_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "raids_default",
+		tunable = tunables.disable_raids,
+		default = defaults.raids_default,
+		disabled_value = 0,
+		is_active = actions.get_raids_active,
+		set_active = state.set_raids_active,
+	})
 	if not silent then
-		push_feature(enabled and "mc.notify.raids_disabled" or "mc.notify.raids_restored", 2000)
+		push_feature(active and "mc.notify.raids_disabled" or "mc.notify.raids_restored", 2000)
 	end
-	return state.protections.raids_active
+	return active
 end
 
 function actions.get_raids_active()

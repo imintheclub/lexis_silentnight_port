@@ -244,13 +244,13 @@ end
 
 local function add_tools(root)
 	local tools = root:submenu(t("cayo.group.tools"))
+	common.add_button(tools, t("cayo.action.reload_planning"), actions.reload_planning_screen)
 	common.add_button(tools, t("cayo.action.voltlab"), actions.instant_voltlab_hack)
 	common.add_button(tools, t("cayo.action.password"), actions.instant_password_hack)
 	common.add_button(tools, t("cayo.action.plasma"), actions.bypass_plasma_cutter)
 	common.add_button(tools, t("cayo.action.drainage"), actions.bypass_drainage_pipe)
-	common.add_button(tools, t("cayo.action.instant_finish"), actions.instant_finish)
 	common.add_button(tools, t("cayo.action.force_ready"), actions.force_ready)
-	common.add_button(tools, t("cayo.action.reload_planning"), actions.reload_planning_screen)
+	common.add_button(tools, t("cayo.action.instant_finish"), actions.instant_finish)
 	common.add_button(tools, t("cayo.action.skip_cutscene"), actions.skip_cutscene)
 end
 
@@ -275,6 +275,8 @@ local function add_danger(root)
 	danger:breaker(t("cayo.warning.use_with_caution"))
 	common.add_button(danger, t("cayo.action.skip_cooldown_solo"), actions.remove_cooldown)
 	common.add_button(danger, t("cayo.action.skip_cooldown_team"), actions.remove_cooldown_team)
+	common.add_button(danger, t("cayo.action.go_offline"), actions.go_offline)
+	common.add_button(danger, t("cayo.action.go_online"), actions.go_online)
 end
 
 function controller.register(parent_menu)
@@ -287,6 +289,8 @@ function controller.register(parent_menu)
 	root:breaker(t("cayo.info.max_transaction"))
 	root:breaker(t("cayo.info.transaction_cooldown"))
 	root:breaker(t("cayo.info.heist_cooldown"))
+	root:breaker(t("cayo.info.skip_cooldown_steps"))
+	root:breaker(t("cayo.tip.force_ready"))
 	common.add_button(root, t("cayo.action.teleport_kosatka"), actions.teleport_kosatka)
 	add_preps(root)
 	add_cuts(root)

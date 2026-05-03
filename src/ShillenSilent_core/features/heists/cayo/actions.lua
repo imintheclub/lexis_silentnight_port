@@ -1,5 +1,6 @@
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local business_runtime = require("ShillenSilent_core.core.business_runtime")
 local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
 local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
@@ -205,7 +206,7 @@ function actions.get_max_payout_cut()
 
 		cut = cut + 1
 		final_payout = math.floor(payout * (cut / 100))
-		if cut > 500 then
+		if cut > data.cuts.max then
 			cut = initial_cut
 			final_payout = math.floor(payout * (cut / 100))
 			difference = difference + 1000
@@ -366,6 +367,20 @@ function actions.remove_cooldown_team()
 	return ok
 end
 
+function actions.go_offline()
+	local globals = offsets.session and offsets.session.globals or {}
+	local ok = safe_access.set_global_int(globals.switch, 1)
+	ok = safe_access.set_global_int(globals.quit, -1) and ok
+	tool_push(ok and "cayo.notify.offline_ok" or "cayo.notify.offline_failed", ok and 2000 or 2800)
+	return ok
+end
+
+function actions.go_online()
+	local ok = business_runtime.start_invite_only_session()
+	tool_push(ok and "cayo.notify.online_ok" or "cayo.notify.online_failed", ok and 2000 or 2800)
+	return ok
+end
+
 function actions.instant_finish()
 	return run_guarded_job("cayo_instant_finish", function()
 		local c = cfg()
@@ -522,36 +537,5 @@ end
 function actions.skip_cutscene()
 	return native_api.heist_skip_cutscene(t("feature.cayo.name"))
 end
-
-actions.cayo_set_womans_bag = actions.set_womans_bag
-actions.cayo_set_remove_crew_cuts = actions.set_remove_crew_cuts
-actions.cayo_set_max_payout = actions.set_max_payout
-actions.cayo_refresh_max_payout = actions.refresh_max_payout
-actions.cayo_enforce_heist_toggles = actions.enforce_heist_toggles
-actions.cayo_apply_preps = actions.apply_preps
-actions.cayo_apply_cuts = actions.apply_cuts
-actions.cayo_force_ready = actions.force_ready
-actions.cayo_unlock_all_poi = actions.unlock_all_poi
-actions.cayo_reset_preps = actions.reset_preps
-actions.cayo_instant_voltlab_hack = actions.instant_voltlab_hack
-actions.cayo_instant_password_hack = actions.instant_password_hack
-actions.cayo_bypass_plasma_cutter = actions.bypass_plasma_cutter
-actions.cayo_bypass_drainage_pipe = actions.bypass_drainage_pipe
-actions.cayo_reload_planning_screen = actions.reload_planning_screen
-actions.cayo_remove_cooldown = actions.remove_cooldown
-actions.cayo_remove_cooldown_team = actions.remove_cooldown_team
-actions.cayo_instant_finish = actions.instant_finish
-actions.cayo_teleport_residence = actions.teleport_residence
-actions.cayo_teleport_main_target = actions.teleport_main_target
-actions.cayo_teleport_gate = actions.teleport_gate
-actions.cayo_teleport_center = actions.teleport_center
-actions.cayo_teleport_loot1 = actions.teleport_loot1
-actions.cayo_teleport_loot2 = actions.teleport_loot2
-actions.cayo_teleport_loot3 = actions.teleport_loot3
-actions.cayo_teleport_gate_outside = actions.teleport_gate_outside
-actions.cayo_teleport_airport = actions.teleport_airport
-actions.cayo_teleport_escape = actions.teleport_escape
-actions.cayo_teleport_kosatka = actions.teleport_kosatka
-actions.hp_get_cayo_max_payout_cut = actions.get_max_payout_cut
 
 return actions

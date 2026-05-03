@@ -24,6 +24,14 @@ function click.register(heist_tab)
 		return nil
 	end
 
+	local info = ui.group(heist_tab, t("acidlab.group.info"), nil, nil, nil, nil, "acidlab")
+	ui.label(info, t("feature.acidlab.name"), config.colors.accent)
+	ui.info(info, t("acidlab.tip.fast_loop"), config.colors.text_sec)
+	ui.info(info, t("acidlab.tip.tick"), config.colors.text_sec)
+	ui.info(info, t("acidlab.tip.refill"), config.colors.text_sec)
+	ui.info(info, t("acidlab.tip.instant_sell"), config.colors.text_sec)
+	ui.spacer(info, config.space.x2)
+
 	local production = ui.group(heist_tab, t("acidlab.group.production"), nil, nil, nil, nil, "acidlab")
 	ui.label(production, t("feature.acidlab.name"), config.colors.accent)
 	refs.fast_status_label = ui.label(
@@ -44,6 +52,9 @@ function click.register(heist_tab)
 	ui.button(production, "acidlab_tick", t("acidlab.action.production_tick"), actions.production_tick)
 	ui.button(production, "acidlab_refill", t("acidlab.action.refill_supplies"), actions.refill_supplies)
 	ui.button(production, "acidlab_sell", t("acidlab.action.instant_sell"), actions.instant_sell)
+
+	local teleport = ui.group(heist_tab, t("acidlab.group.teleport"), nil, nil, nil, nil, "acidlab")
+	ui.button(teleport, "acidlab_teleport", t("acidlab.action.teleport"), actions.teleport)
 
 	click.refresh()
 	return heist_tab

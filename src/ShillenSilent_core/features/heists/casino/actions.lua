@@ -6,14 +6,13 @@ local notify_core = require("ShillenSilent_core.core.notify")
 local native_api = require("ShillenSilent_core.core.native_api")
 local i18n = require("ShillenSilent_core.i18n")
 local offsets = require("ShillenSilent_core.data.offsets.current")
+local arcade_actions = require("ShillenSilent_core.features.businesses.arcade.actions")
 local data = require("ShillenSilent_core.features.heists.casino.data")
 local state = require("ShillenSilent_core.features.heists.casino.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
-local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 
 local run_guarded_job = jobs.run_guarded_job
 local run_coords_teleport = coords_teleport.run_coords_teleport
-local teleport_to_blip_with_job = blip_teleport.teleport_to_blip_with_job
 
 local actions = {}
 
@@ -300,12 +299,6 @@ function actions.reset_preps()
 	return ok
 end
 
-function actions.skip_arcade_setup()
-	local ok = safe_access.set_stat_bool(cfg().stats.arcade_setup_done, true)
-	tool_push(ok and "casino.notify.arcade_setup_ok" or "casino.notify.arcade_setup_failed", 2000)
-	return ok
-end
-
 function actions.fix_stuck_keycards()
 	local c = cfg()
 	local ok = safe_access.set_local_int(c.scripts.controller, c.locals.keycards_fix, 5)
@@ -459,15 +452,66 @@ local function solo_launch_setup()
 	if not is_finale or is_finale ~= 1 then
 		return false
 	end
-	local approach = safe_access.get_mp_stat_int(c.stats.approach, nil)
+	local approach = safe_access.get_active_mp_stat_int(c.stats.approach, nil)
 	if not approach then
 		return false
 	end
-	if approach == 2 and not safe_access.set_global_int_variants(c.globals.big_con_approach, 3) then
-		return false
+	local target = safe_access.get_active_mp_stat_int(c.stats.target, state.config.target)
+	local hard_approach = safe_access.get_active_mp_stat_int(c.stats.hard_approach, 0)
+	local data_globals = c.globals.finale_data or {}
+	local hard_mode = approach == hard_approach and approach ~= 0
+	local ok = true
+	ok = safe_access.set_global_int_variants(data_globals.target, target) and ok
+	ok = safe_access.set_global_int_variants(data_globals.cameras, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.patrol, 1) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.guards,
+		safe_access.get_active_mp_stat_int(c.stats.disrupt_shipments, state.config.disrupt_shipments)
+	) and ok
+	ok = safe_access.set_global_int_variants(data_globals.nvds, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.drills, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.unknown, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.buyer, math.random(6, 8)) and ok
+	ok = safe_access.set_global_int_variants(data_globals.decoy, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.getaway, 1) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.gunman,
+		safe_access.get_active_mp_stat_int(c.stats.crew_weapon, state.config.crew_weapon)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.weapons,
+		safe_access.get_active_mp_stat_int(c.stats.weapons, state.config.loadout_slot - 1)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.driver,
+		safe_access.get_active_mp_stat_int(c.stats.crew_driver, state.config.crew_driver)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.vehicles,
+		safe_access.get_active_mp_stat_int(c.stats.vehicles, state.config.vehicle_slot - 1)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.hacker,
+		safe_access.get_active_mp_stat_int(c.stats.crew_hacker, state.config.crew_hacker)
+	) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.keycards,
+		safe_access.get_active_mp_stat_int(c.stats.key_levels, state.config.key_levels)
+	) and ok
+	ok = safe_access.set_global_int_variants(data_globals.exit, 1) and ok
+	ok = safe_access.set_global_int_variants(
+		data_globals.masks,
+		safe_access.get_active_mp_stat_int(c.stats.masks, state.config.masks)
+	) and ok
+	if approach == 2 then
+		ok = safe_access.set_global_int_variants(data_globals.van, 3) and ok
 	end
-	local target = safe_access.get_mp_stat_int(c.stats.target, 0)
-	return safe_access.set_global_int_variants(c.globals.finale_target, target)
+	ok = safe_access.set_global_int_variants(data_globals.infested, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.bitset, 2047) and ok
+	ok = safe_access.set_global_int_variants(data_globals.gear, 1) and ok
+	ok = safe_access.set_global_int_variants(data_globals.hard_mode, hard_mode and 1 or 0) and ok
+	ok = safe_access.set_global_int(c.globals.difficulty, hard_mode and 2 or 1) and ok
+	return ok
 end
 
 local function solo_launch_reset()
@@ -484,6 +528,8 @@ local function solo_launch_reset()
 	ok = safe_access.set_global_int(c.launcher.globals.player_count_2, 1) and ok
 	ok = safe_access.set_global_int(c.launcher.globals.flow, 2) and ok
 	ok = safe_access.set_global_int_variants(c.launcher.globals.extra, 11) and ok
+	ok = safe_access.set_local_int_variants(c.scripts.launcher, c.launcher.flags_offset, 0) and ok
+	ok = safe_access.set_global_int(c.launcher.globals.flags, 1) and ok
 	return ok
 end
 
@@ -502,14 +548,7 @@ function actions.maintain_solo_launch()
 end
 
 function actions.teleport_arcade()
-	local c = cfg()
-	return teleport_to_blip_with_job(
-		c.blips.arcade,
-		t("casino.group.teleport"),
-		t("casino.notify.tp_arcade"),
-		t("casino.notify.tp_arcade_missing"),
-		{ relay_if_interior = true }
-	)
+	return arcade_actions.teleport()
 end
 
 local function teleport_to_coord(coord_key, message_key)
@@ -541,24 +580,5 @@ end
 function actions.skip_cutscene()
 	return native_api.heist_skip_cutscene(t("feature.casino.name"))
 end
-
-actions.casino_set_remove_crew_cuts = actions.set_remove_crew_cuts
-actions.casino_set_autograbber = actions.set_autograbber
-actions.casino_set_max_payout = actions.set_max_payout
-actions.casino_refresh_max_payout = actions.refresh_max_payout
-actions.casino_enforce_heist_toggles = actions.enforce_heist_toggles
-actions.casino_skip_arcade_setup = actions.skip_arcade_setup
-actions.casino_fix_stuck_keycards = actions.fix_stuck_keycards
-actions.casino_skip_objective = actions.skip_objective
-actions.casino_fingerprint_hack = actions.fingerprint_hack
-actions.casino_instant_keypad_hack = actions.instant_keypad_hack
-actions.casino_instant_vault_drill = actions.instant_vault_drill
-actions.casino_remove_cooldown = actions.remove_cooldown
-actions.casino_set_team_lives = actions.set_team_lives
-actions.casino_instant_finish = actions.instant_finish
-actions.casino_force_ready = actions.force_ready
-actions.reset_heist_preps = actions.reset_preps
-actions.apply_casino_cuts = actions.apply_cuts
-actions.hp_get_casino_max_payout_cut = actions.get_max_payout_cut
 
 return actions

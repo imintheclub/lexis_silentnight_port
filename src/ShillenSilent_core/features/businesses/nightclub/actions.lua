@@ -40,6 +40,107 @@ local function product_by_key(key)
 	return nil
 end
 
+local function product_stock(product)
+	return safe_access.get_mp_stat_int(product_stat(product.slot), 0) or 0
+end
+
+local function apply_product_tick(product)
+	local cur = product_stock(product)
+	if cur >= product.cap then
+		return false, true
+	end
+	return safe_access.set_mp_stat_int(product_stat(product.slot), math.min(cur + 1, product.cap)), false
+end
+
+local function safe_local_cfg()
+	local locals = cfg().locals or {}
+	return locals.safe or {}
+end
+
+local function get_strided_global(field, edition, fallback)
+	if type(field) ~= "table" or type(field[edition]) ~= "number" then
+		return fallback
+	end
+
+	local stride = field[edition .. "_stride"]
+	if type(stride) ~= "number" then
+		return fallback
+	end
+
+	return safe_access.get_global_int(field[edition] + (business_runtime.player_id() * stride), fallback)
+end
+
+local function read_safe_value(offsets_cfg)
+	local globals = offsets_cfg.globals or {}
+	local stats = offsets_cfg.stats or {}
+	if globals.safe_value then
+		local ee_value = get_strided_global(globals.safe_value, "ee", nil)
+		if tonumber(ee_value or 0) > 0 then
+			return ee_value, "ee"
+		end
+
+		local legacy_value = get_strided_global(globals.safe_value, "legacy", nil)
+		if tonumber(legacy_value or 0) > 0 then
+			return legacy_value, "legacy"
+		end
+
+		if ee_value ~= nil then
+			return ee_value, "ee"
+		end
+		if legacy_value ~= nil then
+			return legacy_value, "legacy"
+		end
+	end
+	return safe_access.get_mp_stat_int(stats.safe_cash_value, 0) or 0, "stat"
+end
+
+local function collect_safe_ee(globals)
+	if not globals.safe_collect then
+		return false
+	end
+	return safe_access.set_global_bool(globals.safe_collect, true)
+end
+
+local function collect_safe_legacy(safe_locals)
+	if not (safe_locals.script and safe_access.is_script_running(safe_locals.script)) then
+		return false
+	end
+
+	local ok = safe_access.set_local_int_variants(safe_locals.script, safe_locals.type, 3)
+	ok = safe_access.set_local_int_variants(safe_locals.script, safe_locals.collect, 1) and ok
+	return ok
+end
+
+local function collect_safe_with_edition_paths(preferred_edition)
+	local offsets_cfg = cfg()
+	local globals = offsets_cfg.globals or {}
+	local safe_locals = safe_local_cfg()
+
+	if preferred_edition == "legacy" then
+		return collect_safe_legacy(safe_locals)
+	end
+
+	local ok = collect_safe_ee(globals)
+	if ok or preferred_edition == "ee" then
+		return ok
+	end
+
+	return collect_safe_legacy(safe_locals)
+end
+
+local function active_safe_top_range()
+	local globals = cfg().globals or {}
+	local first = globals.safe_top_range and globals.safe_top_range.first
+	local last = globals.safe_top_range and globals.safe_top_range.last
+	if type(first) == "table" and type(last) == "table" then
+		return first.ee, last.ee
+	end
+	if type(first) == "number" and type(last) == "number" then
+		return first, last
+	end
+	return nil, nil
+end
+
 local function selected_tunables()
 	local tunables = cfg().tunables or {}
 	local target = state.config.fast_prod_target
@@ -128,10 +229,8 @@ function actions.production_tick_all()
 	local any_ok = false
 	for i = 1, #data.product_slots do
 		local product = data.product_slots[i]
-		local cur = safe_access.get_mp_stat_int(product_stat(product.slot), 0) or 0
-		if cur < product.cap then
-			any_ok = safe_access.set_mp_stat_int(product_stat(product.slot), math.min(cur + 1, product.cap)) or any_ok
-		end
+		local ok = apply_product_tick(product)
+		any_ok = ok or any_ok
 	end
 	push(any_ok and "nightclub.notify.production_tick_ok" or "nightclub.notify.production_tick_full", 2000)
 	return any_ok
@@ -148,13 +247,12 @@ function actions.production_tick()
 		return actions.production_tick_all()
 	end
 
-	local cur = safe_access.get_mp_stat_int(product_stat(product.slot), 0) or 0
-	if cur >= product.cap then
+	local ok, full = apply_product_tick(product)
+	if full then
 		push("nightclub.notify.production_tick_target_full", 2000, { target = t(product.label_key) })
 		return false
 	end
 
-	local ok = safe_access.set_mp_stat_int(product_stat(product.slot), math.min(cur + 1, product.cap))
 	push(
 		ok and "nightclub.notify.production_tick_target_ok" or "nightclub.notify.production_tick_failed",
 		2000,
@@ -164,17 +262,21 @@ function actions.production_tick()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
-	state.set_sale_price_active(enabled == true)
-	local ok = state.config.sale_price_active and apply_sale_price() or restore_sale_price()
+	local active, ok = business_runtime.set_recurring_tunable_loop({
+		enabled = enabled,
+		is_active = actions.get_sale_price_loop_active,
+		set_active = state.set_sale_price_active,
+		apply = apply_sale_price,
+		restore = restore_sale_price,
+	})
 	if not silent then
 		push(
-			ok
-					and (state.config.sale_price_active and "nightclub.notify.sale_price_on" or "nightclub.notify.sale_price_off")
+			ok and (active and "nightclub.notify.sale_price_on" or "nightclub.notify.sale_price_off")
 				or "nightclub.notify.sale_price_failed",
 			2200
 		)
 	end
-	return state.config.sale_price_active
+	return active
 end
 
 function actions.get_sale_price_loop_active()
@@ -182,10 +284,10 @@ function actions.get_sale_price_loop_active()
 end
 
 function actions.tick_sale_price()
-	if not state.config.sale_price_active then
-		return false
-	end
-	return apply_sale_price()
+	return business_runtime.tick_recurring_tunable_loop({
+		is_active = actions.get_sale_price_loop_active,
+		apply = apply_sale_price,
+	})
 end
 
 function actions.set_fast_production(enabled, silent)
@@ -211,6 +313,27 @@ function actions.tick_fast_production()
 	for _, tunable in ipairs(selected_tunables()) do
 		safe_access.set_tunable_int(tunable.name, defaults.fast_accrue_time)
 	end
+	local ok = false
+	local all_full = true
+	if state.config.fast_prod_target == "all" then
+		for i = 1, #data.product_slots do
+			local tick_ok, full = apply_product_tick(data.product_slots[i])
+			all_full = all_full and full
+			ok = tick_ok or ok
+		end
+	else
+		local product = product_by_key(state.config.fast_prod_target)
+		if product then
+			local tick_ok, full = apply_product_tick(product)
+			all_full = full
+			ok = tick_ok
+		end
+	end
+	if not ok then
+		state.set_fast_production(false)
+		push(all_full and "nightclub.notify.production_tick_full" or "nightclub.notify.production_tick_failed", 2200)
+		return false
+	end
 	state.set_fast_status(data.status.running)
 	return true
 end
@@ -233,10 +356,6 @@ function actions.get_fast_product_options()
 	return data.localized_options(data.fast_product_options, t)
 end
 
-function actions.get_fast_prod_target()
-	return state.config.fast_prod_target
-end
-
 function actions.set_fast_prod_target(target)
 	local was_active = state.fast_production.active
 	if was_active then
@@ -251,15 +370,13 @@ end
 
 function actions.safe_collect()
 	local offsets_cfg = cfg()
-	local stats = offsets_cfg.stats or {}
-	local value = safe_access.get_mp_stat_int(stats.safe_cash_value, 0) or 0
+	local value, edition = read_safe_value(offsets_cfg)
 	if value <= 0 then
 		push("nightclub.notify.safe_empty", 2000)
 		return false
 	end
 
-	local globals = offsets_cfg.globals or {}
-	local ok = safe_access.set_global_bool(globals.safe_collect, true)
+	local ok = collect_safe_with_edition_paths(edition)
 	push(ok and "nightclub.notify.safe_collect_ok" or "nightclub.notify.safe_collect_failed", 2000)
 	return ok
 end
@@ -269,35 +386,24 @@ function actions.safe_fill()
 	local stats = offsets_cfg.stats or {}
 	local limits = offsets_cfg.limits or {}
 	local globals = offsets_cfg.globals or {}
+	local tunables = offsets_cfg.tunables or {}
 	local max_value = tonumber(limits.safe_max) or 250000
 	local ok = safe_access.set_mp_stat_int(stats.safe_cash_value, max_value)
+	ok = safe_access.set_mp_stat_int(stats.safe_pay_time_left, -1) and ok
+	ok = safe_access.set_tunable_int(tunables.safe_max_capacity, max_value) and ok
+	if globals.safe_value then
+		ok = safe_access.set_global_int_strided_variants(globals.safe_value, business_runtime.player_id(), max_value)
+			and ok
+	end
 	if globals.safe_top_range then
-		local first = globals.safe_top_range.first
-		local last = globals.safe_top_range.last
-		for idx = first.ee, last.ee do
-			ok = safe_access.set_global_int(idx, max_value) and ok
-		end
-		for idx = first.legacy, last.legacy do
-			ok = safe_access.set_global_int(idx, max_value) and ok
+		local first, last = active_safe_top_range()
+		if first and last then
+			for idx = first, last do
+				ok = safe_access.set_global_int(idx, max_value) and ok
+			end
 		end
 	end
 	push(ok and "nightclub.notify.safe_fill_ok" or "nightclub.notify.safe_fill_failed", 2000)
-	return ok
-end
-
-function actions.set_popularity_max()
-	state.set_popularity_editor_value(data.popularity.max)
-	local stats = cfg().stats or {}
-	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity.max)
-	push(ok and "nightclub.notify.popularity_max_ok" or "nightclub.notify.popularity_failed", 2000)
-	return ok
-end
-
-function actions.set_popularity_min()
-	state.set_popularity_editor_value(data.popularity.min)
-	local stats = cfg().stats or {}
-	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity.min)
-	push(ok and "nightclub.notify.popularity_min_ok" or "nightclub.notify.popularity_failed", 2000)
 	return ok
 end
 
@@ -305,7 +411,7 @@ function actions.set_popularity(value, silent)
 	local target = data.clamp_popularity(value)
 	state.set_popularity_editor_value(target)
 	local stats = cfg().stats or {}
-	local ok = safe_access.set_mp_stat_int(stats.popularity, target)
+	local ok = safe_access.set_mp_stat_int(stats.popularity, data.popularity_to_stat(target))
 	if not silent then
 		push(ok and "nightclub.notify.popularity_ok" or "nightclub.notify.popularity_failed", 2000, {
 			value = tostring(target),
@@ -329,7 +435,12 @@ end
 function actions.set_popularity_lock_active(enabled, silent)
 	state.set_popularity_lock_active(enabled == true)
 	if state.popularity.lock_active then
-		actions.set_popularity(state.config.popularity_editor_value, true)
+		local stats = cfg().stats or {}
+		local current = data.popularity_from_stat(
+			safe_access.get_mp_stat_int(stats.popularity, data.popularity_to_stat(state.config.popularity_editor_value))
+		)
+		state.set_popularity_editor_value(current)
+		actions.set_popularity(current, true)
 	end
 	if not silent then
 		push(
@@ -349,37 +460,27 @@ function actions.popularity_lock_tick()
 	if not state.popularity.lock_active then
 		return false
 	end
-	local stats = cfg().stats or {}
-	local cur = safe_access.get_mp_stat_int(stats.popularity, 0) or 0
 	local target = data.clamp_popularity(state.config.popularity_editor_value)
-	local min_allowed = math.max(data.popularity.min, target - data.popularity.lock_tolerance)
-	if cur < min_allowed then
-		return actions.set_popularity(target, true)
-	end
-	return false
+	return actions.set_popularity(target, true)
 end
 
 function actions.safe_unbrick()
 	local globals = cfg().globals or {}
 	local stats = cfg().stats or {}
+	local safe_locals = safe_local_cfg()
 	local any_ok = false
-	local first = globals.safe_top_range and globals.safe_top_range.first
-	local last = globals.safe_top_range and globals.safe_top_range.last
-	if type(first) == "table" and type(last) == "table" then
-		for idx = first.ee, last.ee do
-			any_ok = safe_access.set_global_int(idx, 1) or any_ok
-		end
-		for idx = first.legacy, last.legacy do
-			any_ok = safe_access.set_global_int(idx, 1) or any_ok
-		end
-	elseif type(first) == "number" and type(last) == "number" then
+	local first, last = active_safe_top_range()
+	if first and last then
 		for idx = first, last do
 			any_ok = safe_access.set_global_int(idx, 1) or any_ok
 		end
 	end
 	safe_access.set_mp_stat_int(stats.safe_pay_time_left, -1)
 	util.yield(3000)
-	any_ok = safe_access.set_global_int(globals.safe_collect, 1) or any_ok
+	any_ok = collect_safe_with_edition_paths() or any_ok
+	if safe_locals.script and safe_access.is_script_running(safe_locals.script) then
+		any_ok = safe_access.set_local_int_variants(safe_locals.script, safe_locals.type, 3) or any_ok
+	end
 	push(any_ok and "nightclub.notify.safe_unbrick_ok" or "nightclub.notify.safe_unbrick_failed", 2200)
 	return any_ok
 end
@@ -420,19 +521,21 @@ function actions.open_computer()
 end
 
 function actions.set_cooldowns(enabled, silent)
-	state.set_cooldowns_active(enabled == true)
 	local tunables = cfg().tunables or {}
-	local ok = state.config.cooldowns_active and business_runtime.apply_tunables(tunables.cooldowns, 0)
-		or business_runtime.restore_tunables(tunables.cooldowns)
+	local active, ok = business_runtime.set_tunable_list_toggle({
+		enabled = enabled,
+		tunables = tunables.cooldowns,
+		is_active = actions.get_cooldowns_active,
+		set_active = state.set_cooldowns_active,
+	})
 	if not silent then
 		push(
-			ok
-					and (state.config.cooldowns_active and "nightclub.notify.cooldowns_on" or "nightclub.notify.cooldowns_off")
+			ok and (active and "nightclub.notify.cooldowns_on" or "nightclub.notify.cooldowns_off")
 				or "nightclub.notify.cooldowns_failed",
 			2000
 		)
 	end
-	return state.config.cooldowns_active
+	return active
 end
 
 function actions.get_cooldowns_active()
@@ -442,21 +545,20 @@ end
 function actions.set_disable_raids(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.raids_default == nil then
-			state.protections.raids_default =
-				safe_access.get_tunable_int(tunables.disable_raids, defaults.raids_default)
-		end
-		safe_access.set_tunable_int(tunables.disable_raids, defaults.raids_disabled)
-		state.set_raids_active(true)
-	else
-		safe_access.set_tunable_int(tunables.disable_raids, state.protections.raids_default or defaults.raids_default)
-		state.set_raids_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "raids_default",
+		tunable = tunables.disable_raids,
+		default = defaults.raids_default,
+		disabled_value = defaults.raids_disabled,
+		is_active = actions.get_raids_active,
+		set_active = state.set_raids_active,
+	})
 	if not silent then
-		push(enabled and "nightclub.notify.raids_disabled" or "nightclub.notify.raids_restored", 2000)
+		push(active and "nightclub.notify.raids_disabled" or "nightclub.notify.raids_restored", 2000)
 	end
-	return state.protections.raids_active
+	return active
 end
 
 function actions.get_raids_active()
@@ -466,24 +568,20 @@ end
 function actions.set_disable_reminders(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.reminders_default == nil then
-			state.protections.reminders_default =
-				safe_access.get_tunable_int(tunables.reminders, defaults.reminder_cooldown_default)
-		end
-		safe_access.set_tunable_int(tunables.reminders, defaults.reminder_cooldown_disabled)
-		state.set_reminders_active(true)
-	else
-		safe_access.set_tunable_int(
-			tunables.reminders,
-			state.protections.reminders_default or defaults.reminder_cooldown_default
-		)
-		state.set_reminders_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "reminders_default",
+		tunable = tunables.reminders,
+		default = defaults.reminder_cooldown_default,
+		disabled_value = defaults.reminder_cooldown_disabled,
+		is_active = actions.get_reminders_active,
+		set_active = state.set_reminders_active,
+	})
 	if not silent then
-		push(enabled and "nightclub.notify.reminders_disabled" or "nightclub.notify.reminders_restored", 2000)
+		push(active and "nightclub.notify.reminders_disabled" or "nightclub.notify.reminders_restored", 2000)
 	end
-	return state.protections.reminders_active
+	return active
 end
 
 function actions.get_reminders_active()

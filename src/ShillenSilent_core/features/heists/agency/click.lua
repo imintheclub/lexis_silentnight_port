@@ -49,9 +49,13 @@ function click.register(heist_tab)
 		refresh = click.refresh,
 	})
 
+	local teleport = ui.group(heist_tab, t("agency.group.teleport"), nil, nil, nil, nil, "agency")
+	ui.button(teleport, "agency_tp_entrance", t("agency.action.teleport_entrance"), actions.teleport_entrance)
+	ui.button(teleport, "agency_tp_computer", t("agency.action.teleport_computer"), actions.teleport_computer)
+	ui.button(teleport, "agency_tp_mission", t("agency.action.teleport_mission"), actions.teleport_mission)
+
 	local preps = ui.group(heist_tab, t("agency.group.preps"), nil, nil, nil, nil, "agency")
 	local contract_options = data.localized_options(data.contracts, t)
-	ui.button(preps, "agency_tp_entrance", t("agency.action.teleport_entrance"), actions.teleport_entrance)
 	refs.contract_dropdown = ui.dropdown(
 		preps,
 		"agency_contract",
@@ -66,11 +70,9 @@ function click.register(heist_tab)
 	ui.button(preps, "agency_apply_preps", t("agency.action.apply_preps"), actions.apply_and_complete_preps)
 
 	local tools = ui.group(heist_tab, t("agency.group.tools"), nil, nil, nil, nil, "agency")
-	ui.button(tools, "agency_tp_computer", t("agency.action.teleport_computer"), actions.teleport_computer)
-	ui.button(tools, "agency_tp_mission", t("agency.action.teleport_mission"), actions.teleport_mission)
+	ui.button(tools, "agency_instant_finish", t("agency.action.instant_finish"), actions.instant_finish_new)
 	refs.collect_safe_button =
 		ui.button(tools, "agency_collect_safe", t("agency.action.collect_safe"), actions.collect_safe)
-	ui.button(tools, "agency_instant_finish", t("agency.action.instant_finish"), actions.instant_finish_new)
 	ui.button(tools, "agency_skip_cutscene", t("agency.action.skip_cutscene"), actions.skip_cutscene)
 
 	local danger = ui.group(heist_tab, t("agency.group.danger"), nil, nil, nil, nil, "agency")

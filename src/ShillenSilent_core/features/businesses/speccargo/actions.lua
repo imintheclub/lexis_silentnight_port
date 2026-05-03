@@ -68,6 +68,20 @@ local function threshold_value(base_price, i)
 	return math.floor(base_price / (denominators[i] or 1))
 end
 
+local function apply_sale_price()
+	local tunables = cfg().tunables or {}
+	local ok = true
+	for i, entry in ipairs(tunables.price_thresholds or {}) do
+		ok = safe_access.set_tunable_int(entry.name, threshold_value(6000000, i)) and ok
+	end
+	return ok
+end
+
+local function restore_sale_price()
+	local tunables = cfg().tunables or {}
+	return business_runtime.restore_tunables(tunables.price_thresholds)
+end
+
 function actions.get_locations()
 	local owned_ids = get_owned_warehouse_ids()
 	local owned_locations = {}
@@ -159,6 +173,7 @@ function actions.instant_sell()
 		local ok1 = safe_access.set_local_int_variants(sell.name, sell.timer_offset, sell.timer_value)
 		local ok2 = safe_access.set_local_int_variants(sell.name, sell.state_offset, sell.state_value)
 		util.yield(2000)
+		ok2 = safe_access.set_local_int_variants(sell.name, sell.state_offset, sell.state_value) and ok2
 		ok1 = safe_access.set_local_int_variants(sell.name, sell.timer_offset, sell.timer_value) and ok1
 		push((ok1 and ok2) and "speccargo.notify.sell_ok" or "speccargo.notify.sell_failed", 2200)
 	end, function()
@@ -167,25 +182,21 @@ function actions.instant_sell()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
-	state.set_sale_price_active(enabled == true)
-	local tunables = cfg().tunables or {}
-	local ok = true
-	if state.config.sale_price_active then
-		for i, entry in ipairs(tunables.price_thresholds or {}) do
-			ok = safe_access.set_tunable_int(entry.name, threshold_value(6000000, i)) and ok
-		end
-	else
-		ok = business_runtime.restore_tunables(tunables.price_thresholds)
-	end
+	local active, ok = business_runtime.set_recurring_tunable_loop({
+		enabled = enabled,
+		is_active = actions.get_sale_price_loop_active,
+		set_active = state.set_sale_price_active,
+		apply = apply_sale_price,
+		restore = restore_sale_price,
+	})
 	if not silent then
 		push(
-			ok
-					and (state.config.sale_price_active and "speccargo.notify.sale_price_on" or "speccargo.notify.sale_price_off")
+			ok and (active and "speccargo.notify.sale_price_on" or "speccargo.notify.sale_price_off")
 				or "speccargo.notify.sale_price_failed",
 			2200
 		)
 	end
-	return state.config.sale_price_active
+	return active
 end
 
 function actions.get_sale_price_loop_active()
@@ -193,15 +204,10 @@ function actions.get_sale_price_loop_active()
 end
 
 function actions.tick_sale_price()
-	if not state.config.sale_price_active then
-		return false
-	end
-	local tunables = cfg().tunables or {}
-	local ok = true
-	for i, entry in ipairs(tunables.price_thresholds or {}) do
-		ok = safe_access.set_tunable_int(entry.name, threshold_value(6000000, i)) and ok
-	end
-	return ok
+	return business_runtime.tick_recurring_tunable_loop({
+		is_active = actions.get_sale_price_loop_active,
+		apply = apply_sale_price,
+	})
 end
 
 function actions.set_no_xp(enabled, silent)
@@ -310,19 +316,21 @@ function actions.instant_buy()
 end
 
 function actions.set_cooldowns(enabled, silent)
-	state.set_cooldowns_active(enabled == true)
 	local tunables = cfg().tunables or {}
-	local ok = state.config.cooldowns_active and business_runtime.apply_tunables(tunables.cooldowns, 0)
-		or business_runtime.restore_tunables(tunables.cooldowns)
+	local active, ok = business_runtime.set_tunable_list_toggle({
+		enabled = enabled,
+		tunables = tunables.cooldowns,
+		is_active = actions.get_cooldowns_active,
+		set_active = state.set_cooldowns_active,
+	})
 	if not silent then
 		push(
-			ok
-					and (state.config.cooldowns_active and "speccargo.notify.cooldowns_on" or "speccargo.notify.cooldowns_off")
+			ok and (active and "speccargo.notify.cooldowns_on" or "speccargo.notify.cooldowns_off")
 				or "speccargo.notify.cooldowns_failed",
 			2000
 		)
 	end
-	return state.config.cooldowns_active
+	return active
 end
 
 function actions.get_cooldowns_active()
@@ -421,21 +429,20 @@ end
 function actions.set_disable_raids(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.raids_default == nil then
-			state.protections.raids_default =
-				safe_access.get_tunable_int(tunables.disable_raids, defaults.raids_default)
-		end
-		safe_access.set_tunable_int(tunables.disable_raids, defaults.raids_disabled)
-		state.set_raids_active(true)
-	else
-		safe_access.set_tunable_int(tunables.disable_raids, state.protections.raids_default or defaults.raids_default)
-		state.set_raids_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "raids_default",
+		tunable = tunables.disable_raids,
+		default = defaults.raids_default,
+		disabled_value = defaults.raids_disabled,
+		is_active = actions.get_raids_active,
+		set_active = state.set_raids_active,
+	})
 	if not silent then
-		push(enabled and "speccargo.notify.raids_disabled" or "speccargo.notify.raids_restored", 2000)
+		push(active and "speccargo.notify.raids_disabled" or "speccargo.notify.raids_restored", 2000)
 	end
-	return state.protections.raids_active
+	return active
 end
 
 function actions.get_raids_active()
@@ -445,24 +452,20 @@ end
 function actions.set_disable_reminders(enabled, silent)
 	local tunables = cfg().tunables or {}
 	local defaults = cfg().defaults or {}
-	if enabled then
-		if state.protections.reminders_default == nil then
-			state.protections.reminders_default =
-				safe_access.get_tunable_int(tunables.reminders, defaults.reminder_cooldown_default)
-		end
-		safe_access.set_tunable_int(tunables.reminders, defaults.reminder_cooldown_disabled)
-		state.set_reminders_active(true)
-	else
-		safe_access.set_tunable_int(
-			tunables.reminders,
-			state.protections.reminders_default or defaults.reminder_cooldown_default
-		)
-		state.set_reminders_active(false)
-	end
+	local active = business_runtime.set_cached_tunable_toggle({
+		enabled = enabled,
+		cache = state.protections,
+		cache_key = "reminders_default",
+		tunable = tunables.reminders,
+		default = defaults.reminder_cooldown_default,
+		disabled_value = defaults.reminder_cooldown_disabled,
+		is_active = actions.get_reminders_active,
+		set_active = state.set_reminders_active,
+	})
 	if not silent then
-		push(enabled and "speccargo.notify.reminders_disabled" or "speccargo.notify.reminders_restored", 2000)
+		push(active and "speccargo.notify.reminders_disabled" or "speccargo.notify.reminders_restored", 2000)
 	end
-	return state.protections.reminders_active
+	return active
 end
 
 function actions.get_reminders_active()

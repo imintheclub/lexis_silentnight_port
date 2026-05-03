@@ -481,31 +481,4 @@ function actions.skip_cutscene()
 	return native_api.heist_skip_cutscene(text("feature.salvageyard.name"))
 end
 
-actions.salvage_apply_slot = actions.apply_slot
-actions.salvage_make_slot_available = actions.make_slot_available
-actions.salvage_apply_all_changes = actions.apply_all_changes
-actions.salvage_complete_preps = actions.complete_preps
-actions.salvage_reset_preps = actions.reset_preps
-actions.salvage_reload_screen = actions.reload_screen
-actions.salvage_set_free_setup = actions.set_free_setup
-actions.salvage_set_free_claim = actions.set_free_claim
-actions.salvage_enforce_heist_toggles = actions.enforce_heist_toggles
-actions.salvage_teleport_entrance = actions.teleport_entrance
-actions.salvage_teleport_board = actions.teleport_board
-actions.salvage_instant_finish = actions.instant_finish
-actions.salvage_instant_sell = actions.instant_sell
-actions.salvage_force_through_error = actions.force_through_error
-actions.salvage_skip_weekly_cooldown = actions.skip_weekly_cooldown
-actions.salvage_collect_safe = actions.collect_safe
-actions.salvage_tow_truck_instant_finish = actions.tow_truck_instant_finish
-actions.salvage_get_popularity_editor_value = actions.get_popularity_editor_value
-actions.salvage_set_popularity_editor_value = actions.set_popularity_editor_value
-actions.salvage_apply_popularity_editor_value = actions.apply_popularity_editor_value
-actions.salvage_set_popularity_lock_active = actions.set_popularity_lock_active
-actions.salvage_get_popularity_lock_active = actions.get_popularity_lock_active
-actions.salvage_popularity_lock_tick = actions.popularity_lock_tick
-actions.salvage_refresh_collect_safe_state = actions.refresh_collect_safe_state
-actions.salvage_apply_sell_values = actions.apply_sell_values
-actions.salvage_skip_cutscene = actions.skip_cutscene
-
 return actions

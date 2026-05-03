@@ -9,7 +9,6 @@ return {
 	support = { current = true, legacy = false },
 	modules = {
 		data = "ShillenSilent_core.features.businesses.bailoffice.data",
-		state = "ShillenSilent_core.features.businesses.bailoffice.state",
 		actions = "ShillenSilent_core.features.businesses.bailoffice.actions",
 		click = "ShillenSilent_core.features.businesses.bailoffice.click",
 		controller = "ShillenSilent_core.features.businesses.bailoffice.controller",

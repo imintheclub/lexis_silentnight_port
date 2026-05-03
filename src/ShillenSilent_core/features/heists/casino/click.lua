@@ -141,6 +141,7 @@ function click.register(heist_tab)
 	ui.info(info, t("casino.tip.fix_keycards"), config.colors.text_sec)
 	ui.info(info, t("casino.tip.team_lives"), config.colors.text_sec)
 	ui.info(info, t("casino.tip.max_payout"), config.colors.text_sec)
+	ui.info(info, t("casino.tip.force_ready"), config.colors.text_sec)
 	ui.spacer(info, config.space.x2)
 
 	preset_ui.click_group(heist_tab, {
@@ -159,7 +160,6 @@ function click.register(heist_tab)
 	ui.button(tools, "casino_instant_finish", t("casino.action.instant_finish"), actions.instant_finish)
 	ui.button(tools, "casino_fix_keycards", t("casino.action.fix_keycards"), actions.fix_stuck_keycards)
 	ui.button(tools, "casino_skip_objective", t("casino.action.skip_objective"), actions.skip_objective)
-	ui.button(tools, "casino_skip_cutscene", t("casino.action.skip_cutscene"), actions.skip_cutscene)
 	ui.button(tools, "casino_team_lives", t("casino.action.team_lives"), actions.set_team_lives)
 	refs.autograbber_toggle = ui.toggle(
 		tools,
@@ -171,6 +171,7 @@ function click.register(heist_tab)
 			click.refresh()
 		end
 	)
+	ui.button(tools, "casino_skip_cutscene", t("casino.action.skip_cutscene"), actions.skip_cutscene)
 
 	local launch = ui.group(heist_tab, t("casino.group.launch"), nil, nil, nil, nil, "casino")
 	ui.button(launch, "casino_tp_arcade_launch", t("casino.action.teleport_arcade"), actions.teleport_arcade)
@@ -185,7 +186,6 @@ function click.register(heist_tab)
 		end
 	)
 	ui.button(launch, "casino_force_ready", t("casino.action.force_ready"), actions.force_ready)
-	ui.button(launch, "casino_skip_setup", t("casino.action.skip_setup"), actions.skip_arcade_setup)
 
 	local preps = ui.group(heist_tab, t("casino.group.preps"), nil, nil, nil, nil, "casino")
 	refs.unlock_poi_toggle = ui.toggle(

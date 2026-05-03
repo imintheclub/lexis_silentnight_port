@@ -1,4 +1,5 @@
 local ui = require("ShillenSilent_core.ui.click.widgets")
+local config = require("ShillenSilent_core.ui.click.config")
 local i18n = require("ShillenSilent_core.i18n")
 local data = require("ShillenSilent_core.features.businesses.moneyfronts.data")
 local state = require("ShillenSilent_core.features.businesses.moneyfronts.state")
@@ -14,11 +15,14 @@ local t = i18n.t
 
 function click.refresh()
 	for _, key in ipairs(data.front_keys) do
+		local available = actions.is_front_available(key)
 		if refs.front_heat[key] then
 			refs.front_heat[key].value = state.config.front_heat[key]
+			refs.front_heat[key].disabled = not available
 		end
 		if refs.front_lock[key] then
 			refs.front_lock[key].state = state.flags.front_heat_lock[key] == true
+			refs.front_lock[key].disabled = not available
 		end
 	end
 	return true
@@ -33,19 +37,31 @@ function click.register(heist_tab, manifest)
 
 	for _, key in ipairs(data.front_keys) do
 		local loc = data.location_by_key(key)
+		local available = actions.is_front_available(key)
 		local front = ui.group(heist_tab, t(loc.heat_label_key), nil, nil, nil, nil, subtab)
-		ui.button(front, "mf_" .. key .. "_entrance", t("moneyfronts.action.teleport_entrance"), function()
-			actions.teleport_front(key)
-		end)
-		ui.button(front, "mf_" .. key .. "_laptop", t("moneyfronts.action.teleport_laptop"), function()
+		local entrance = ui.button(
+			front,
+			"mf_" .. key .. "_entrance",
+			t("moneyfronts.action.teleport_entrance"),
+			function()
+				actions.teleport_front(key)
+			end,
+			nil,
+			not available
+		)
+		entrance.disabled = not available
+		local laptop = ui.button(front, "mf_" .. key .. "_laptop", t("moneyfronts.action.teleport_laptop"), function()
 			actions.teleport_laptop(key)
-		end)
+		end, nil, not available)
+		laptop.disabled = not available
 		if key == "car_wash" then
 			ui.button(
 				front,
 				"mf_carwash_safe_collect",
 				t("moneyfronts.action.collect_car_wash_safe"),
-				actions.car_wash_collect_safe
+				actions.car_wash_collect_safe,
+				nil,
+				not available
 			)
 		end
 		refs.front_heat[key] = ui.slider(
@@ -62,18 +78,11 @@ function click.register(heist_tab, manifest)
 			t("moneyfronts.tooltip.heat"),
 			data.heat.step
 		)
+		refs.front_heat[key].disabled = not available
 		ui.button(front, "mf_" .. key .. "_apply", t("moneyfronts.action.apply_heat"), function()
 			actions.apply_front_heat_value(key)
 			click.refresh()
-		end)
-		ui.button(front, "mf_" .. key .. "_max", t("moneyfronts.action.max_heat"), function()
-			actions.max_front_heat(key)
-			click.refresh()
-		end)
-		ui.button(front, "mf_" .. key .. "_min", t("moneyfronts.action.min_heat"), function()
-			actions.min_front_heat(key)
-			click.refresh()
-		end)
+		end, nil, not available)
 		refs.front_lock[key] = ui.toggle(
 			front,
 			"mf_" .. key .. "_lock",
@@ -84,6 +93,7 @@ function click.register(heist_tab, manifest)
 				click.refresh()
 			end
 		)
+		refs.front_lock[key].disabled = not available
 	end
 
 	click.refresh()

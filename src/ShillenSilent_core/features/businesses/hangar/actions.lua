@@ -59,6 +59,10 @@ local function set_cargo_limit(value)
 	)
 end
 
+local function restore_cargo_limit()
+	return set_cargo_limit(get_stock_units())
+end
+
 local function apply_sale_price()
 	local offsets_cfg = cfg()
 	local tunables = offsets_cfg.tunables or {}
@@ -140,19 +144,21 @@ function actions.fill_cargo()
 end
 
 function actions.set_sale_price_loop(enabled, silent)
-	state.set_sale_price_active(enabled == true)
-	if not state.config.sale_price_active then
-		local ok = restore_sale_price()
-		if not silent then
-			push(ok and "hangar.notify.sale_price_off" or "hangar.notify.sale_price_failed", 2000)
-		end
-		return false
-	end
-	local ok = apply_sale_price()
+	local active, ok = business_runtime.set_recurring_tunable_loop({
+		enabled = enabled,
+		is_active = actions.get_sale_price_loop_active,
+		set_active = state.set_sale_price_active,
+		apply = apply_sale_price,
+		restore = restore_sale_price,
+	})
 	if not silent then
-		push(ok and "hangar.notify.sale_price_on" or "hangar.notify.sale_price_failed", 2200)
+		push(
+			ok and (active and "hangar.notify.sale_price_on" or "hangar.notify.sale_price_off")
+				or "hangar.notify.sale_price_failed",
+			active and 2200 or 2000
+		)
 	end
-	return state.config.sale_price_active
+	return active
 end
 
 function actions.get_sale_price_loop_active()
@@ -160,10 +166,10 @@ function actions.get_sale_price_loop_active()
 end
 
 function actions.tick_sale_price()
-	if not state.config.sale_price_active then
-		return false
-	end
-	return apply_sale_price()
+	return business_runtime.tick_recurring_tunable_loop({
+		is_active = actions.get_sale_price_loop_active,
+		apply = apply_sale_price,
+	})
 end
 
 function actions.set_no_xp(enabled, silent)
@@ -179,7 +185,7 @@ function actions.get_no_xp()
 end
 
 function actions.set_supplier_loop(enabled, silent)
-	state.set_supplier_active(enabled == true)
+	state.set_supplier_active(enabled == true and not state.config.pocket_active)
 	if not silent then
 		push(state.config.supplier_active and "hangar.notify.supplier_on" or "hangar.notify.supplier_off", 2000)
 	end
@@ -195,7 +201,12 @@ function actions.tick_supplier()
 		return false
 	end
 	local laptop = cfg().scripts and cfg().scripts.laptop or {}
-	if safe_access.is_script_running(laptop.name) or is_full() then
+	if is_full() then
+		state.set_supplier_active(false)
+		push("hangar.notify.cargo_full", 2000)
+		return false
+	end
+	if safe_access.is_script_running(laptop.name) then
 		return false
 	end
 	return supplier_tick()
@@ -203,7 +214,10 @@ end
 
 function actions.set_pocket_active(enabled, silent)
 	state.set_pocket_active(enabled == true)
-	if not state.config.pocket_active then
+	if state.config.pocket_active then
+		state.set_supplier_active(false)
+	elseif not state.config.pocket_active then
+		restore_cargo_limit()
 		state.set_fill_active(false)
 	end
 	if not silent then
@@ -235,18 +249,21 @@ function actions.get_pocket_delay()
 end
 
 function actions.set_cooldowns(enabled, silent)
-	state.set_cooldowns_active(enabled == true)
 	local tunables = cfg().tunables or {}
-	local ok = state.config.cooldowns_active and business_runtime.apply_tunables(tunables.cooldowns, 0)
-		or business_runtime.restore_tunables(tunables.cooldowns)
+	local active, ok = business_runtime.set_tunable_list_toggle({
+		enabled = enabled,
+		tunables = tunables.cooldowns,
+		is_active = actions.get_cooldowns_active,
+		set_active = state.set_cooldowns_active,
+	})
 	if not silent then
 		push(
-			ok and (state.config.cooldowns_active and "hangar.notify.cooldowns_on" or "hangar.notify.cooldowns_off")
+			ok and (active and "hangar.notify.cooldowns_on" or "hangar.notify.cooldowns_off")
 				or "hangar.notify.cooldowns_failed",
 			2000
 		)
 	end
-	return state.config.cooldowns_active
+	return active
 end
 
 function actions.get_cooldowns_active()
@@ -281,6 +298,9 @@ function actions.set_fill_loop(enabled, silent)
 			return false
 		end
 		state.set_fill_active(false)
+		if state.config.pocket_active then
+			restore_cargo_limit()
+		end
 		if not silent then
 			push("hangar.notify.fill_stopped", 2000)
 		end
@@ -294,6 +314,9 @@ function actions.stop_fill()
 		return false
 	end
 	state.set_fill_active(false)
+	if state.config.pocket_active then
+		restore_cargo_limit()
+	end
 	push("hangar.notify.fill_stopped", 2000)
 	return true
 end

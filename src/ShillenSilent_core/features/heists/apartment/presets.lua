@@ -14,6 +14,7 @@ end
 
 function presets.collect()
 	return {
+		heist = state.config.selected_heist,
 		solo_launch = core_state.solo_launch.apartment and true or false,
 		bonus_12mil = state.flags.bonus_enabled and true or false,
 		double_rewards_week = state.flags.double_rewards_week and true or false,
@@ -34,6 +35,9 @@ function presets.apply(payload)
 
 	if type(payload.solo_launch) == "boolean" then
 		core_state.solo_launch.apartment = payload.solo_launch
+	end
+	if payload.heist ~= nil then
+		state.set_selected_heist(payload.heist)
 	end
 	if type(payload.bonus_12mil) == "boolean" then
 		actions.set_12mil_bonus(payload.bonus_12mil, true)

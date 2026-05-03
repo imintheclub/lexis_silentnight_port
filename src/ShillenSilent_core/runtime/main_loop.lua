@@ -6,6 +6,7 @@ local ui = require("ShillenSilent_core.ui.click.widgets")
 local native_api = require("ShillenSilent_core.core.native_api")
 local runtime_services = require("ShillenSilent_core.runtime.services")
 local config = require("ShillenSilent_core.ui.click.config")
+local splash = require("ShillenSilent_core.ui.click.splash")
 local state = require("ShillenSilent_core.ui.click.state")
 
 local native = require("natives")
@@ -21,8 +22,9 @@ local function subscribe_scroll_handler()
 		return
 	end
 
+	local my_gen = _G.ShillenSilent_Generation or 0
 	events.subscribe(events.event.scroll, function(e)
-		if _G.ShillenSilent_ForceStop then
+		if _G.ShillenSilent_ForceStop or (_G.ShillenSilent_Generation or 0) ~= my_gen then
 			return
 		end
 		if not state.animation.open and state.animation.progress < 0.01 then
@@ -78,9 +80,10 @@ local function subscribe_scroll_handler()
 end
 
 local function start_runtime_loop()
+	local my_gen = _G.ShillenSilent_Generation or 0
 	util.create_thread(function()
 		while true do
-			if _G.ShillenSilent_ForceStop then
+			if _G.ShillenSilent_ForceStop or (_G.ShillenSilent_Generation or 0) ~= my_gen then
 				return
 			end
 
@@ -92,6 +95,7 @@ local function start_runtime_loop()
 			end)
 
 			if t_pressed then
+				local was_open = state.animation.open
 				state.animation.open = not state.animation.open
 				state.animation.target = state.animation.open and 1.0 or 0.0
 				pcall(function()
@@ -99,6 +103,9 @@ local function start_runtime_loop()
 				end)
 
 				if state.animation.open then
+					if not was_open then
+						pcall(splash.stop)
+					end
 					if native and native.set_cursor_position then
 						pcall(native.set_cursor_position, 0.5, 0.5)
 					end
@@ -106,6 +113,7 @@ local function start_runtime_loop()
 			end
 
 			local custom_visible = state.animation.open or state.animation.progress > 0.01
+			pcall(splash.render)
 			if custom_visible then
 				pcall(ui.render)
 
@@ -141,6 +149,7 @@ function runtime_main_loop.start()
 
 	pcall(runtime_services.start)
 	pcall(subscribe_scroll_handler)
+	pcall(splash.start)
 	start_runtime_loop()
 	return true
 end

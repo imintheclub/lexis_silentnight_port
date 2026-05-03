@@ -41,6 +41,8 @@ function presets.apply(payload)
 	end
 	if payload.cut_preset ~= nil then
 		state.set_cut_preset_index(payload.cut_preset)
+	elseif payload.presets ~= nil then
+		state.set_cut_preset_index((tonumber(payload.presets) or 0) + 1)
 	end
 
 	for i = 1, #data.player_keys do

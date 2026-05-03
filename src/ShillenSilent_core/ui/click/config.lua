@@ -21,7 +21,7 @@ local function init_config()
 	end
 
 	local design_menu_width = tw(356)
-	local menu_height = tw(150)
+	local menu_height = tw(180)
 	local content_margin = tw(6)
 	local header_height = tw(12)
 	local column_gap = tw(4)
@@ -33,7 +33,8 @@ local function init_config()
 	local min_w_from_one_card = (content_margin * 2) + fixed_column_w
 
 	return {
-		font_path = paths.fonts_dir .. "\\Inter-SemiBold.ttf",
+		font_path = paths.fonts_dir .. "\\NotoSansSC-SemiBold.ttf",
+		font_load_scale = 16.0,
 		background_tile_path = paths.img_dir
 			.. "\\43d8dab59abbbb877fd374f24b34a459880815bd195696b01e0301de7c079a79.png",
 		background_tile_alpha = 255,
@@ -86,6 +87,8 @@ local function init_config()
 			header_padding = tw(10),
 		},
 		item_gap = tw(2),
+		cut_pair_inner_offset = tw(9),
+		cut_pair_height = tw(21),
 
 		space = {
 			x1 = tw(1),

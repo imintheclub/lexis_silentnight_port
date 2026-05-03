@@ -21,6 +21,8 @@ local function register(heistTab)
 	local info = ui.group(heistTab, t("cluckin.group.info"), nil, nil, nil, 140, data.feature_id)
 	ui.label(info, t("cluckin.info.title"), config.colors.accent)
 	ui.label(info, t("cluckin.info.subtitle"), config.colors.text_main)
+	ui.label(info, t("cluckin.info.max_transaction"), config.colors.text_main)
+	ui.label(info, t("cluckin.info.cooldown"), config.colors.text_sec)
 	ui.spacer(info, config.space.x2)
 
 	local tools = ui.group(heistTab, t("cluckin.group.tools"), nil, nil, nil, nil, data.feature_id)

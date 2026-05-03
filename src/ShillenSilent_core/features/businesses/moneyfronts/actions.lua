@@ -44,12 +44,25 @@ local function current_heat_for_key(key)
 	if type(idx) ~= "number" then
 		return state.config.front_heat[key] or 0
 	end
-	return read_packed_int(idx, 0) or state.config.front_heat[key] or 0
+	return read_packed_int(idx, business_runtime.active_character_slot()) or state.config.front_heat[key] or 0
+end
+
+function actions.is_front_available(key)
+	local stats = cfg().stats or {}
+	local stat_name = stats.owned and stats.owned[key]
+	if not stat_name then
+		return true
+	end
+	return (safe_access.get_mp_stat_int(stat_name, 0) or 0) ~= 0
 end
 
 function actions.teleport_front(key)
 	local loc = data.location_by_key(key)
 	if not loc then
+		return false
+	end
+	if not actions.is_front_available(key) then
+		push("moneyfronts.notify.front_unavailable", 2000)
 		return false
 	end
 	local blips = cfg().blips or {}
@@ -71,6 +84,10 @@ function actions.teleport_laptop(key)
 	local loc = data.location_by_key(key)
 	local coords = cfg().coords and cfg().coords[key]
 	if not (loc and coords) then
+		return false
+	end
+	if not actions.is_front_available(key) then
+		push("moneyfronts.notify.front_unavailable", 2000)
 		return false
 	end
 	return coords_teleport.run_coords_teleport(
@@ -95,16 +112,6 @@ end
 
 function actions.apply_front_heat_value(key)
 	return set_heat_for_key(key, state.config.front_heat[key] or data.heat.default, false)
-end
-
-function actions.max_front_heat(key)
-	state.set_front_heat_value(key, data.heat.max)
-	return set_heat_for_key(key, data.heat.max, false)
-end
-
-function actions.min_front_heat(key)
-	state.set_front_heat_value(key, data.heat.min)
-	return set_heat_for_key(key, data.heat.min, false)
 end
 
 function actions.set_front_heat_lock_active(key, enabled, silent)
@@ -141,6 +148,10 @@ function actions.tick_front_heat_locks()
 end
 
 function actions.car_wash_collect_safe()
+	if not actions.is_front_available("car_wash") then
+		push("moneyfronts.notify.front_unavailable", 2000)
+		return false
+	end
 	local offsets_cfg = cfg()
 	local stats = offsets_cfg.stats or {}
 	local value = safe_access.get_mp_stat_int(stats.car_wash_safe_cash_value, 0) or 0

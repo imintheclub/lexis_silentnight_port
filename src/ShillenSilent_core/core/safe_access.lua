@@ -25,6 +25,17 @@ local function get_stat_handle(stat_name)
 	return stat
 end
 
+local function account_character()
+	if account and type(account.character) == "function" then
+		local ok, result = pcall(account.character)
+		local character = math.floor(tonumber(ok and result or nil) or -1)
+		if character == 0 or character == 1 then
+			return character
+		end
+	end
+	return nil
+end
+
 function safe_access.is_script_running(script_name)
 	if not has_script_fn("running") then
 		return false
@@ -267,11 +278,19 @@ function safe_access.set_stat_bool(stat_name, value)
 end
 
 function safe_access.get_mp_prefix()
+	local character = account_character()
+	if character ~= nil then
+		return character == 1 and "MP1_" or "MP0_"
+	end
 	local mp_idx = safe_access.get_global_int(MP_GLOBAL, 0)
 	return mp_idx == 1 and "MP1_" or "MP0_"
 end
 
 function safe_access.get_active_mp_prefix()
+	local character = account_character()
+	if character ~= nil then
+		return character == 1 and "MP1_" or "MP0_"
+	end
 	local last_char = safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
 	return (math.floor(tonumber(last_char) or 0) == 1) and "MP1_" or "MP0_"
 end
@@ -369,6 +388,15 @@ function safe_access.set_global_int_variants(field, value)
 	end
 	local ee_ok = safe_access.set_global_int(field.ee, value)
 	local legacy_ok = safe_access.set_global_int(field.legacy, value)
+	return ee_ok or legacy_ok
+end
+
+function safe_access.set_global_bool_variants(field, value)
+	if type(field) == "number" then
+		return safe_access.set_global_bool(field, value)
+	end
+	local ee_ok = safe_access.set_global_bool(field.ee, value)
+	local legacy_ok = safe_access.set_global_bool(field.legacy, value)
 	return ee_ok or legacy_ok
 end
 

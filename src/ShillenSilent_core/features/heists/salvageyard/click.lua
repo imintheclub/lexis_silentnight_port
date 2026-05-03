@@ -112,13 +112,13 @@ function click.register(heist_tab)
 	local info = ui.group(heist_tab, t("salvageyard.group.info"), nil, nil, nil, nil, "salvageyard")
 	ui.label(info, t("feature.salvageyard.name"), config.colors.accent)
 	ui.label(info, t("salvageyard.info.max_transaction"), config.colors.text_main)
+	ui.label(info, t("salvageyard.info.cooldown"), config.colors.text_sec)
 	ui.label(info, t("salvageyard.info.planning_controls"), config.colors.text_sec)
 	ui.info(info, t("salvageyard.tip.status"), config.colors.text_sec)
 	ui.info(info, t("salvageyard.tip.make_available"), config.colors.text_sec)
 	ui.info(info, t("salvageyard.tip.force_error"), config.colors.text_sec)
 	ui.info(info, t("salvageyard.tip.sell_values"), config.colors.text_sec)
 	ui.info(info, t("salvageyard.tip.multiplier"), config.colors.text_sec)
-	ui.info(info, t("salvageyard.tip.instant_sell"), config.colors.text_sec)
 	ui.spacer(info, config.space.x2)
 
 	preset_ui.click_group(heist_tab, {
@@ -135,7 +135,6 @@ function click.register(heist_tab)
 	end
 
 	local preps = ui.group(heist_tab, t("salvageyard.group.preps"), nil, nil, nil, nil, "salvageyard")
-	ui.button(preps, "salvage_tp_entrance", t("salvageyard.action.teleport_entrance"), actions.teleport_entrance)
 	ui.button(preps, "salvage_apply_all_changes", t("salvageyard.action.apply_all_changes"), actions.apply_all_changes)
 	ui.button(preps, "salvage_reload_screen", t("salvageyard.action.reload_screen"), actions.reload_screen)
 	ui.button(preps, "salvage_complete_preps", t("salvageyard.action.complete_preps"), actions.complete_preps)
@@ -161,8 +160,11 @@ function click.register(heist_tab)
 		end
 	)
 
+	local teleport = ui.group(heist_tab, t("salvageyard.group.teleport"), nil, nil, nil, nil, "salvageyard")
+	ui.button(teleport, "salvage_tp_entrance", t("salvageyard.action.teleport_entrance"), actions.teleport_entrance)
+	ui.button(teleport, "salvage_tp_board", t("salvageyard.action.teleport_board"), actions.teleport_board)
+
 	local tools = ui.group(heist_tab, t("salvageyard.group.tools"), nil, nil, nil, nil, "salvageyard")
-	ui.button(tools, "salvage_tp_board", t("salvageyard.action.teleport_board"), actions.teleport_board)
 	ui.button(tools, "salvage_instant_finish", t("salvageyard.action.instant_finish"), actions.instant_finish)
 	ui.button(tools, "salvage_instant_sell", t("salvageyard.action.instant_sell"), actions.instant_sell)
 	ui.button(

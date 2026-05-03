@@ -5,7 +5,6 @@ local offsets = require("ShillenSilent_core.data.offsets.current")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local data = require("ShillenSilent_core.features.businesses.garment.data")
-local state = require("ShillenSilent_core.features.businesses.garment.state")
 
 local actions = {}
 
@@ -17,20 +16,8 @@ local t = i18n.t
 
 local push = notify_core.feature("feature.garment.name")
 
-function actions.get_locations()
-	return data.locations
-end
-
-function actions.get_selected_loc()
-	return state.config.location_index
-end
-
-function actions.set_selected_loc(idx)
-	state.set_location_index(idx)
-end
-
 function actions.teleport()
-	local loc = data.locations[state.config.location_index]
+	local loc = data.location
 	if not loc then
 		return false
 	end
@@ -87,7 +74,6 @@ function actions.collect_safe()
 end
 
 function actions.apply_current_state()
-	state.set_location_index(state.config.location_index)
 	return true
 end
 

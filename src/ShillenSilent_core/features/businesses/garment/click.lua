@@ -2,18 +2,13 @@ local config = require("ShillenSilent_core.ui.click.config")
 local ui = require("ShillenSilent_core.ui.click.widgets")
 local i18n = require("ShillenSilent_core.i18n")
 local data = require("ShillenSilent_core.features.businesses.garment.data")
-local state = require("ShillenSilent_core.features.businesses.garment.state")
 local actions = require("ShillenSilent_core.features.businesses.garment.actions")
 
 local click = {}
-local refs = {}
 
 local t = i18n.t
 
 function click.refresh()
-	if refs.location_dropdown then
-		refs.location_dropdown.value = state.config.location_index
-	end
 	return true
 end
 
@@ -26,18 +21,6 @@ function click.register(heist_tab, manifest)
 
 	local group = ui.group(heist_tab, t("feature.garment.name"), nil, nil, nil, nil, subtab)
 	ui.label(group, t("feature.garment.name"), config.colors.accent)
-	local locations = data.localized_locations(t)
-	refs.location_dropdown = ui.dropdown(
-		group,
-		"garment_location",
-		t("garment.field.location"),
-		data.option_names(locations),
-		state.config.location_index,
-		function(opt)
-			state.set_location_index(data.option_value_by_name(locations, opt, state.config.location_index))
-			click.refresh()
-		end
-	)
 	ui.button(group, "garment_teleport", t("garment.action.teleport_entrance"), actions.teleport)
 	ui.button(group, "garment_computer", t("garment.action.teleport_computer"), actions.teleport_computer)
 	ui.button(group, "garment_unbrick", t("garment.action.unbrick_computer"), actions.unbrick_computer)

@@ -52,9 +52,9 @@ function click.register(heistTab)
 	ui.label(info, t("doomsday.info.title"), config.colors.accent)
 	ui.label(info, t("doomsday.info.max_transaction"), config.colors.text_main)
 	ui.label(info, t("doomsday.info.transaction_cooldown"), config.colors.text_sec)
-	ui.label(info, t("doomsday.info.transaction_note"), config.colors.text_sec)
 	ui.label(info, t("doomsday.info.heist_cooldown"), config.colors.text_sec)
 	ui.info(info, t("doomsday.tip.max_payout"), config.colors.text_sec)
+	ui.info(info, t("doomsday.tip.force_ready"), config.colors.text_sec)
 	ui.spacer(info, config.space.x2)
 
 	preset_ui.click_group(heistTab, {
@@ -66,9 +66,16 @@ function click.register(heistTab)
 		refresh = click.refresh,
 	})
 
+	local teleport = ui.group(heistTab, t("doomsday.group.teleport"), nil, nil, nil, nil, data.feature_id)
+	ui.button(
+		teleport,
+		"doomsday_teleport_entrance",
+		t("doomsday.action.teleport_entrance"),
+		actions.teleport_to_entrance
+	)
+	ui.button(teleport, "doomsday_teleport_screen", t("doomsday.action.teleport_screen"), actions.teleport_to_screen)
+
 	local preps = ui.group(heistTab, t("doomsday.group.preps"), nil, nil, nil, nil, data.feature_id)
-	ui.button(preps, "doomsday_teleport_entrance", t("doomsday.action.teleport_entrance"), actions.teleport_to_entrance)
-	ui.button(preps, "doomsday_teleport_screen", t("doomsday.action.teleport_screen"), actions.teleport_to_screen)
 
 	local act_options = data.localized_options(data.act_options, t)
 	refs.act_dropdown = ui.dropdown(
@@ -106,10 +113,6 @@ function click.register(heistTab)
 		end
 	)
 	ui.button(launch, "doomsday_launch_force_ready", t("doomsday.action.force_ready"), actions.force_ready)
-	ui.button(launch, "doomsday_launch_reset_manual", t("doomsday.action.reset_solo_launch"), function()
-		actions.manual_launch_reset()
-		click.refresh()
-	end)
 
 	local cuts = ui.group(heistTab, t("doomsday.group.cuts"), nil, nil, nil, nil, data.feature_id)
 	refs.max_payout_toggle = ui.toggle(

@@ -33,6 +33,9 @@ function controller.register(parent_menu)
 	local controls = controller.controls
 
 	for _, key in ipairs(data.front_keys) do
+		if not actions.is_front_available(key) then
+			goto continue
+		end
 		local loc = data.location_by_key(key)
 		local front = parent_menu:submenu(t(loc.heat_label_key))
 		common.add_button(front, t("moneyfronts.action.teleport_entrance"), function()
@@ -63,20 +66,13 @@ function controller.register(parent_menu)
 			actions.apply_front_heat_value(key)
 			controller.refresh_controls()
 		end)
-		common.add_button(front, t("moneyfronts.action.max_heat"), function()
-			actions.max_front_heat(key)
-			controller.refresh_controls()
-		end)
-		common.add_button(front, t("moneyfronts.action.min_heat"), function()
-			actions.min_front_heat(key)
-			controller.refresh_controls()
-		end)
 		controls.front_lock[key] = common.add_toggle(ctx, front, t("moneyfronts.action.lock_heat"), function()
 			return actions.get_front_heat_lock_active(key)
 		end, function(enabled)
 			actions.set_front_heat_lock_active(key, enabled)
 			controller.refresh_controls()
 		end)
+		::continue::
 	end
 
 	controller.refresh_controls()

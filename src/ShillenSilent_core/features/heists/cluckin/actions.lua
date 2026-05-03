@@ -33,8 +33,8 @@ end
 function actions.remove_cooldown()
 	return run_guarded_job("cluckin_remove_cooldown", function()
 		local cfg = config()
-		local ok =
-			safe_access.set_stat_for_all_characters(cfg.stats and cfg.stats.cooldown, data.values.complete_bitset)
+		local tunables = cfg.tunables or {}
+		local ok = safe_access.set_tunable_int(tunables.cooldown, 0)
 		push(ok and "cluckin.notify.cooldown_ok" or "cluckin.notify.cooldown_failed", 2000)
 	end, function()
 		push("cluckin.notify.action_running", 1500)
@@ -103,10 +103,5 @@ function actions.skip_cutscene()
 	push(ok and "cluckin.notify.cutscene_ok" or "cluckin.notify.cutscene_failed", 2000)
 	return ok
 end
-
-actions.cluckin_skip_to_finale = actions.skip_to_finale
-actions.cluckin_remove_cooldown = actions.remove_cooldown
-actions.cluckin_reset_progress = actions.reset_progress
-actions.cluckin_instant_finish = actions.instant_finish
 
 return actions

@@ -3,7 +3,7 @@ local number_helpers = require("ShillenSilent_core.core.numbers")
 local data = {}
 
 data.payout = {
-	default = 1000000,
+	default = 0,
 	max = 2500000,
 	step = 50000,
 }

@@ -61,14 +61,9 @@ local function solo_launch_reset_doomsday()
 	return ok
 end
 
-local function manual_reset_doomsday_launch()
-	return solo_launch_reset_doomsday()
-end
-
 local solo_launch = {
 	solo_launch_generic = solo_launch_generic,
 	solo_launch_reset_doomsday = solo_launch_reset_doomsday,
-	manual_reset_doomsday_launch = manual_reset_doomsday_launch,
 }
 
 return solo_launch

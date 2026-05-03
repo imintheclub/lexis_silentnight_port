@@ -17,7 +17,11 @@ local locale_registry = {
 }
 
 local locale_modules = {}
-local locale_cache = {}
+local locale_cache = {
+	language = nil,
+	module = nil,
+	values = nil,
+}
 local locale = {}
 
 local languages = {}
@@ -54,16 +58,47 @@ local function load_locale(language)
 	if not module_name then
 		return nil
 	end
-	if locale_cache[language] then
-		return locale_cache[language]
+	if locale_cache.language == language and locale_cache.values then
+		return locale_cache.values
 	end
 
 	local ok, loaded = pcall(require, module_name)
 	if ok and type(loaded) == "table" then
-		locale_cache[language] = loaded
+		if locale_cache.module and locale_cache.module ~= module_name then
+			package.loaded[locale_cache.module] = nil
+		end
+		locale_cache.language = language
+		locale_cache.module = module_name
+		locale_cache.values = loaded
 		return loaded
 	end
 	return nil
+end
+
+local function load_uncached_locale(language)
+	if locale_cache.language == language and locale_cache.values then
+		return locale_cache.values
+	end
+
+	local module_name = locale_modules[language]
+	if not module_name then
+		return nil
+	end
+
+	local ok, loaded = pcall(require, module_name)
+	if ok and type(loaded) == "table" then
+		package.loaded[module_name] = nil
+		return loaded
+	end
+	return nil
+end
+
+local function drop_inactive_locale_modules(active_language)
+	for language, module_name in pairs(locale_modules) do
+		if language ~= active_language then
+			package.loaded[module_name] = nil
+		end
+	end
 end
 
 local function apply_language(language)
@@ -77,6 +112,7 @@ local function apply_language(language)
 	locale = loaded or {}
 	i18n.locale = locale
 	i18n.language = normalized
+	drop_inactive_locale_modules(normalized)
 	return normalized
 end
 
@@ -102,7 +138,7 @@ end
 function i18n.t(key, vars)
 	local text = locale[key]
 	if text == nil and i18n.language ~= DEFAULT_LANGUAGE then
-		local fallback_locale = load_locale(DEFAULT_LANGUAGE)
+		local fallback_locale = load_uncached_locale(DEFAULT_LANGUAGE)
 		text = fallback_locale and fallback_locale[key] or nil
 	end
 	if text == nil then

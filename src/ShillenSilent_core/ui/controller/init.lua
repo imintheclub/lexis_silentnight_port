@@ -2,6 +2,7 @@ local registry = require("ShillenSilent_core.features.registry")
 local runtime_services = require("ShillenSilent_core.runtime.services")
 local i18n = require("ShillenSilent_core.i18n")
 local notify_core = require("ShillenSilent_core.core.notify")
+local splash = require("ShillenSilent_core.ui.click.splash")
 
 local controller = {
 	started = false,
@@ -78,6 +79,25 @@ local function register_businesses(root)
 	return true
 end
 
+local function register_general(root)
+	local general = registry.list("general")
+	if #general <= 0 then
+		return false
+	end
+
+	local general_root = root:submenu(i18n.t("drawer.section.general"))
+	general_root:breaker(i18n.t("drawer.section.general"))
+
+	for i = 1, #general do
+		local controller_module = registry.load_module(general[i], "controller")
+		if controller_module and type(controller_module.register) == "function" then
+			register_menu_group(controller_module.register, general_root)
+		end
+	end
+
+	return true
+end
+
 function controller.register_all(root)
 	local heists = registry.list("heist")
 	for i = 1, #heists do
@@ -88,6 +108,7 @@ function controller.register_all(root)
 		end
 	end
 
+	register_general(root)
 	register_businesses(root)
 	return true
 end
@@ -109,6 +130,7 @@ function controller.start()
 	controller.register_all(root)
 
 	pcall(runtime_services.start)
+	pcall(splash.start_thread, "splash.controller_loaded_scripts")
 	controller.started = true
 	notify_core.push("app.name", "notify.controller_loaded", 2500)
 	return true

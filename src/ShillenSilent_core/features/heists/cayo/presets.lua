@@ -4,6 +4,15 @@ local actions = require("ShillenSilent_core.features.heists.cayo.actions")
 
 local presets = {}
 
+local function legacy_value(options, index, fallback)
+	local legacy_index = tonumber(index)
+	if legacy_index == nil then
+		return fallback
+	end
+	local option = options[math.floor(legacy_index) + 1]
+	return option and option.value or fallback
+end
+
 local function collect_player(player_key)
 	return {
 		enabled = state.cut_enabled[player_key] and true or false,
@@ -53,20 +62,58 @@ function presets.apply(payload)
 	state.config.amt_isl = data.resolve_option_value(data.island_amounts, payload.amt_isl, state.config.amt_isl)
 	state.config.paint = data.resolve_option_value(data.arts_amounts, payload.paint, state.config.paint)
 
+	if payload.difficulty ~= nil and payload.diff == nil then
+		state.config.diff = legacy_value(data.difficulties, payload.difficulty, state.config.diff)
+	end
+	if payload.approach ~= nil and payload.app == nil then
+		state.config.app = legacy_value(data.approaches, payload.approach, state.config.app)
+	end
+	if payload.loadout ~= nil and payload.wep == nil then
+		state.config.wep = legacy_value(data.loadouts, payload.loadout, state.config.wep)
+	end
+	if payload.primary_target ~= nil and payload.tgt == nil then
+		state.config.tgt = legacy_value(data.primary_targets, payload.primary_target, state.config.tgt)
+	end
+	if payload.compound_target ~= nil and payload.sec_comp == nil then
+		state.config.sec_comp = legacy_value(data.secondary_targets, payload.compound_target, state.config.sec_comp)
+	end
+	if payload.compound_amount ~= nil and payload.amt_comp == nil then
+		state.config.amt_comp = legacy_value(data.compound_amounts, payload.compound_amount, state.config.amt_comp)
+	end
+	if payload.arts_amount ~= nil and payload.paint == nil then
+		state.config.paint = legacy_value(data.arts_amounts, payload.arts_amount, state.config.paint)
+	end
+	if payload.island_target ~= nil and payload.sec_isl == nil then
+		state.config.sec_isl = legacy_value(data.secondary_targets, payload.island_target, state.config.sec_isl)
+	end
+	if payload.island_amount ~= nil and payload.amt_isl == nil then
+		state.config.amt_isl = legacy_value(data.island_amounts, payload.island_amount, state.config.amt_isl)
+	end
+
 	if payload.val_cash ~= nil then
 		state.config.val_cash = data.clamp_value(payload.val_cash)
+	elseif payload.cash_value ~= nil then
+		state.config.val_cash = data.clamp_value(payload.cash_value)
 	end
 	if payload.val_weed ~= nil then
 		state.config.val_weed = data.clamp_value(payload.val_weed)
+	elseif payload.weed_value ~= nil then
+		state.config.val_weed = data.clamp_value(payload.weed_value)
 	end
 	if payload.val_coke ~= nil then
 		state.config.val_coke = data.clamp_value(payload.val_coke)
+	elseif payload.coke_value ~= nil then
+		state.config.val_coke = data.clamp_value(payload.coke_value)
 	end
 	if payload.val_gold ~= nil then
 		state.config.val_gold = data.clamp_value(payload.val_gold)
+	elseif payload.gold_value ~= nil then
+		state.config.val_gold = data.clamp_value(payload.gold_value)
 	end
 	if payload.val_art ~= nil then
 		state.config.val_art = data.clamp_value(payload.val_art)
+	elseif payload.arts_value ~= nil then
+		state.config.val_art = data.clamp_value(payload.arts_value)
 	end
 	if type(payload.unlock_all_poi) == "boolean" then
 		state.config.unlock_all_poi = payload.unlock_all_poi

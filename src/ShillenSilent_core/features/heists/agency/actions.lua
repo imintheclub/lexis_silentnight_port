@@ -243,6 +243,4 @@ function actions.skip_cutscene()
 	return native_api.heist_skip_cutscene(text("feature.agency.name"))
 end
 
-actions.instant_finish = actions.instant_finish_new
-
 return actions

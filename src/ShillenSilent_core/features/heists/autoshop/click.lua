@@ -42,7 +42,6 @@ function click.register(heist_tab)
 	})
 
 	local preps = ui.group(heist_tab, t("autoshop.group.preps"), nil, nil, nil, nil, "autoshop")
-	ui.button(preps, "autoshop_tp_entrance", t("autoshop.action.teleport_entrance"), actions.teleport_entrance)
 	refs.contract_dropdown = ui.dropdown(
 		preps,
 		"autoshop_contract",
@@ -58,8 +57,11 @@ function click.register(heist_tab)
 	ui.button(preps, "autoshop_reset_preps", t("autoshop.action.reset_preps"), actions.reset_preps)
 	ui.button(preps, "autoshop_redraw_board", t("autoshop.action.redraw_board"), actions.redraw_board)
 
+	local teleport = ui.group(heist_tab, t("autoshop.group.teleport"), nil, nil, nil, nil, "autoshop")
+	ui.button(teleport, "autoshop_tp_entrance", t("autoshop.action.teleport_entrance"), actions.teleport_entrance)
+	ui.button(teleport, "autoshop_tp_board", t("autoshop.action.teleport_board"), actions.teleport_board)
+
 	local tools = ui.group(heist_tab, t("autoshop.group.tools"), nil, nil, nil, nil, "autoshop")
-	ui.button(tools, "autoshop_tp_board", t("autoshop.action.teleport_board"), actions.teleport_board)
 	ui.button(tools, "autoshop_instant_finish", t("autoshop.action.instant_finish"), actions.instant_finish_new)
 	ui.button(tools, "autoshop_skip_cutscene", t("autoshop.action.skip_cutscene"), actions.skip_cutscene)
 

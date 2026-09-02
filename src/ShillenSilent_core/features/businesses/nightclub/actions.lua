@@ -165,6 +165,16 @@ local function restore_selected_tunables()
 	return ok
 end
 
+local function apply_selected_tunables()
+	local defaults = cfg().defaults or {}
+	local fast_accrue_time = tonumber(defaults.fast_accrue_time) or 1000
+	local ok = true
+	for _, tunable in ipairs(selected_tunables()) do
+		ok = safe_access.set_tunable_int(tunable.name, fast_accrue_time) and ok
+	end
+	return ok
+end
+
 local function apply_sale_price()
 	local offsets_cfg = cfg()
 	local tunables = offsets_cfg.tunables or {}
@@ -292,12 +302,19 @@ end
 
 function actions.set_fast_production(enabled, silent)
 	enabled = enabled == true
+	local ok = true
 	if not enabled then
-		restore_selected_tunables()
+		ok = restore_selected_tunables()
+	else
+		ok = apply_selected_tunables()
 	end
-	state.set_fast_production(enabled)
+	state.set_fast_production(enabled and ok)
 	if not silent then
-		push(enabled and "nightclub.notify.fast_enabled" or "nightclub.notify.fast_disabled", 2000)
+		push(
+			ok and (enabled and "nightclub.notify.fast_enabled" or "nightclub.notify.fast_disabled")
+				or "nightclub.notify.production_tick_failed",
+			2000
+		)
 	end
 	return state.fast_production.active
 end
@@ -309,33 +326,16 @@ function actions.tick_fast_production()
 		end
 		return false
 	end
-	local defaults = cfg().defaults or {}
-	for _, tunable in ipairs(selected_tunables()) do
-		safe_access.set_tunable_int(tunable.name, defaults.fast_accrue_time)
-	end
-	local ok = false
-	local all_full = true
-	if state.config.fast_prod_target == "all" then
-		for i = 1, #data.product_slots do
-			local tick_ok, full = apply_product_tick(data.product_slots[i])
-			all_full = all_full and full
-			ok = tick_ok or ok
-		end
-	else
-		local product = product_by_key(state.config.fast_prod_target)
-		if product then
-			local tick_ok, full = apply_product_tick(product)
-			all_full = full
-			ok = tick_ok
-		end
-	end
+
+	local ok = apply_selected_tunables()
 	if not ok then
-		state.set_fast_production(false)
-		push(all_full and "nightclub.notify.production_tick_full" or "nightclub.notify.production_tick_failed", 2200)
+		actions.set_fast_production(false, true)
+		push("nightclub.notify.production_tick_failed", 2200)
 		return false
 	end
+
 	state.set_fast_status(data.status.running)
-	return true
+	return ok
 end
 
 function actions.get_fast_prod_active()
@@ -489,10 +489,9 @@ function actions.skip_setup()
 	local offsets_cfg = cfg()
 	local packed = offsets_cfg.packed_stats or {}
 	local setup = packed.setup or {}
-	local natives = offsets_cfg.natives or {}
 	local ok = true
 	for _, idx in pairs(setup) do
-		ok = business_runtime.write_packed_bool(idx, true, packed.character_slots, natives.stat_set_packed_bool) and ok
+		ok = business_runtime.write_packed_bool(idx, true, packed.character_slots) and ok
 	end
 	push(ok and "nightclub.notify.setup_ok" or "nightclub.notify.setup_failed", 2200)
 	return ok

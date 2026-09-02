@@ -7,6 +7,7 @@ local offsets = require("ShillenSilent_core.data.offsets.current")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local data = require("ShillenSilent_core.features.businesses.mc.data")
 local state = require("ShillenSilent_core.features.businesses.mc.state")
+local native = require("natives")
 
 local actions = {}
 
@@ -52,25 +53,27 @@ end
 
 local function get_blip_coords(sprite_id)
 	local natives = cfg().natives or {}
-	if not (sprite_id and invoker and invoker.call) then
+	if not sprite_id then
 		return nil
 	end
 
 	local ok_blip, blip = pcall(function()
-		return invoker.call(natives.get_first_blip_info_id, sprite_id).int
+		return native.get_first_blip_info_id(sprite_id)
 	end)
 	if not ok_blip or not blip or blip == 0 then
 		return nil
 	end
 
 	local ok_exists, exists = pcall(function()
-		return invoker.call(natives.does_blip_exist, blip).bool
+		return native.does_blip_exist(blip)
 	end)
 	if not ok_exists or not exists then
 		return nil
 	end
 
 	local ok_vec, vec = pcall(function()
+		-- TODO(Lexis API): current native wrappers do not expose GET_BLIP_COORDS.
+		-- GET_BLIP_COORDS 0x586AFE3FF72D996E(blipHandle:int) -> scr_vec3.
 		return invoker.call(natives.get_blip_coords, blip).scr_vec3
 	end)
 	if not ok_vec or not vec then
@@ -415,22 +418,19 @@ function actions.apply_current_state(silent)
 end
 
 function actions.kill_black_screen()
-	local natives = cfg().natives or {}
 	local any_ok = false
-	if invoker and invoker.call then
-		pcall(function()
-			invoker.call(natives.do_screen_fade_in, 0)
-			any_ok = true
-		end)
-		pcall(function()
-			invoker.call(natives.display_hud, true)
-			any_ok = true
-		end)
-		pcall(function()
-			invoker.call(natives.display_radar, true)
-			any_ok = true
-		end)
-	end
+	pcall(function()
+		native.do_screen_fade_in(0)
+		any_ok = true
+	end)
+	pcall(function()
+		native.display_hud(true)
+		any_ok = true
+	end)
+	pcall(function()
+		native.display_radar(true)
+		any_ok = true
+	end)
 	push_feature(any_ok and "mc.notify.black_screen_ok" or "mc.notify.black_screen_failed", 2200)
 	return any_ok
 end

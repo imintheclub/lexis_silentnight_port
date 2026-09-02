@@ -9,6 +9,7 @@ local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.cayo.data")
 local state = require("ShillenSilent_core.features.heists.cayo.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
+local native = require("natives")
 
 local run_guarded_job = jobs.run_guarded_job
 local run_coords_teleport = coords_teleport.run_coords_teleport
@@ -456,8 +457,7 @@ function actions.teleport_kosatka()
 
 	local c = cfg()
 	local function kosatka_blip_exists()
-		local result = invoker.call(c.natives.get_first_blip_info_id, c.blips.kosatka)
-		return result and result.int and result.int ~= 0
+		return native.get_first_blip_info_id(c.blips.kosatka) ~= 0
 	end
 
 	local function request_kosatka_spawn()
@@ -474,12 +474,12 @@ function actions.teleport_kosatka()
 
 	local entity = me.ped
 	local ok, err = pcall(function()
-		invoker.call(c.natives.freeze_entity_position, entity, true)
+		native.freeze_entity_position(entity, true)
 
 		if me.in_interior then
 			local maze = c.coords.mazebank
-			invoker.call(c.natives.set_entity_coords_no_offset, entity, maze.x, maze.y, maze.z, false, false, false)
-			invoker.call(c.natives.set_entity_heading, entity, maze.heading)
+			native.set_entity_coords_no_offset(entity, maze.x, maze.y, maze.z, false, false, false)
+			native.set_entity_heading(entity, maze.heading)
 			util.yield(800)
 		end
 
@@ -493,24 +493,15 @@ function actions.teleport_kosatka()
 		end
 
 		local kosatka = c.coords.kosatka_interior
-		invoker.call(
-			c.natives.set_entity_coords_no_offset,
-			entity,
-			kosatka.x,
-			kosatka.y,
-			kosatka.z,
-			false,
-			false,
-			false
-		)
-		invoker.call(c.natives.set_entity_heading, entity, kosatka.heading)
+		native.set_entity_coords_no_offset(entity, kosatka.x, kosatka.y, kosatka.z, false, false, false)
+		native.set_entity_heading(entity, kosatka.heading)
 
 		local blip_check = 0
 		local attempts = 0
 		while blip_check == 0 and attempts < 120 do
-			local check_result = invoker.call(c.natives.get_closest_blip_info_id, c.blips.heist)
-			if check_result and check_result.int and check_result.int ~= 0 then
-				blip_check = check_result.int
+			local check_blip = native.get_first_blip_info_id(c.blips.heist)
+			if check_blip and check_blip ~= 0 then
+				blip_check = check_blip
 			else
 				util.yield()
 				attempts = attempts + 1
@@ -518,13 +509,13 @@ function actions.teleport_kosatka()
 		end
 
 		util.yield(500)
-		invoker.call(c.natives.freeze_entity_position, entity, false)
+		native.freeze_entity_position(entity, false)
 	end)
 
 	state.runtime.teleport_in_progress = false
 	if not ok then
 		pcall(function()
-			invoker.call(c.natives.freeze_entity_position, entity, false)
+			native.freeze_entity_position(entity, false)
 		end)
 		tp_push("cayo.notify.kosatka_failed", 3000, { error = tostring(err) })
 		return false

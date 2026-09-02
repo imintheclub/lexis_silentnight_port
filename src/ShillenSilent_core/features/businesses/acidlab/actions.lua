@@ -6,6 +6,7 @@ local offsets = require("ShillenSilent_core.data.offsets.current")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local data = require("ShillenSilent_core.features.businesses.acidlab.data")
 local state = require("ShillenSilent_core.features.businesses.acidlab.state")
+local native = require("natives")
 
 local actions = {}
 
@@ -72,19 +73,16 @@ local function get_acid_lab_vehicle_coords()
 	if not vehicle or vehicle == 0 then
 		return nil, "acidlab.notify.teleport_vehicle_missing"
 	end
-	if not (invoker and invoker.call) then
-		return nil, "notify.invoker_unavailable"
-	end
-
 	local exists_ok, exists = pcall(function()
-		local result = invoker.call(natives.does_entity_exist, vehicle)
-		return result and result.bool == true
+		return native.does_entity_exist(vehicle)
 	end)
 	if not exists_ok or not exists then
 		return nil, "acidlab.notify.teleport_vehicle_missing"
 	end
 
 	local coords_ok, coords = pcall(function()
+		-- TODO(Lexis API): current native wrappers do not expose GET_ENTITY_COORDS.
+		-- GET_ENTITY_COORDS 0x3FEF770D40960D5A(entity:int, alive:bool) -> scr_vec3.
 		local result = invoker.call(natives.get_entity_coords, vehicle, true)
 		return result and result.scr_vec3
 	end)

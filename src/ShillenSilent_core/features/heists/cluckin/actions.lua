@@ -1,9 +1,9 @@
--- luacheck: globals invoker
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
 local notify_core = require("ShillenSilent_core.core.notify")
 local offsets = require("ShillenSilent_core.data.offsets.current")
 local data = require("ShillenSilent_core.features.heists.cluckin.data")
+local native = require("natives")
 
 local run_guarded_job = jobs.run_guarded_job
 
@@ -94,11 +94,7 @@ end
 
 function actions.skip_cutscene()
 	local ok = pcall(function()
-		if invoker and invoker.call then
-			invoker.call(data.natives.stop_cutscene_immediately)
-		else
-			error("invoker unavailable")
-		end
+		native.stop_cutscene_immediately()
 	end)
 	push(ok and "cluckin.notify.cutscene_ok" or "cluckin.notify.cutscene_failed", 2000)
 	return ok

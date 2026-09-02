@@ -1,6 +1,7 @@
 local jobs = require("ShillenSilent_core.core.jobs")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
+local native = require("natives")
 
 local run_guarded_job = jobs.run_guarded_job
 
@@ -11,116 +12,68 @@ local function teleport_to_coords(x, y, z)
 	local ok, err = pcall(function()
 		local ped = nil
 
-		-- Method 1: Try using invoker directly to get player ped (most reliable)
-		if invoker and invoker.call then
-			local result = invoker.call(0xD80958FC74E988A6) -- PLAYER_PED_ID
-			if result and result.int and result.int ~= 0 then
-				ped = result.int
-			end
-		end
-
-		-- Method 2: Try using native.player_ped_id() (fallback)
-		if not ped then
-			local native_ok, native_result = pcall(function()
-				local native_api = require("natives")
-				if native_api and native_api.player_ped_id then
-					return native_api.player_ped_id()
-				end
-				return nil
-			end)
-
-			if native_ok and native_result and native_result ~= 0 then
-				ped = native_result
-			end
+		ped = native.player_ped_id()
+		if ped == 0 then
+			ped = nil
 		end
 
 		if ped and ped ~= 0 then
 			-- Check if player is in a vehicle
 			local vehicle = nil
-			if invoker and invoker.call then
-				-- IS_PED_IN_ANY_VEHICLE native (0x997ABD671D25CA0B)
-				local in_vehicle = invoker.call(0x997ABD671D25CA0B, ped, false)
-				if in_vehicle and in_vehicle.bool then
-					-- GET_VEHICLE_PED_IS_IN native (0x9A9112A0FE9A4713)
-					local veh_result = invoker.call(0x9A9112A0FE9A4713, ped, false)
-					if veh_result and veh_result.int and veh_result.int ~= 0 then
-						vehicle = veh_result.int
-					end
+			if native.is_ped_in_any_vehicle(ped, false) then
+				vehicle = native.get_vehicle_ped_is_in(ped, false)
+				if vehicle == 0 then
+					vehicle = nil
 				end
 			end
 
 			-- Teleport vehicle first if player is in one
 			if vehicle and vehicle ~= 0 then
 				-- Request network control of vehicle for better sync with passengers
-				if invoker and invoker.call then
-					-- NETWORK_REQUEST_CONTROL_OF_ENTITY (0xB69317BF5E782347)
-					invoker.call(0xB69317BF5E782347, vehicle) -- NETWORK_REQUEST_CONTROL_OF_ENTITY
-					-- Wait for network control (important for sync with passengers)
-					util.yield(150)
+				native.network_request_control_of_entity(vehicle)
+				-- Wait for network control (important for sync with passengers)
+				util.yield(150)
 
-					-- Try multiple times if needed for network sync
-					for _ = 1, 10 do
-						local has_control = invoker.call(0x01BF60A500E28887, vehicle) -- NETWORK_HAS_CONTROL_OF_ENTITY
-						if has_control and has_control.bool then
-							break
-						end
-						invoker.call(0xB69317BF5E782347, vehicle) -- NETWORK_REQUEST_CONTROL_OF_ENTITY
-						util.yield(50)
+				-- Try multiple times if needed for network sync
+				for _ = 1, 10 do
+					if native.network_has_control_of_entity(vehicle) then
+						break
 					end
+					native.network_request_control_of_entity(vehicle)
+					util.yield(50)
 				end
 
 				-- Get current vehicle heading to preserve it
-				local heading_result = nil
-				if invoker and invoker.call then
-					heading_result = invoker.call(0xE83D4F9BA2A38914, vehicle) -- GET_ENTITY_HEADING
-				end
-				local heading = (heading_result and heading_result.float) or 0.0
+				local heading = native.get_entity_heading(vehicle) or 0.0
 
 				-- Freeze vehicle during teleport for better sync
-				if invoker and invoker.call then
-					invoker.call(0x428CA6DBD1094446, vehicle, true) -- FREEZE_ENTITY_POSITION
-				end
+				native.freeze_entity_position(vehicle, true)
 
 				-- SET_ENTITY_COORDS for vehicle (better network sync than NO_OFFSET)
-				invoker.call(0x06843DA7060A026B, vehicle, x, y, z, false, false, false, true)
+				native.set_entity_coords(vehicle, x, y, z, false, false, false, true)
 
 				-- Restore vehicle heading
-				if invoker and invoker.call then
-					invoker.call(0x8E2530AA8ADA980E, vehicle, heading) -- SET_ENTITY_HEADING
-				end
+				native.set_entity_heading(vehicle, heading)
 
 				-- Longer delay for network sync, especially with passengers
 				util.yield(250)
 
 				-- Unfreeze vehicle
-				if invoker and invoker.call then
-					invoker.call(0x428CA6DBD1094446, vehicle, false) -- FREEZE_ENTITY_POSITION
-				end
+				native.freeze_entity_position(vehicle, false)
 
 				-- Teleport player (ped) to same location
-				if invoker and invoker.call then
-					invoker.call(0x06843DA7060A026B, ped, x, y, z, false, false, false, true)
-					util.yield(150)
+				native.set_entity_coords(ped, x, y, z, false, false, false, true)
+				util.yield(150)
 
-					-- Set player back as driver using TASK_WARP_PED_INTO_VEHICLE
-					-- Parameters: ped, vehicle, seat (-1 = driver seat)
-					invoker.call(0x9A7D091411C5F684, ped, vehicle, -1)
-					-- Additional delay for network sync
-					util.yield(150)
-					success = true
-				else
-					error_msg = i18n.t("notify.invoker_unavailable")
-				end
+				-- Set player back as driver using TASK_WARP_PED_INTO_VEHICLE
+				native.task_warp_ped_into_vehicle(ped, vehicle, -1)
+				-- Additional delay for network sync
+				util.yield(150)
+				success = true
 			else
 				-- Teleport player (ped) if not in vehicle
-				if invoker and invoker.call then
-					-- Use SET_ENTITY_COORDS native (0x06843DA7060A026B)
-					-- Parameters: entity, x, y, z, xAxis, yAxis, zAxis, clearArea
-					invoker.call(0x06843DA7060A026B, ped, x, y, z, false, false, false, true)
-					success = true
-				else
-					error_msg = i18n.t("notify.invoker_unavailable")
-				end
+				native.set_entity_coords(ped, x, y, z, false, false, false, true)
+				success = true
 			end
 		else
 			error_msg = i18n.t("notify.player_ped_missing", { ped = tostring(ped) })

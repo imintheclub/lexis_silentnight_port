@@ -189,13 +189,6 @@ return {
 			airport = { x = 4443.0, y = -4510.0, z = 5.0 },
 			escape = { x = 3698.0, y = -6133.0, z = -5.0 },
 		},
-		natives = {
-			get_first_blip_info_id = 0x1BEDE233E6CD2A1F,
-			get_closest_blip_info_id = 0xD484BF71050CA1EE,
-			freeze_entity_position = 0x428CA6DBD1094446,
-			set_entity_coords_no_offset = 0x239A3351AC1DA385,
-			set_entity_heading = 0x8E2530AA8ADA980E,
-		},
 	},
 	casino = {
 		blips = {
@@ -485,11 +478,6 @@ return {
 		globals = {
 			safe_collect_bool = 2708859,
 		},
-		natives = {
-			stat_set_packed_int = 0x1581503AE529CD2E,
-			stat_get_packed_int = 0x0BC900A27CBBAC55,
-			set_entity_heading = 0x8E2530AA8ADA980E,
-		},
 		packed_stats = {
 			popularity = 51051,
 		},
@@ -595,10 +583,6 @@ return {
 		globals = {
 			car_wash_safe_collect = 2708890,
 		},
-		natives = {
-			stat_set_packed_int = 0x1581503AE529CD2E,
-			stat_get_packed_int = 0x0BC900A27CBBAC55,
-		},
 		packed_stats = {
 			heat_indices = {
 				car_wash = 24924,
@@ -628,7 +612,6 @@ return {
 			vehicle_handle = 2733138 + 348,
 		},
 		natives = {
-			does_entity_exist = 0x7239B21A38F536BA,
 			get_entity_coords = 0x3FEF770D40960D5A,
 		},
 		scripts = {
@@ -712,9 +695,6 @@ return {
 		limits = {
 			max_cargo = 50,
 		},
-		natives = {
-			stat_set_packed_bool = 0xDB8A58AEAA67CD07,
-		},
 		packed_stats = {
 			cargo_available = 36828,
 			character_slots = { 0, 1 },
@@ -760,9 +740,6 @@ return {
 		stats = {
 			warehouse_slot_prefix = "PROP_WHOUSE_SLOT",
 			crate_total_prefix = "CONTOTALFORWHOUSE",
-		},
-		natives = {
-			stat_set_packed_bool = 0xDB8A58AEAA67CD07,
 		},
 		packed_stats = {
 			supply_first = 32359,
@@ -869,9 +846,6 @@ return {
 				collect = { ee = 208 + 32 + 19 + 1, legacy = 206 + 32 + 19 + 1 },
 			},
 		},
-		natives = {
-			stat_set_packed_bool = 0xDB8A58AEAA67CD07,
-		},
 		packed_stats = {
 			setup = {
 				staff = 18161,
@@ -974,12 +948,7 @@ return {
 			raids_default = 5,
 		},
 		natives = {
-			get_first_blip_info_id = 0x1BEDE233E6CD2A1F,
-			does_blip_exist = 0xA6DB27D19ECBB7DA,
 			get_blip_coords = 0x586AFE3FF72D996E,
-			do_screen_fade_in = 0xD4E8E24955024033,
-			display_hud = 0xA6294919E56FF02A,
-			display_radar = 0xA0EBB943C300E693,
 		},
 	},
 	autoshop = {

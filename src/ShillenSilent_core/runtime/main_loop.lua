@@ -122,16 +122,20 @@ local function start_runtime_loop()
 					disable_control_action(CONTROL_ACTION_BLOCK_LIST)
 
 					-- Disable player firing
-					if players and players.user then
-						local player_id = players.user()
-						invoker.call(0x5E6CC07646BBEAB8, player_id, true)
+					if players and players.me then
+						local me = players.me()
+						if me and me.id then
+							native.disable_player_firing(me.id, true)
+						end
 					end
 				end)
 			else
 				pcall(function()
-					if players and players.user then
-						local player_id = players.user()
-						invoker.call(0x5E6CC07646BBEAB8, player_id, false)
+					if players and players.me then
+						local me = players.me()
+						if me and me.id then
+							native.disable_player_firing(me.id, false)
+						end
 					end
 				end)
 			end

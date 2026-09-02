@@ -19,16 +19,14 @@ local t = i18n.t
 local push = notify_core.feature("feature.moneyfronts.name")
 
 local function read_packed_int(idx, slot)
-	local natives = cfg().natives or {}
-	return business_runtime.read_packed_int(idx, slot, natives.stat_get_packed_int)
+	return business_runtime.read_packed_int(idx, slot)
 end
 
 local function set_heat_for_key(key, value, silent)
 	local packed = cfg().packed_stats or {}
-	local natives = cfg().natives or {}
 	local idx = packed.heat_indices and packed.heat_indices[key]
 	local heat = data.clamp_heat(value)
-	local ok = business_runtime.write_packed_int(idx, heat, packed.character_slots, natives.stat_set_packed_int)
+	local ok = business_runtime.write_packed_int(idx, heat, packed.character_slots)
 	state.set_front_heat_value(key, heat)
 	if not silent then
 		push(ok and "moneyfronts.notify.heat_set" or "moneyfronts.notify.heat_failed", 2000, {

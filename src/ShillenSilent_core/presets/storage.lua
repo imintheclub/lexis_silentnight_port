@@ -35,16 +35,6 @@ local function read_json_file(path)
 		return false, "missing"
 	end
 
-	if handle.json ~= nil then
-		local ok, payload = pcall(json.decode, handle.json)
-		if ok and type(payload) == "table" then
-			return true, payload
-		end
-		if type(handle.json) == "table" then
-			return true, handle.json
-		end
-	end
-
 	local text = handle.text or ""
 	if text ~= "" then
 		local ok, payload = pcall(json.decode, text)
@@ -99,7 +89,7 @@ function storage.save(feature_id, name, data)
 	if not handle or not handle.valid then
 		return false, "file open failed"
 	end
-	handle.json = json.encode(payload)
+	handle.text = json.encode(payload)
 	return true
 end
 

@@ -3,16 +3,6 @@ local paths = require("ShillenSilent_core.core.paths")
 local config_store = {}
 
 local function decode_json_payload(handle)
-	if handle.json ~= nil then
-		local ok_decode, decoded = pcall(json.decode, handle.json)
-		if ok_decode and type(decoded) == "table" then
-			return decoded
-		end
-		if type(handle.json) == "table" then
-			return handle.json
-		end
-	end
-
 	if handle.text and handle.text ~= "" then
 		local ok_decode_text, decoded_text = pcall(json.decode, handle.text)
 		if ok_decode_text and type(decoded_text) == "table" then
@@ -49,7 +39,7 @@ function config_store.write(payload)
 		if not handle or not handle.valid then
 			error("Invalid config file handle")
 		end
-		handle.json = json.encode(payload)
+		handle.text = json.encode(payload)
 	end)
 
 	return ok, err

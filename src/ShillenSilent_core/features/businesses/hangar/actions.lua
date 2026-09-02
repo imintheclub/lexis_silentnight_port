@@ -38,13 +38,7 @@ end
 
 local function supplier_tick()
 	local packed = cfg().packed_stats or {}
-	local natives = cfg().natives or {}
-	return business_runtime.write_packed_bool(
-		packed.cargo_available,
-		true,
-		packed.character_slots,
-		natives.stat_set_packed_bool
-	)
+	return business_runtime.write_packed_bool(packed.cargo_available, true, packed.character_slots)
 end
 
 local function set_cargo_limit(value)

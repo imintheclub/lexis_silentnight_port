@@ -96,7 +96,7 @@ function common.add_toggle(ctx, parent_menu, label, get_value, set_value)
 end
 
 function common.add_number_int(ctx, parent_menu, label, min_value, max_value, step, get_value, set_value)
-	local number = parent_menu:number_int(label, menu.type.scroll):fmt("%i", min_value, max_value, step)
+	local number = parent_menu:number_int(label, menu.slider.scroll):fmt("%i", min_value, max_value, step)
 	number.value = common.clamp_int(get_value(), min_value, max_value)
 	common.bind_change(ctx, number, function(opt)
 		local value = common.clamp_int(opt and opt.value or number.value, min_value, max_value)
@@ -106,7 +106,7 @@ function common.add_number_int(ctx, parent_menu, label, min_value, max_value, st
 end
 
 function common.add_number_float(ctx, parent_menu, label, min_value, max_value, step, get_value, set_value)
-	local number = parent_menu:number_float(label, menu.type.scroll):fmt("%.2f", min_value, max_value, step)
+	local number = parent_menu:number_float(label, menu.slider.scroll):fmt("%.2f", min_value, max_value, step)
 	number.value = common.clamp_float(get_value(), min_value, max_value)
 	common.bind_change(ctx, number, function(opt)
 		local value = common.clamp_float(opt and opt.value or number.value, min_value, max_value)
@@ -121,7 +121,7 @@ function common.add_combo_options(ctx, parent_menu, label, options, get_value, s
 		entries[i] = { options[i].name, i }
 	end
 
-	local combo = parent_menu:combo_int(label, entries, menu.type.scroll)
+	local combo = parent_menu:combo_int(label, entries, menu.slider.scroll)
 	combo.value = common.find_index_by_value(options, get_value(), 1)
 	common.bind_change(ctx, combo, function(opt)
 		local idx = common.clamp_int(opt and opt.value or combo.value, 1, #options)
@@ -134,7 +134,7 @@ function common.add_combo_options(ctx, parent_menu, label, options, get_value, s
 end
 
 function common.add_combo_entries(ctx, parent_menu, label, entries, get_index, set_index)
-	local combo = parent_menu:combo_int(label, entries, menu.type.scroll)
+	local combo = parent_menu:combo_int(label, entries, menu.slider.scroll)
 	combo.value = get_index()
 	common.bind_change(ctx, combo, function(opt)
 		local idx = common.clamp_int(opt and opt.value or combo.value, 1, #entries)

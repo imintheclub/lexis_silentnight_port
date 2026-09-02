@@ -215,6 +215,8 @@ local function get_keyboard_result()
 	if not (invoker and invoker.call) then
 		return ""
 	end
+	-- TODO(Lexis API): current native wrappers do not expose GET_ONSCREEN_KEYBOARD_RESULT.
+	-- GET_ONSCREEN_KEYBOARD_RESULT 0x8362B09B91893647() -> string.
 	local ok, result = pcall(invoker.call, 0x8362B09B91893647)
 	if not ok or result == nil then
 		return ""

@@ -53,13 +53,11 @@ end
 
 local function supplier_pulse_once()
 	local packed = cfg().packed_stats or {}
-	local natives = cfg().natives or {}
 	return business_runtime.write_packed_bool_range(
 		packed.supply_first,
 		packed.supply_last,
 		true,
-		packed.character_slots,
-		natives.stat_set_packed_bool
+		packed.character_slots
 	)
 end
 

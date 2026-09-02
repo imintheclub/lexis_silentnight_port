@@ -1,4 +1,4 @@
--- luacheck: globals invoker util
+-- luacheck: globals util
 local jobs = require("ShillenSilent_core.core.jobs")
 local safe_access = require("ShillenSilent_core.core.safe_access")
 local heist_cuts = require("ShillenSilent_core.core.heist_cuts")
@@ -9,6 +9,7 @@ local data = require("ShillenSilent_core.features.heists.doomsday.data")
 local state = require("ShillenSilent_core.features.heists.doomsday.state")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local solo_launch_runtime = require("ShillenSilent_core.runtime.solo_launch")
+local native = require("natives")
 
 local core_state = require("ShillenSilent_core.shared.runtime_state")
 local run_guarded_job = jobs.run_guarded_job
@@ -347,11 +348,7 @@ end
 
 function actions.skip_cutscene()
 	local ok = pcall(function()
-		if invoker and invoker.call then
-			invoker.call(data.natives.stop_cutscene_immediately)
-		else
-			error("invoker unavailable")
-		end
+		native.stop_cutscene_immediately()
 	end)
 	push(ok and "doomsday.notify.cutscene_ok" or "doomsday.notify.cutscene_failed", 2000)
 	return ok

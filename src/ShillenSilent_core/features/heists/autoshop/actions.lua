@@ -8,6 +8,7 @@ local data = require("ShillenSilent_core.features.heists.autoshop.data")
 local state = require("ShillenSilent_core.features.heists.autoshop.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
+local native = require("natives")
 
 local run_guarded_job = jobs.run_guarded_job
 local run_coords_teleport = coords_teleport.run_coords_teleport
@@ -95,8 +96,8 @@ function actions.teleport_board()
 		function()
 			local me = players and players.me and players.me() or nil
 			local entity = me and ((me.vehicle and me.vehicle ~= 0) and me.vehicle or me.ped) or nil
-			if entity and invoker and invoker.call then
-				invoker.call(0x8E2530AA8ADA980E, entity, cfg.board.coords.heading)
+			if entity then
+				native.set_entity_heading(entity, cfg.board.coords.heading)
 			end
 		end
 	)

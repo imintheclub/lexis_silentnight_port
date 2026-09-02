@@ -2,6 +2,7 @@
 local jobs = require("ShillenSilent_core.core.jobs")
 local notify_core = require("ShillenSilent_core.core.notify")
 local i18n = require("ShillenSilent_core.i18n")
+local native = require("natives")
 local run_guarded_job = jobs.run_guarded_job
 
 local TELEPORT_COORDS_MAZEBANK = { x = -75.146, y = -818.687, z = 326.175 }
@@ -29,11 +30,7 @@ local function resolve_entity_handle(value)
 end
 
 local function get_local_ped_handle(me)
-	local ped = nil
-	if invoker and invoker.call then
-		local result = invoker.call(0xD80958FC74E988A6) -- PLAYER_PED_ID
-		ped = resolve_entity_handle(result)
-	end
+	local ped = resolve_entity_handle(native.player_ped_id())
 	if not ped and me then
 		ped = resolve_entity_handle(me.ped)
 	end
@@ -42,12 +39,8 @@ end
 
 local function get_local_vehicle_handle(ped, me)
 	local veh = nil
-	if invoker and invoker.call and ped then
-		local in_vehicle = invoker.call(0x997ABD671D25CA0B, ped, false) -- IS_PED_IN_ANY_VEHICLE
-		if in_vehicle and in_vehicle.bool then
-			local result = invoker.call(0x9A9112A0FE9A4713, ped, false) -- GET_VEHICLE_PED_IS_IN
-			veh = resolve_entity_handle(result)
-		end
+	if ped and native.is_ped_in_any_vehicle(ped, false) then
+		veh = resolve_entity_handle(native.get_vehicle_ped_is_in(ped, false))
 	end
 	if not veh and me then
 		veh = resolve_entity_handle(me.vehicle)
@@ -56,27 +49,27 @@ local function get_local_vehicle_handle(ped, me)
 end
 
 local function get_blip_coords(blip_sprite)
-	local blip = invoker.call(0x1BEDE233E6CD2A1F, blip_sprite) -- GET_FIRST_BLIP_INFO_ID
-	if not blip or not blip.int or blip.int == 0 then
+	local blip = native.get_first_blip_info_id(blip_sprite)
+	if not blip or blip == 0 then
 		return nil
 	end
 
-	local blip_handle = blip.int
+	local blip_handle = blip
 	while blip_handle and blip_handle ~= 0 do
-		local exists = invoker.call(0xA6DB27D19ECBB7DA, blip_handle) -- DOES_BLIP_EXIST
-		if exists and exists.bool then
-			local color = invoker.call(0xDF729E8D20CF7327, blip_handle) -- GET_BLIP_COLOUR
-			if not color or color.int ~= 3 then
-				-- GET_BLIP_COORDS - returns scr_vec3
+		if native.does_blip_exist(blip_handle) then
+			local color = native.get_blip_colour(blip_handle)
+			if color ~= 3 then
+				-- TODO(Lexis API): current native wrappers do not expose GET_BLIP_COORDS.
+				-- GET_BLIP_COORDS 0x586AFE3FF72D996E(blipHandle:int) -> scr_vec3.
 				local coords = invoker.call(0x586AFE3FF72D996E, blip_handle) -- GET_BLIP_COORDS
 				if coords and coords.scr_vec3 then
 					return { x = coords.scr_vec3.x, y = coords.scr_vec3.y, z = coords.scr_vec3.z + 1.0 }
 				end
 			end
 		end
-		local next_blip = invoker.call(0x14F96AA50D6FBEA7, blip_sprite) -- GET_NEXT_BLIP_INFO_ID
-		if next_blip and next_blip.int and next_blip.int ~= blip_handle then
-			blip_handle = next_blip.int
+		local next_blip = native.get_next_blip_info_id(blip_sprite)
+		if next_blip and next_blip ~= blip_handle then
+			blip_handle = next_blip
 		else
 			break
 		end
@@ -103,13 +96,13 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 			return
 		end
 
-		invoker.call(0x428CA6DBD1094446, entity, true) -- FREEZE_ENTITY_POSITION
+		native.freeze_entity_position(entity, true)
 
 		if opts.relay_if_interior and me.in_interior then
 			local relay = opts.relay_coords or TELEPORT_COORDS_MAZEBANK
 			local rx, ry, rz = tonumber(relay.x), tonumber(relay.y), tonumber(relay.z)
 			if rx and ry and rz then
-				invoker.call(0x239A3351AC1DA385, entity, rx, ry, rz, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+				native.set_entity_coords_no_offset(entity, rx, ry, rz, false, false, false)
 			end
 			util.yield(opts.relay_delay_ms or 800)
 		end
@@ -120,11 +113,11 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 			if not (x and y and z) then
 				notify_core.raw(title, i18n.t("notify.teleport_invalid_blip_coordinates"), 2200)
 			else
-				invoker.call(0x239A3351AC1DA385, entity, x, y, z, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+				native.set_entity_coords_no_offset(entity, x, y, z, false, false, false)
 			end
 			local heading = tonumber(opts.heading)
 			if heading then
-				invoker.call(0x8E2530AA8ADA980E, entity, heading) -- SET_ENTITY_HEADING
+				native.set_entity_heading(entity, heading)
 			end
 			util.yield(opts.arrival_delay_ms or 500)
 			if success_message then
@@ -134,11 +127,11 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 			local fb = opts.fallback_coords
 			local fx, fy, fz = tonumber(fb.x), tonumber(fb.y), tonumber(fb.z)
 			if fx and fy and fz then
-				invoker.call(0x239A3351AC1DA385, entity, fx, fy, fz, false, false, false) -- SET_ENTITY_COORDS_NO_OFFSET
+				native.set_entity_coords_no_offset(entity, fx, fy, fz, false, false, false)
 			end
 			local heading = tonumber(opts.heading)
 			if heading then
-				invoker.call(0x8E2530AA8ADA980E, entity, heading) -- SET_ENTITY_HEADING
+				native.set_entity_heading(entity, heading)
 			end
 			util.yield(opts.arrival_delay_ms or 500)
 			if opts.fallback_message then
@@ -150,7 +143,7 @@ local function teleport_to_blip_with_job(blip_sprite, notify_title, success_mess
 			end
 		end
 
-		invoker.call(0x428CA6DBD1094446, entity, false) -- FREEZE_ENTITY_POSITION
+		native.freeze_entity_position(entity, false)
 	end, function()
 		notify_core.raw(title, i18n.t("notify.teleport_already_running"), 1200)
 	end)

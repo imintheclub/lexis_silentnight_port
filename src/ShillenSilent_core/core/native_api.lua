@@ -3,6 +3,7 @@
 -- ---------------------------------------------------------
 local i18n = require("ShillenSilent_core.i18n")
 local notify_core = require("ShillenSilent_core.core.notify")
+local native = require("natives")
 
 local CONTROL_ACTION_BLOCK_LIST = {
 	-- Block weapon/attack/scroll/camera inputs when menu is open.
@@ -35,14 +36,14 @@ local CONTROL_ACTION_BLOCK_LIST = {
 local function disable_control_action(keys)
 	for group = 0, 1 do
 		for i = 1, #keys do
-			invoker.call(0xFE99B66D079CF6BC, group, keys[i], true)
+			native.disable_control_action(group, keys[i], true)
 		end
 	end
 end
 
 local function heist_skip_cutscene(heist_name)
 	local ok = pcall(function()
-		invoker.call(0xD220BDD222AC4A1E) -- STOP_CUTSCENE_IMMEDIATELY
+		native.stop_cutscene_immediately()
 	end)
 
 	local title = (heist_name and heist_name ~= "") and i18n.t("notify.heist_tools_title", { heist = heist_name })

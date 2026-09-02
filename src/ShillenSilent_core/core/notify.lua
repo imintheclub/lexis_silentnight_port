@@ -8,7 +8,7 @@ function notify_core.push(title_key, message_key, duration, vars)
 	end
 	local title = i18n.t(title_key, vars)
 	local message = i18n.t(message_key, vars)
-	notify.push(title, message, duration or 2500)
+	notify.push(title, message, { time = duration or 2500 })
 	return true
 end
 
@@ -22,7 +22,7 @@ function notify_core.raw(title, message, duration)
 	if not notify or type(notify.push) ~= "function" then
 		return false
 	end
-	notify.push(tostring(title), tostring(message), duration or 2500)
+	notify.push(tostring(title), tostring(message), { time = duration or 2500 })
 	return true
 end
 

@@ -1,4 +1,5 @@
 local safe_access = require("ShillenSilent_core.core.safe_access")
+local native = require("natives")
 
 local business_runtime = {}
 
@@ -21,50 +22,33 @@ local function packed_slots(slots)
 	return slots or { 0 }
 end
 
-local function native_result_ok(result)
-	if not result then
-		return false
-	end
-	if result.bool ~= nil then
-		return result.bool == true or tonumber(result.bool) == 1
-	end
-	return tonumber(result.int) == 1
-end
-
 function business_runtime.active_character_slot()
 	local last_char = account_character() or safe_access.get_stat_int("MPPLY_LAST_MP_CHAR", 0)
 	return math.floor(tonumber(last_char) or 0)
 end
 
 function business_runtime.start_invite_only_session()
-	if not (invoker and invoker.call) then
-		return false
-	end
-	local result = invoker.call(0xED34C0C02C098BB7, 0, 32)
-	local started = native_result_ok(result)
+	local started = native.network_session_host_closed(0, 32)
 	if not started then
-		local fallback = invoker.call(0x6F3D4ED9BEE4E61D, 0, 32, true)
-		started = native_result_ok(fallback)
+		started = native.network_session_host(0, 32, true)
 	end
 	return started
 end
 
-function business_runtime.write_packed_bool(idx, value, slots, native_hash)
-	if not (invoker and invoker.call and type(native_hash) == "number" and type(idx) == "number") then
+function business_runtime.write_packed_bool(idx, value, slots)
+	if type(idx) ~= "number" then
 		return false
 	end
 
 	local ok_any = false
 	for _, slot in ipairs(packed_slots(slots)) do
-		local ok = pcall(function()
-			invoker.call(native_hash, idx, value and true or false, slot)
-		end)
-		ok_any = ok or ok_any
+		local ok, result = pcall(native.set_packed_stat_bool_code, idx, value and true or false, slot)
+		ok_any = (ok and result == true) or ok_any
 	end
 	return ok_any
 end
 
-function business_runtime.write_packed_bool_range(first_idx, last_idx, value, slots, native_hash)
+function business_runtime.write_packed_bool_range(first_idx, last_idx, value, slots)
 	local first = tonumber(first_idx)
 	local last = tonumber(last_idx)
 	if not first or not last then
@@ -73,57 +57,36 @@ function business_runtime.write_packed_bool_range(first_idx, last_idx, value, sl
 
 	local ok_any = false
 	for idx = first, last do
-		ok_any = business_runtime.write_packed_bool(idx, value, slots, native_hash) or ok_any
+		ok_any = business_runtime.write_packed_bool(idx, value, slots) or ok_any
 	end
 	return ok_any
 end
 
-function business_runtime.write_packed_int(idx, value, slots, native_hash)
-	if not (invoker and invoker.call and type(native_hash) == "number" and type(idx) == "number") then
+function business_runtime.write_packed_int(idx, value, slots)
+	if type(idx) ~= "number" then
 		return false
 	end
 
 	local ok_any = false
 	for _, slot in ipairs(packed_slots(slots)) do
-		local ok = pcall(function()
-			invoker.call(native_hash, idx, math.floor(tonumber(value) or 0), slot)
+		local ok, result = pcall(function()
+			local stat_key = native.get_packed_int_stat_key(idx, false, true, slot)
+			return type(stat_key) == "number"
+				and stat_key ~= 0
+				and native.stat_set_int(stat_key, math.floor(tonumber(value) or 0), true)
 		end)
-		ok_any = ok or ok_any
+		ok_any = (ok and result == true) or ok_any
 	end
 	return ok_any
 end
 
-function business_runtime.read_packed_int(idx, slot, native_hash)
-	if not (memory and invoker and invoker.call and memory.alloc_int and memory.read_int) then
-		return nil
-	end
-	if type(native_hash) ~= "number" or type(idx) ~= "number" then
+function business_runtime.read_packed_int(idx, slot)
+	if type(idx) ~= "number" then
 		return nil
 	end
 
-	local buf = memory.alloc_int()
-	if not buf then
-		return nil
-	end
-
-	local value = nil
-	local ok_call = pcall(function()
-		invoker.call(native_hash, idx, buf, slot or 0)
-	end)
-	if ok_call then
-		local ok_read, read_value = pcall(memory.read_int, buf)
-		if ok_read then
-			value = tonumber(read_value)
-		end
-	end
-
-	if memory.free then
-		pcall(memory.free, buf)
-	elseif memory.free_int then
-		pcall(memory.free_int, buf)
-	end
-
-	return value
+	local ok, value = pcall(native.get_packed_stat_int, idx, slot or 0)
+	return ok and tonumber(value) or nil
 end
 
 function business_runtime.apply_tunables(tunables, value)
@@ -228,26 +191,10 @@ function business_runtime.start_script(script_cfg)
 		return true
 	end
 
-	local ok, native_api = pcall(require, "natives")
-	if ok and native_api then
-		if type(native_api.request_script) == "function" then
-			pcall(native_api.request_script, script_cfg.name)
-			util.yield(100)
-		end
-		if type(native_api.start_new_script) == "function" then
-			local result_ok, result =
-				pcall(native_api.start_new_script, script_cfg.name, tonumber(script_cfg.stack) or 4592)
-			return result_ok and tonumber(result) ~= 0
-		end
-	end
-
-	if invoker and invoker.call then
-		local call_ok, result =
-			pcall(invoker.call, 0xE81651AD79516E48, script_cfg.name, tonumber(script_cfg.stack) or 4592)
-		return call_ok and result and tonumber(result.int) ~= 0
-	end
-
-	return false
+	pcall(native.request_script, script_cfg.name)
+	util.yield(100)
+	local result_ok, result = pcall(native.start_new_script, script_cfg.name, tonumber(script_cfg.stack) or 4592)
+	return result_ok and tonumber(result) ~= 0
 end
 
 return business_runtime

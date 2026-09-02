@@ -9,6 +9,7 @@ local data = require("ShillenSilent_core.features.heists.apartment.data")
 local state = require("ShillenSilent_core.features.heists.apartment.state")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
 local solo_launch_runtime = require("ShillenSilent_core.runtime.solo_launch")
+local native = require("natives")
 
 local core_state = require("ShillenSilent_core.shared.runtime_state")
 local run_guarded_job = jobs.run_guarded_job
@@ -29,7 +30,8 @@ local function mission_script()
 end
 
 local function user_id()
-	return (players and players.user and players.user()) or 0
+	local me = players and players.me and players.me()
+	return (me and me.id) or 0
 end
 
 local function read_heist_key_from_stat(stat_name)
@@ -122,14 +124,7 @@ local function resolve_root_hash(tunable_name, fallback_text)
 	end
 
 	local ok_native, native_hash = pcall(function()
-		local hashed = invoker.call(data.natives.get_hash_key, fallback_text)
-		if type(hashed) == "number" then
-			return hashed
-		end
-		if type(hashed) == "table" then
-			return hashed.int32 or hashed.int or hashed.uint or hashed.u32 or hashed.hash
-		end
-		return nil
+		return native.get_hash_key(fallback_text)
 	end)
 	if ok_native then
 		return normalize_hash(native_hash)
@@ -404,12 +399,10 @@ end
 
 function actions.change_session()
 	local started
-	local result = invoker.call(data.natives.network_session_host_closed, 0, 32)
-	if result and result.bool then
+	if native.network_session_host_closed(0, 32) then
 		started = true
 	else
-		local fallback = invoker.call(data.natives.network_session_host, 0, 32, true)
-		started = (fallback and fallback.bool) and true or false
+		started = native.network_session_host(0, 32, true) and true or false
 	end
 
 	push(started and "apartment.notify.session_ok" or "apartment.notify.session_failed", started and 2000 or 2800)
@@ -463,9 +456,7 @@ local function force_cut_ui_flow()
 	end
 
 	pcall(function()
-		if invoker and type(invoker.call) == "function" then
-			invoker.call(data.natives.set_cursor_position, 0.775, 0.175)
-		end
+		native.set_cursor_position(0.775, 0.175)
 	end)
 	pcall(function()
 		local gta = _G.GTA

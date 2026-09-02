@@ -8,6 +8,7 @@ local data = require("ShillenSilent_core.features.heists.salvageyard.data")
 local state = require("ShillenSilent_core.features.heists.salvageyard.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
+local native = require("natives")
 
 local run_guarded_job = jobs.run_guarded_job
 local run_coords_teleport = coords_teleport.run_coords_teleport
@@ -26,48 +27,32 @@ local push = notify_core.feature("feature.salvageyard.name")
 local function set_heading(coords)
 	local me = players and players.me and players.me() or nil
 	local entity = me and ((me.vehicle and me.vehicle ~= 0) and me.vehicle or me.ped) or nil
-	if entity and invoker and invoker.call then
-		invoker.call(config().natives.set_entity_heading, entity, coords.heading)
+	if entity then
+		native.set_entity_heading(entity, coords.heading)
 	end
 end
 
 local function read_packed_int(idx, slot)
-	if not (memory and invoker and invoker.call and memory.alloc_int and memory.read_int) then
+	if type(idx) ~= "number" then
 		return nil
 	end
 
-	local buf = memory.alloc_int()
-	if not buf then
-		return nil
-	end
-
-	local value = nil
-	local ok_call = pcall(function()
-		invoker.call(config().natives.stat_get_packed_int, idx, buf, slot or 0)
-	end)
-	if ok_call then
-		local ok_read, result = pcall(memory.read_int, buf)
-		if ok_read then
-			value = tonumber(result)
-		end
-	end
-
-	if memory.free then
-		pcall(memory.free, buf)
-	elseif memory.free_int then
-		pcall(memory.free_int, buf)
-	end
-
-	return value
+	local ok, value = pcall(native.get_packed_stat_int, idx, slot or 0)
+	return ok and tonumber(value) or nil
 end
 
 local function write_packed_int(idx, value, slot)
-	if not (invoker and invoker.call) then
+	if type(idx) ~= "number" then
 		return false
 	end
-	return pcall(function()
-		invoker.call(config().natives.stat_set_packed_int, idx, value, slot or 0)
+
+	local ok, result = pcall(function()
+		local stat_key = native.get_packed_int_stat_key(idx, false, true, slot or 0)
+		return type(stat_key) == "number"
+			and stat_key ~= 0
+			and native.stat_set_int(stat_key, math.floor(tonumber(value) or 0), true)
 	end)
+	return ok and result == true
 end
 
 local function apply_slot_tunables(slot)

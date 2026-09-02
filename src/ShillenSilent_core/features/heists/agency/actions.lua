@@ -8,6 +8,7 @@ local data = require("ShillenSilent_core.features.heists.agency.data")
 local state = require("ShillenSilent_core.features.heists.agency.state")
 local coords_teleport = require("ShillenSilent_core.shared.coords_teleport")
 local blip_teleport = require("ShillenSilent_core.shared.blip_teleport")
+local native = require("natives")
 
 local run_guarded_job = jobs.run_guarded_job
 local run_coords_teleport = coords_teleport.run_coords_teleport
@@ -23,39 +24,21 @@ local text = i18n.t
 
 local push = notify_core.feature("feature.agency.name")
 
-local function get_entity_coords(entity)
-	if not (entity and entity ~= 0 and invoker and invoker.call) then
-		return nil
-	end
-	local result = invoker.call(0x3FEF770D40960D5A, entity, false)
-	if result and result.scr_vec3 then
-		return result.scr_vec3
-	end
-	return nil
-end
-
 local function get_interior_from_entity(entity)
-	if not (entity and entity ~= 0 and invoker and invoker.call) then
+	if not (entity and entity ~= 0) then
 		return 0
 	end
-	local result = invoker.call(0x2107BA504071A6BB, entity)
-	if result and result.int then
-		return result.int
-	end
-	return 0
+	return native.get_interior_from_entity(entity) or 0
 end
 
 local function resolve_computer_interior_id()
 	if state.runtime.computer_interior_id and state.runtime.computer_interior_id ~= 0 then
 		return state.runtime.computer_interior_id
 	end
-	if not (invoker and invoker.call) then
-		return 0
-	end
 	local computer = config().computer.coords
-	local result = invoker.call(0xB0F7F8663821D9C3, computer.x, computer.y, computer.z)
-	if result and result.int and result.int ~= 0 then
-		state.runtime.computer_interior_id = result.int
+	local result = native.get_interior_at_coords(computer.x, computer.y, computer.z)
+	if result and result ~= 0 then
+		state.runtime.computer_interior_id = result
 		return state.runtime.computer_interior_id
 	end
 	return 0
@@ -74,7 +57,7 @@ local function is_in_agency_interior()
 		return player_interior == agency_interior
 	end
 
-	local coords = get_entity_coords(me.ped)
+	local coords = me.coords
 	if not coords then
 		return false
 	end
@@ -162,8 +145,8 @@ function actions.teleport_computer()
 		function()
 			local me = players and players.me and players.me() or nil
 			local entity = me and ((me.vehicle and me.vehicle ~= 0) and me.vehicle or me.ped) or nil
-			if entity and invoker and invoker.call then
-				invoker.call(0x8E2530AA8ADA980E, entity, computer.heading)
+			if entity then
+				native.set_entity_heading(entity, computer.heading)
 			end
 		end
 	)
